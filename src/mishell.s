@@ -163,6 +163,21 @@ _start:
   jmp   .exit
 
 .error:
+  ; close tcp socket
+  mov   rax, 3  ; CLOSE
+  mov   rdi, [tcp_fd]
+  syscall
+  
+  ; close unix socket
+  mov   rax, 3  ; CLOSE
+  mov   rdi, [unix_fd]
+  syscall
+
+  ; close epoll socket
+  mov   rax, 3  ; CLOSE
+  mov   rdi, [epoll_fd]
+  syscall
+
   mov   rax, 60
   mov   rdi, -1
   syscall
