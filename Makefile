@@ -24,6 +24,9 @@ run:
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
 	./$(BIN_DIR)/$(MAIN_PATH)
 
+strace:
+	strace ./$(BIN_DIR)/$(MAIN_PATH)
+
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
