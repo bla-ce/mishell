@@ -5,10 +5,13 @@ section .bss
 epoll_fd  resq 1
 tcp_fd    resq 1
 unix_fd   resq 1
+conn_fd   resq 1
+nfds      resq 1
 
 epoll_event_t:
   .events resd 1
   .data   resq 1
+epoll_event_t_end:
 
 sockaddr_in_t:
   .sin_family resw 1
@@ -17,17 +20,24 @@ sockaddr_in_t:
   .sin_zero   resq 1
 sockaddr_in_t_end:
 
+events resb EPOLL_EVENT_T_LEN * MAX_EVENTS
+
 section .data
+
+enable dd 1
+
+MAX_EVENTS        equ 10
+EPOLL_EVENT_T_LEN equ epoll_event_t_end - epoll_event_t
 
 tcp_port  equ 7474
 
-sockaddr_in_len equ sockaddr_in_t_end - sockaddr_in_t
+sockaddr_in_t_len dq sockaddr_in_t_end - sockaddr_in_t
 
-LISTEN_BACKLOG equ 50
+LISTEN_BACKLOG  equ 50
 
 sockaddr_un_t:
   .sun_family dw 1
-  .sun_path   db "herve.sock", 0
+  .sun_path   db "mishell.sock", 0
 sockaddr_un_t_end:
 
 unix_path_len     equ sockaddr_un_t_end - sockaddr_un_t.sun_path
@@ -47,6 +57,17 @@ _start:
 
   mov   [tcp_fd], rax
 
+  ; enable reuse address
+  mov   rax, 54         ; SETSOCKOPT
+  mov   rdi, [tcp_fd]
+  mov   rsi, 1          ; SOL_SOCKET
+  mov   rdx, 2          ; SO_REUSEADDR
+  mov   r10, enable
+  mov   r8, 4
+  syscall
+  cmp   rax, 0
+  jl    .error
+
   ; bind tcp socket
   mov   ax, tcp_port
   xchg  al, ah ; bswap 16-bit registers
@@ -59,7 +80,7 @@ _start:
   mov   rax, 49 ; BIND
   mov   rdi, [tcp_fd]
   mov   rsi, sockaddr_in_t
-  mov   rdx, sockaddr_in_len
+  mov   rdx, [sockaddr_in_t_len]
   syscall
   cmp   rax, 0
   jl    .error
@@ -119,13 +140,13 @@ _start:
   mov   rax, [tcp_fd]
   mov   [epoll_event_t.data], rax
 
-  mov   rax, 233  ; EPOLL_CTL
+  mov   rax, 233    ; EPOLL_CTL
   mov   rdi, [epoll_fd]
-  mov   rsi, 1     ; EPOLL_CTL_ADDA
+  mov   rsi, 1      ; EPOLL_CTL_ADD
   mov   rdx, [tcp_fd]
   mov   r10, epoll_event_t
   syscall
-  cmp   ax, 0
+  cmp   rax, 0
   jl    .error
 
   ; add unix socket to the epoll interest list
@@ -133,17 +154,122 @@ _start:
   mov   rax, [unix_fd]
   mov   qword [epoll_event_t.data], rax
 
-  mov   rax, 233  ; EPOLL_CTL
+  mov   rax, 233    ; EPOLL_CTL
   mov   rdi, [epoll_fd]
-  mov   rsi, 1     ; EPOLL_CTL_ADD
+  mov   rsi, 1      ; EPOLL_CTL_ADD
   mov   rdx, [unix_fd]
   mov   r10, epoll_event_t
   syscall
-  cmp   ax, 0
+  cmp   rax, 0
   jl    .error
 
-  ; epoll loop
+.outer_loop:
+  ; epoll wait
+  mov   rax, 232  ; EPOLL_WAIT
+  mov   rdi, [epoll_fd]
+  mov   rsi, events
+  mov   rdx, MAX_EVENTS
+  mov   rcx, -1
+  syscall
+  cmp   rax, 0
+  jl    .error
 
+  mov   [nfds], rax
+
+  xor   r12, r12  ; init counter
+
+.inner_loop:
+  ; check if we processed all events
+  cmp   r12, [nfds]
+  jge   .inner_loop_end
+
+  ; get the conn fd of this event
+  mov   rdi, events
+
+  imul  r12, EPOLL_EVENT_T_LEN
+  mov   rax, [rdi + r12 + 4] 
+
+  ; check if conn fd is a new connection
+  cmp   rax, [tcp_fd]
+  je    .new_connection
+
+  cmp   rax, [unix_fd]
+  je    .new_connection
+
+  jmp   .existing_connection
+
+.new_connection:
+  ; accept connection
+  mov   rdi, rax
+  mov   rsi, 0
+  mov   rdx, 0
+  mov   rax, 43 ; ACCEPT
+  syscall
+  cmp   rax, 0
+  jl    .next_connection
+
+  mov   [conn_fd], rax
+  
+  ; set conn fd non blocking
+  mov   rax, 72         ; FCNTL
+  mov   rdi, [conn_fd]
+  mov   rsi, 3          ; F_GETFL
+  syscall
+  cmp   rax, 0
+  jl    .clear_connection
+
+  mov   rdx, rax
+  or    rdx, 2048
+  mov   rax, 72         ; FCNTL
+  mov   rdi, [conn_fd]
+  mov   rsi, 4          ; F_SETFL
+  syscall
+  cmp   rax, 0
+  jl    .clear_connection
+
+  ; add conn fd to epoll instance
+  mov   dword [epoll_event_t.events], 1 ; EPOLLIN
+  mov   rax, [conn_fd]
+  mov   [epoll_event_t.data], rax
+
+  mov   rax, 233    ; EPOLL_CTL
+  mov   rdi, [epoll_fd]
+  mov   rsi, 1      ; EPOLL_CTL_ADD
+  mov   rdx, [conn_fd]
+  mov   r10, epoll_event_t
+  syscall
+  cmp   rax, 0
+  jl    .clear_connection
+
+  jmp   .next_connection
+
+.existing_connection:
+  ; read message
+
+  jmp   .next_connection
+
+.clear_connection:
+  ; close conn fd socket
+  mov   rax, 3  ; CLOSE
+  mov   rdi, [conn_fd]
+  syscall
+
+  ; remove conn fd from epoll instance
+  mov   rax, 233    ; EPOLL_CTL
+  mov   rdi, [epoll_fd]
+  mov   rsi, 2      ; EPOLL_CTL_DEL
+  mov   rdx, [conn_fd]
+  mov   r10, epoll_event_t
+  syscall
+
+.next_connection:
+  inc   r12
+  jmp   .inner_loop
+
+.inner_loop_end:
+  jmp   .outer_loop
+
+.cleanup:
   ; close tcp socket
   mov   rax, 3  ; CLOSE
   mov   rdi, [tcp_fd]
