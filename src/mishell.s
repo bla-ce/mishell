@@ -279,16 +279,16 @@ _start:
   cmp   word [packet_t.magic], MAGIC_VALUE
   jne   .invalid_magic
 
-  ; print payload
+  ; send back payload
   mov   rax, 1  ; WRITE
-  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rdi, [conn_fd]
   mov   rsi, packet_t.payload
   movzx rdx, word [packet_t.payload_len]
   syscall
   cmp   rax, 0
   jl    .error
 
-  jmp   .next_connection
+  jmp   .clear_connection
 
 .invalid_magic:
   mov   rax, 1          ; WRITE

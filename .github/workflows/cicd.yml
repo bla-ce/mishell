@@ -1,0 +1,32 @@
+name: Herve CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mishell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nasm
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: mishell builds
+        run: make
+
+      - name: Run mishell
+        run: |
+          make run &
+          echo $! > server.pid
+          sleep 1
+
+      - name: Run python client script
+        working-directory: client/
+        run: python client.py
