@@ -22,7 +22,21 @@ sockaddr_in_t_end:
 
 events resb EPOLL_EVENT_T_LEN * MAX_EVENTS
 
+packet_t:
+  .magic        resw 1
+  .op           resb 1
+  .payload_len  resw 1
+  .payload      resb PAYLOAD_MAX_LEN
+
+packet_len resq 1
+
 section .data
+
+HEADER_LEN      equ 0x5
+MAGIC_VALUE     equ 0xCAFE
+PAYLOAD_MAX_LEN equ 0xFFFF
+
+PACKET_MAX_LEN  equ HEADER_LEN + PAYLOAD_MAX_LEN
 
 enable dd 1
 
@@ -42,6 +56,9 @@ sockaddr_un_t_end:
 
 unix_path_len     equ sockaddr_un_t_end - sockaddr_un_t.sun_path
 sockaddr_un_t_len equ sockaddr_un_t_end - sockaddr_un_t
+
+err_invalid_magic     db "Invalid magic value", 10
+err_invalid_magic_len equ $ - err_invalid_magic
 
 section .text
 
@@ -228,7 +245,10 @@ _start:
   jl    .clear_connection
 
   ; add conn fd to epoll instance
-  mov   dword [epoll_event_t.events], 1 ; EPOLLIN
+  mov   edx, 1          ; EPOLLIN
+  mov   ecx, 0x80000000 ; EPOLLET
+  or    edx, ecx 
+  mov   dword [epoll_event_t.events], edx ; EPOLLIN
   mov   rax, [conn_fd]
   mov   [epoll_event_t.data], rax
 
@@ -244,22 +264,29 @@ _start:
   jmp   .next_connection
 
 .existing_connection:
-  ; read message
+  ; get packet
+  mov   rax, 0
+  mov   rdi, [conn_fd]
+  mov   rsi, packet_t
+  mov   rdx, PACKET_MAX_LEN
+  syscall
+  cmp   rax, 0
+  jle   .clear_connection
 
-  jmp   .next_connection
+  mov   [packet_len], rax
 
 .clear_connection:
-  ; close conn fd socket
-  mov   rax, 3  ; CLOSE
-  mov   rdi, [conn_fd]
-  syscall
-
   ; remove conn fd from epoll instance
   mov   rax, 233    ; EPOLL_CTL
   mov   rdi, [epoll_fd]
   mov   rsi, 2      ; EPOLL_CTL_DEL
   mov   rdx, [conn_fd]
   mov   r10, epoll_event_t
+  syscall
+
+  ; close conn fd socket
+  mov   rax, 3  ; CLOSE
+  mov   rdi, [conn_fd]
   syscall
 
 .next_connection:
