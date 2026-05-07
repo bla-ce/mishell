@@ -25,12 +25,17 @@ events resb EPOLL_EVENT_T_LEN * MAX_EVENTS
 packet_t:
   .magic        resw 1
   .op           resb 1
+  .flags        resb 1  ; message direction
   .payload_len  resw 1
   .payload      resb PAYLOAD_MAX_LEN
 
 packet_len resq 1
 
 section .data
+
+; FLAGS
+CLIENT_TO_SERVER equ 0
+SERVER_TO_CLIENT equ 1
 
 HEADER_LEN      equ 0x5
 MAGIC_VALUE     equ 0xCAFE
@@ -57,8 +62,21 @@ sockaddr_un_t_end:
 unix_path_len     equ sockaddr_un_t_end - sockaddr_un_t.sun_path
 sockaddr_un_t_len equ sockaddr_un_t_end - sockaddr_un_t
 
-err_invalid_magic     db "invalid magic value"
-err_invalid_magic_len equ $ - err_invalid_magic
+err_invalid_packet     db "invalid packet"
+err_invalid_packet_len equ $ - err_invalid_packet
+
+log:
+  .listen_tcp     db "[mishell] listening on TCP port 7474", 10
+  .listen_tcp_len equ $ - log.listen_tcp
+
+  .listen_unix      db "[mishell] listening on UNIX socket mishell.sock", 10
+  .listen_unix_len  equ $ - log.listen_unix
+
+  .accept_new_conn      db "[mishell] accepted new connection", 10
+  .accept_new_conn_len  equ $ - log.accept_new_conn
+
+  .recv_packet      db "[mishell] received packet from client", 10
+  .recv_packet_len  equ $ - log.recv_packet
 
 section .text
 
@@ -110,6 +128,14 @@ _start:
   cmp   rax, 0
   jl    .error
 
+  mov   rax, 1  ; WRITE
+  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rsi, log.listen_tcp
+  mov   rdx, log.listen_tcp_len
+  syscall
+  cmp   rax, 0
+  jl    .error
+
   ; create unix socket
   mov   rax, 41 ; SOCKET
   mov   rdi, 1  ; AF_LOCAL
@@ -139,6 +165,14 @@ _start:
   mov   rax, 50 ; LISTEN
   mov   rdi, [unix_fd]
   mov   rsi, LISTEN_BACKLOG
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   rax, 1  ; WRITE
+  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rsi, log.listen_unix
+  mov   rdx, log.listen_unix_len
   syscall
   cmp   rax, 0
   jl    .error
@@ -227,6 +261,14 @@ _start:
 
   mov   [conn_fd], rax
 
+  mov   rax, 1  ; WRITE
+  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rsi, log.accept_new_conn
+  mov   rdx, log.accept_new_conn_len
+  syscall
+  cmp   rax, 0
+  jl    .error
+
   ; set conn fd non blocking
   mov   rax, 72         ; FCNTL
   mov   rdi, [conn_fd]
@@ -275,9 +317,21 @@ _start:
 
   mov   [packet_len], rax
 
+  mov   rax, 1  ; WRITE
+  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rsi, log.recv_packet
+  mov   rdx, log.recv_packet_len
+  syscall
+  cmp   rax, 0
+  jl    .error
+
   ; verify magic value
   cmp   word [packet_t.magic], MAGIC_VALUE
-  jne   .invalid_magic
+  jne   .invalid_packet
+
+  ; make sure the direction is client to server
+  cmp   byte [packet_t.flags], CLIENT_TO_SERVER
+  jne   .invalid_packet
 
   ; send back payload
   mov   rax, 1  ; WRITE
@@ -290,11 +344,11 @@ _start:
 
   jmp   .clear_connection
 
-.invalid_magic:
+.invalid_packet:
   mov   rax, 1          ; WRITE
   mov   rdi, [conn_fd]  ; STDOUT_FILENO
-  mov   rsi, err_invalid_magic
-  mov   rdx, err_invalid_magic_len
+  mov   rsi, err_invalid_packet
+  mov   rdx, err_invalid_packet_len
   syscall
 
 .clear_connection:
