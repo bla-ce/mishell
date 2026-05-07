@@ -57,7 +57,7 @@ sockaddr_un_t_end:
 unix_path_len     equ sockaddr_un_t_end - sockaddr_un_t.sun_path
 sockaddr_un_t_len equ sockaddr_un_t_end - sockaddr_un_t
 
-err_invalid_magic     db "Invalid magic value", 10
+err_invalid_magic     db "invalid magic value"
 err_invalid_magic_len equ $ - err_invalid_magic
 
 section .text
@@ -274,6 +274,28 @@ _start:
   jle   .clear_connection
 
   mov   [packet_len], rax
+
+  ; verify magic value
+  cmp   word [packet_t.magic], MAGIC_VALUE
+  jne   .invalid_magic
+
+  ; print payload
+  mov   rax, 1  ; WRITE
+  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rsi, packet_t.payload
+  movzx rdx, word [packet_t.payload_len]
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  jmp   .next_connection
+
+.invalid_magic:
+  mov   rax, 1          ; WRITE
+  mov   rdi, [conn_fd]  ; STDOUT_FILENO
+  mov   rsi, err_invalid_magic
+  mov   rdx, err_invalid_magic_len
+  syscall
 
 .clear_connection:
   ; remove conn fd from epoll instance
