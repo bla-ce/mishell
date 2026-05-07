@@ -114,7 +114,7 @@ _start:
   mov   rax, 41 ; SOCKET
   mov   rdi, 1  ; AF_LOCAL
   mov   rsi, 1  ; SOCK_STREAM
-  mov   rdx, 0 
+  mov   rdx, 0
   syscall
   cmp   rax, 0
   jl    .error
@@ -151,7 +151,7 @@ _start:
   jl    .error
 
   mov   [epoll_fd], rax
-  
+
   ; add tcp socket to the epoll interest list
   mov   dword [epoll_event_t.events], 1 ; EPOLLIN
   mov   rax, [tcp_fd]
@@ -204,7 +204,7 @@ _start:
   mov   rdi, events
 
   imul  r12, EPOLL_EVENT_T_LEN
-  mov   rax, [rdi + r12 + 4] 
+  mov   rax, [rdi + r12 + 4]
 
   ; check if conn fd is a new connection
   cmp   rax, [tcp_fd]
@@ -226,7 +226,7 @@ _start:
   jl    .next_connection
 
   mov   [conn_fd], rax
-  
+
   ; set conn fd non blocking
   mov   rax, 72         ; FCNTL
   mov   rdi, [conn_fd]
@@ -247,7 +247,7 @@ _start:
   ; add conn fd to epoll instance
   mov   edx, 1          ; EPOLLIN
   mov   ecx, 0x80000000 ; EPOLLET
-  or    edx, ecx 
+  or    edx, ecx
   mov   dword [epoll_event_t.events], edx ; EPOLLIN
   mov   rax, [conn_fd]
   mov   [epoll_event_t.data], rax
@@ -323,7 +323,7 @@ _start:
   mov   rax, 3  ; CLOSE
   mov   rdi, [tcp_fd]
   syscall
-  
+
   ; close unix socket
   mov   rax, 3  ; CLOSE
   mov   rdi, [unix_fd]
@@ -342,7 +342,7 @@ _start:
   mov   rax, 3  ; CLOSE
   mov   rdi, [tcp_fd]
   syscall
-  
+
   ; close unix socket
   mov   rax, 3  ; CLOSE
   mov   rdi, [unix_fd]
@@ -360,4 +360,3 @@ _start:
 .exit:
   mov   rax, 60
   syscall
-
