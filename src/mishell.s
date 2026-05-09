@@ -296,8 +296,6 @@ _start:
   cmp   rax, 0
   jle   .clear_connection
 
-  mov   [packet_len], rax
-
   mov   rax, 1  ; WRITE
   mov   rdi, 1  ; STDOUT_FILENO
   mov   rsi, log.recv_packet

@@ -8,12 +8,11 @@ packet_t:
   .payload      resb PAYLOAD_MAX_LEN
 packet_t_end:
 
-packet_len resq 1
-
 section .data
 
 ; PACKET OFFSETS
 PACKET_T_LEN equ packet_t_end - packet_t
+PACKET_T_HEADER_LEN equ packet_t.payload - packet_t
 
 PACKET_T_OFF_MAGIC        equ 0x0
 PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
@@ -31,6 +30,17 @@ PAYLOAD_MAX_LEN equ 0xFFFF
 
 PACKET_MAX_LEN  equ HEADER_LEN + PAYLOAD_MAX_LEN
 
+err_msg:
+  .internal db "internal error"
+  .internal_len equ $ - err_msg.internal
+
+  .invalid_magic db "invalid magic value in packet"
+  .invalid_magic_len equ $ - err_msg.invalid_magic
+  .invalid_op db "invalid op value in packet"
+  .invalid_op_len equ $ - err_msg.invalid_op
+  .invalid_direction db "invalid direction flag in packet"
+  .invalid_direction_len equ $ - err_msg.invalid_direction
+
 section .text
 
 ; handles a packet received from the connection fd
@@ -38,39 +48,62 @@ section .text
 ; @param  rsi: connection fd
 ; @return rax: return code
 handle_packet:
-  sub   rsp, 0x10
+  sub   rsp, 0x10 + PACKET_T_LEN
 
   ; STACK USAGE
-  ; [rsp]     -> pointer to the packet struct
-  ; [rsp+0x8] -> connection fd
+  ; [rsp]       -> pointer to the packet struct
+  ; [rsp+0x8]   -> connection fd
+  ; [rsp+0x10]  -> response packet
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+
+  ; reset response packet
+  lea   rdi, [rsp+0x10]
+  mov   ax, 0
+  mov   rcx, PACKET_T_LEN
+  rep   stosb
 
   test  rdi, rdi
   jz    .error
 
   ; verify packet
   mov   rdi, [rsp]
+  lea   rsi, [rsp+0x10]
   call  verify_packet
-  cmp   rax, 0
-  jl    .error
+  test  rax, rax
+  jnz   .error
 
   mov   rax, 0
   jmp   .return
 
 .error:
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_OP], ops.ERROR
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], SERVER_TO_CLIENT
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], err_msg.internal_len
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, err_msg.internal
+  mov   rcx, err_msg.internal_len
+  rep   movsb
+
+  mov   rax, 1  ; WRITE
+  mov   rdi, [rsp+0x8]
+  lea   rsi, [rsp+0x10]
+  mov   rdx, PACKET_T_HEADER_LEN + err_msg.internal_len
+  syscall
+
   mov   rax, -1
 
 .return:
-  add   rsp, 0x10
+  add   rsp, 0x10 + PACKET_T_LEN
   ret
 
 ; verifies that the packet received is a valid packet
 ; @param  rdi: pointer to the packet struct
-; @return rax:
-  ; 0: packet is valid
-  ; -1: packet is invalid
+; @return rax: 0 if valid, err code if invalid
 verify_packet:
   sub   rsp, 0x8
 
