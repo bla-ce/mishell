@@ -1,4 +1,5 @@
 %include "ops.inc"
+%include "packet.inc"
 
 global _start
 
@@ -24,36 +25,7 @@ sockaddr_in_t_end:
 
 events resb EPOLL_EVENT_T_LEN * MAX_EVENTS
 
-packet_t:
-  .magic        resw 1
-  .op           resb 1
-  .flags        resb 1  ; message direction
-  .payload_len  resw 1
-  .payload      resb PAYLOAD_MAX_LEN
-packet_t_end:
-
-packet_len resq 1
-
 section .data
-
-; PACKET OFFSETS
-PACKET_T_LEN equ packet_t_end - packet_t
-
-PACKET_T_OFF_MAGIC        equ 0x0
-PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
-PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
-PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_FLAGS + 0x1
-PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
-
-; FLAGS
-CLIENT_TO_SERVER equ 0
-SERVER_TO_CLIENT equ 1
-
-HEADER_LEN      equ 0x5
-MAGIC_VALUE     equ 0xCAFE
-PAYLOAD_MAX_LEN equ 0xFFFF
-
-PACKET_MAX_LEN  equ HEADER_LEN + PAYLOAD_MAX_LEN
 
 enable dd 1
 
@@ -73,9 +45,6 @@ sockaddr_un_t_end:
 
 unix_path_len     equ sockaddr_un_t_end - sockaddr_un_t.sun_path
 sockaddr_un_t_len equ sockaddr_un_t_end - sockaddr_un_t
-
-err_invalid_packet     db "invalid packet"
-err_invalid_packet_len equ $ - err_invalid_packet
 
 log:
   .listen_tcp     db "[mishell] listening on TCP port 7474", 10
@@ -335,35 +304,14 @@ _start:
   mov   rdx, log.recv_packet_len
   syscall
   cmp   rax, 0
-  jl    .error
+  jl    .clear_connection
 
-  ; verify magic value
-  cmp   word [packet_t.magic], MAGIC_VALUE
-  jne   .invalid_packet
-
-  ; make sure the direction is client to server
-  cmp   byte [packet_t.flags], CLIENT_TO_SERVER
-  jne   .invalid_packet
-
-  movzx rax, byte [packet_t.op]
+  ; handle the packet
+  mov   rdi, packet_t
+  mov   rsi, [conn_fd]
+  call  handle_packet
   cmp   rax, 0
-  jle   .invalid_packet
-  cmp   rax, ops.COUNT
-  jge   .invalid_packet
-
-  ; call op
-  mov   rdi, [conn_fd]
-  mov   rsi, packet_t
-  call  qword [ops_table+rax]
-
-  jmp   .clear_connection
-
-.invalid_packet:
-  mov   rax, 1          ; WRITE
-  mov   rdi, [conn_fd]  ; STDOUT_FILENO
-  mov   rsi, err_invalid_packet
-  mov   rdx, err_invalid_packet_len
-  syscall
+  jl    .clear_connection
 
 .clear_connection:
   ; remove conn fd from epoll instance
