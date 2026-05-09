@@ -4,9 +4,12 @@ import socket, struct
 MAGIC = 0xCAFE
 WRONG_MAGIC = 0xBEEF
 
-# Op codes
-OP_HELLO = 0x01
-OP_ERROR = 0x02
+# Request OP codes
+OP_HELLO = 0x00
+
+# Return OP codes
+OP_WELCOME = 0x0
+OP_ERROR = 0x1
 
 # Flags
 FL_CLIENT_TO_SERVER = 0b0000
@@ -57,46 +60,14 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     expected = make_error_packet(b'invalid op value in packet')
     assert msg == expected, f"Expected: {expected!r}\n  Actual: {msg!r}"
 
-# -- Unix socket tests --
-SOCKET_PATH = '../mishell.sock'
-print("TEST (unix): sending invalid magic value should fail")
-with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-    sock.connect(SOCKET_PATH)
-    header = struct.pack('<HBBH', WRONG_MAGIC, OP_HELLO, FL_CLIENT_TO_SERVER | FL_HOST, 0x00)
+print("TEST (tcp): sending HELLO should work and return a WELCOME op")
+with socket.create_connection(('127.0.0.1', 7474)) as sock:
+    header = struct.pack('<HBBH', MAGIC, OP_HELLO, FL_CLIENT_TO_SERVER | FL_USER, 0x00)
     sock.sendall(header)
     sock.shutdown(socket.SHUT_WR)
     msg = sock.recv(1024)
-    expected = make_error_packet(b'invalid magic value in packet')
-    assert msg == expected, f"Expected: {expected!r}\n  Actual: {msg!r}"
 
-print("TEST (unix): sending wrong direction should fail")
-with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-    sock.connect(SOCKET_PATH)
-    header = struct.pack('<HBBH', MAGIC, OP_HELLO, FL_SERVER_TO_CLIENT | FL_HOST, 0x00)
-    sock.sendall(header)
-    sock.shutdown(socket.SHUT_WR)
-    msg = sock.recv(1024)
-    expected = make_error_packet(b'invalid direction flag in packet')
-    assert msg == expected, f"Expected: {expected!r}\n  Actual: {msg!r}"
-
-print("TEST (unix): sending wrong mode should fail")
-with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-    sock.connect(SOCKET_PATH)
-    header = struct.pack('<HBBH', MAGIC, OP_HELLO, FL_CLIENT_TO_SERVER | FL_SERVER, 0x00)
-    sock.sendall(header)
-    sock.shutdown(socket.SHUT_WR)
-    msg = sock.recv(1024)
-    expected = make_error_packet(b'invalid mode flag in packet')
-    assert msg == expected, f"Expected: {expected!r}\n  Actual: {msg!r}"
-
-print("TEST (unix): sending wrong op should fail")
-with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-    sock.connect(SOCKET_PATH)
-    header = struct.pack('<HBBH', MAGIC, 0x22, FL_CLIENT_TO_SERVER | FL_HOST, 0x00)
-    sock.sendall(header)
-    sock.shutdown(socket.SHUT_WR)
-    msg = sock.recv(1024)
-    expected = make_error_packet(b'invalid op value in packet')
+    expected = struct.pack('<HBBH', MAGIC, OP_WELCOME, FL_SERVER_TO_CLIENT | FL_SERVER, 0x00)
     assert msg == expected, f"Expected: {expected!r}\n  Actual: {msg!r}"
 
 print("All tests passed!")

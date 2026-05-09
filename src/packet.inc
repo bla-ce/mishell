@@ -73,6 +73,23 @@ handle_packet:
   test  rax, rax
   jnz   .error
 
+  ; call op
+  mov   rdi, [rsp]
+  movzx rax, byte [rdi+PACKET_T_OFF_OP]
+  shl   rax, 3 ; rax *= 8
+
+  mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
+  lea   rdi, [rsp+0x18]
+  call  qword [req_op_fn_table+rax]
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdx, rax
+  mov   rax, 1  ; WRITE
+  mov   rdi, [rsp+0x8]
+  lea   rsi, [rsp+0x18]
+  syscall
+
   mov   rax, 0
   jmp   .return
 
@@ -140,10 +157,10 @@ verify_packet:
 
 .check_op:
   mov   qword [rsp+0x8], error_codes.INVALID_OP
-  mov   al, byte [rdi+PACKET_T_OFF_OP]
-  cmp   al, 0
+  movzx rax, byte [rdi+PACKET_T_OFF_OP]
+  cmp   rax, 0
   jl    .error
-  cmp   al, ops.COUNT
+  cmp   rax, req_ops.COUNT
   jge   .error
 
   mov   rax, 0
@@ -195,7 +212,7 @@ build_err_packet:
 
   ; set magic, op and flags
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   byte [rdi+PACKET_T_OFF_OP], ops.ERROR
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.ERROR
 
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
   or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
