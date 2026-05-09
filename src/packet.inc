@@ -5,7 +5,7 @@ section .bss
 packet_t:
   .magic        resw 1
   .op           resb 1
-  .flags        resb 1  ; message direction
+  .flags        resb 1
   .payload_len  resw 1
   .payload      resb PAYLOAD_MAX_LEN
 packet_t_end:
@@ -22,9 +22,14 @@ PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
 PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_FLAGS + 0x1
 PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
-; FLAGS
-CLIENT_TO_SERVER equ 0
-SERVER_TO_CLIENT equ 1
+; DIRECTION FLAGS
+FL_CLIENT_TO_SERVER equ 0000b
+FL_SERVER_TO_CLIENT equ 0001b
+
+; MODE FLAGS
+FL_USER   equ 0010b
+FL_HOST   equ 0100b
+FL_SERVER equ 1000b
 
 HEADER_LEN      equ 0x5
 MAGIC_VALUE     equ 0xCAFE
@@ -113,14 +118,31 @@ verify_packet:
   jne   .error
 
   ; make sure the direction is client to server
-  mov   qword [rsp+0x8], error_codes.INVALID_DIRECTION
-  cmp   byte [rdi+PACKET_T_OFF_FLAGS], CLIENT_TO_SERVER
-  jne   .error
+  mov   al, byte [rdi+PACKET_T_OFF_FLAGS]
 
+  mov   qword [rsp+0x8], error_codes.INVALID_DIRECTION
+  mov   bl, al
+  and   bl, FL_SERVER_TO_CLIENT
+  test  bl, bl
+  jnz   .error
+
+  ; make sure the mode is not host or user
+  mov   qword [rsp+0x8], error_codes.INVALID_MODE
+  mov   bl, al
+  and   bl, FL_HOST
+  test  bl, bl
+  jnz   .check_op
+
+  mov   bl, al
+  and   bl, FL_USER
+  test  bl, bl
+  jz    .error
+
+.check_op:
   mov   qword [rsp+0x8], error_codes.INVALID_OP
   mov   al, byte [rdi+PACKET_T_OFF_OP]
   cmp   al, 0
-  jle   .error
+  jl    .error
   cmp   al, ops.COUNT
   jge   .error
 
@@ -174,7 +196,9 @@ build_err_packet:
   ; set magic, op and flags
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], ops.ERROR
-  mov   byte [rdi+PACKET_T_OFF_FLAGS], SERVER_TO_CLIENT
+
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
+  or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
 
   cmp   rsi, 0
   jl    .internal_error
