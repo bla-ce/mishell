@@ -1,3 +1,5 @@
+%include "ops.inc"
+
 global _start
 
 section .bss
@@ -333,14 +335,16 @@ _start:
   cmp   byte [packet_t.flags], CLIENT_TO_SERVER
   jne   .invalid_packet
 
-  ; send back payload
-  mov   rax, 1  ; WRITE
-  mov   rdi, [conn_fd]
-  mov   rsi, packet_t.payload
-  movzx rdx, word [packet_t.payload_len]
-  syscall
+  movzx rax, byte [packet_t.op]
   cmp   rax, 0
-  jl    .error
+  jle   .invalid_packet
+  cmp   rax, ops.COUNT
+  jge   .invalid_packet
+
+  ; call op
+  mov   rdi, [conn_fd]
+  mov   rsi, packet_t
+  call  qword [ops_table+rax]
 
   jmp   .clear_connection
 

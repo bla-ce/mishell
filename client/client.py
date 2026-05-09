@@ -21,15 +21,14 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     msg = sock.recv(1024)
     assert msg == b'invalid packet', f"Unexpected response: {msg}"
 
-# Send real payload
-print("TEST (tcp): sending expected packet should return the payload")
+# Test wrong op
+print("TEST (tcp): sending wrong op should fail")
 with socket.create_connection(('127.0.0.1', 7474)) as sock:
-    payload = b"good evening sir"
-    header = struct.pack('<HBBH', MAGIC, 0x00, 0x00, len(payload))
-    sock.sendall(header + payload)
+    header = struct.pack('<HBBH', WRONG_MAGIC, 0x22, 0x01, 0x00)
+    sock.sendall(header)
     sock.shutdown(socket.SHUT_WR)
     msg = sock.recv(1024)
-    assert msg == payload, f"Unexpected response: {msg}"
+    assert msg == b'invalid packet', f"Unexpected response: {msg}"
 
 # Same tests with unix socket
 SOCKET_PATH = '../mishell.sock'
@@ -52,12 +51,11 @@ with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
     msg = sock.recv(1024)
     assert msg == b'invalid packet', f"Unexpected response: {msg}"
 
-print("TEST (unix): sending expected packet should return the payload")
+print("TEST (unix): sending wrong op should fail")
 with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
     sock.connect(SOCKET_PATH)
-    payload = b"good evening sir"
-    header = struct.pack('<HBBH', MAGIC, 0x00, 0x00, len(payload))
-    sock.sendall(header + payload)
+    header = struct.pack('<HBBH', WRONG_MAGIC, 0x22, 0x01, 0x00)
+    sock.sendall(header)
     sock.shutdown(socket.SHUT_WR)
     msg = sock.recv(1024)
-    assert msg == payload, f"Unexpected response: {msg}"
+    assert msg == b'invalid packet', f"Unexpected response: {msg}"
