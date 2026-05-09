@@ -62,6 +62,11 @@ log:
 section .text
 
 _start:
+  sub   rsp, PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]   -> pointer to the packet struct
+
   ; create tcp socket
   mov   rax, 41 ; SOCKET
   mov   rdi, 2  ; AF_INET
@@ -287,10 +292,16 @@ _start:
   jmp   .next_connection
 
 .existing_connection:
+  ; reset packet
+  lea   rdi, [rsp]
+  call  reset_packet
+  cmp   rax, 0
+  jl    .error
+
   ; get packet
   mov   rax, 0
   mov   rdi, [conn_fd]
-  mov   rsi, packet_t
+  lea   rsi, [rsp]
   mov   rdx, PACKET_MAX_LEN
   syscall
   cmp   rax, 0
@@ -305,7 +316,7 @@ _start:
   jl    .clear_connection
 
   ; handle the packet
-  mov   rdi, packet_t
+  lea   rdi, [rsp]
   mov   rsi, [conn_fd]
   call  handle_packet
   cmp   rax, 0

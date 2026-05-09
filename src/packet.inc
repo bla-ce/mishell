@@ -60,9 +60,9 @@ handle_packet:
 
   ; reset response packet
   lea   rdi, [rsp+0x10]
-  mov   ax, 0
-  mov   rcx, PACKET_T_LEN
-  rep   stosb
+  call  reset_packet
+  cmp   rax, 0
+  jl    .error
 
   test  rdi, rdi
   jz    .error
@@ -137,4 +137,24 @@ verify_packet:
 
 .return:
   add   rsp, 0x8
+  ret
+
+; resets a packet struct
+; @param  rdi: pointer to the packet struct
+; @return rax: return code
+reset_packet:
+  test  rdi, rdi
+  jz    .error
+
+  xor   rax, rax
+  mov   rcx, PACKET_T_LEN
+  rep   stosb
+
+  mov   rax, 0
+  jmp   .return
+
+.error:
+  mov   rax, -1
+
+.return:
   ret
