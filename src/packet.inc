@@ -1,3 +1,5 @@
+%include "errors.inc"
+
 section .bss
 
 packet_t:
@@ -30,17 +32,6 @@ PAYLOAD_MAX_LEN equ 0xFFFF
 
 PACKET_MAX_LEN  equ HEADER_LEN + PAYLOAD_MAX_LEN
 
-err_msg:
-  .internal db "internal error"
-  .internal_len equ $ - err_msg.internal
-
-  .invalid_magic db "invalid magic value in packet"
-  .invalid_magic_len equ $ - err_msg.invalid_magic
-  .invalid_op db "invalid op value in packet"
-  .invalid_op_len equ $ - err_msg.invalid_op
-  .invalid_direction db "invalid direction flag in packet"
-  .invalid_direction_len equ $ - err_msg.invalid_direction
-
 section .text
 
 ; handles a packet received from the connection fd
@@ -48,18 +39,20 @@ section .text
 ; @param  rsi: connection fd
 ; @return rax: return code
 handle_packet:
-  sub   rsp, 0x10 + PACKET_T_LEN
+  sub   rsp, 0x18 + PACKET_T_LEN
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the packet struct
   ; [rsp+0x8]   -> connection fd
-  ; [rsp+0x10]  -> response packet
+  ; [rsp+0x10]  -> error code
+  ; [rsp+0x18]  -> response packet
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
 
   ; reset response packet
-  lea   rdi, [rsp+0x10]
+  lea   rdi, [rsp+0x18]
   call  reset_packet
   cmp   rax, 0
   jl    .error
@@ -69,8 +62,9 @@ handle_packet:
 
   ; verify packet
   mov   rdi, [rsp]
-  lea   rsi, [rsp+0x10]
+  lea   rsi, [rsp+0x18]
   call  verify_packet
+  mov   [rsp+0x10], rax ; save error code if it failed
   test  rax, rax
   jnz   .error
 
@@ -78,65 +72,66 @@ handle_packet:
   jmp   .return
 
 .error:
-  lea   rdi, [rsp+0x10]
-  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   byte [rdi+PACKET_T_OFF_OP], ops.ERROR
-  mov   byte [rdi+PACKET_T_OFF_FLAGS], SERVER_TO_CLIENT
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], err_msg.internal_len
+  lea   rdi, [rsp+0x18]
+  mov   rsi, [rsp+0x10]
+  call  build_err_packet
+  cmp   rax, 0
+  jl    .skip_send
 
-  add   rdi, PACKET_T_OFF_PAYLOAD
-  mov   rsi, err_msg.internal
-  mov   rcx, err_msg.internal_len
-  rep   movsb
-
+  mov   rdx, rax
   mov   rax, 1  ; WRITE
   mov   rdi, [rsp+0x8]
-  lea   rsi, [rsp+0x10]
-  mov   rdx, PACKET_T_HEADER_LEN + err_msg.internal_len
+  lea   rsi, [rsp+0x18]
   syscall
 
+.skip_send:
   mov   rax, -1
 
 .return:
-  add   rsp, 0x10 + PACKET_T_LEN
+  add   rsp, 0x18 + PACKET_T_LEN
   ret
 
 ; verifies that the packet received is a valid packet
 ; @param  rdi: pointer to the packet struct
 ; @return rax: 0 if valid, err code if invalid
 verify_packet:
-  sub   rsp, 0x8
+  sub   rsp, 0x10
 
   ; STACK USAGE
-  ; [rsp]   -> pointer to the packet struct
+  ; [rsp]     -> pointer to the packet struct
+  ; [rsp+0x8] -> error code
 
   mov   [rsp], rdi
+  mov   qword [rsp+0x8], 0
 
   test  rdi, rdi
   jz    .error
 
   ; verify magic value
+  mov   qword [rsp+0x8], error_codes.INVALID_MAGIC
   cmp   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   jne   .error
 
   ; make sure the direction is client to server
+  mov   qword [rsp+0x8], error_codes.INVALID_DIRECTION
   cmp   byte [rdi+PACKET_T_OFF_FLAGS], CLIENT_TO_SERVER
   jne   .error
 
-  movzx rax, byte [rdi+PACKET_T_OFF_OP]
-  cmp   rax, 0
+  mov   qword [rsp+0x8], error_codes.INVALID_OP
+  mov   al, byte [rdi+PACKET_T_OFF_OP]
+  cmp   al, 0
   jle   .error
-  cmp   rax, ops.COUNT
+  cmp   al, ops.COUNT
   jge   .error
 
   mov   rax, 0
   jmp   .return
 
 .error:
-  mov   rax, -1
+  mov   rax, [rsp+0x8]
 
 .return:
-  add   rsp, 0x8
+  add   rsp, 0x10
   ret
 
 ; resets a packet struct
@@ -157,4 +152,76 @@ reset_packet:
   mov   rax, -1
 
 .return:
+  ret
+
+; builds the error packet from the error code
+; @param  rdi: pointer to the packet struct
+; @param  rsi: error code
+; @return rax: packet size
+build_err_packet:
+  sub   rsp, 0x10
+
+  ; STACK USAGE
+  ; [rsp]     -> pointer to the packet struct
+  ; [rsp+0x8] -> error code
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  test  rdi, rdi
+  jz    .error
+
+  ; set magic, op and flags
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_OP], ops.ERROR
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], SERVER_TO_CLIENT
+
+  cmp   rsi, 0
+  jl    .internal_error
+
+  cmp   rsi, error_codes.COUNT
+  jge   .internal_error
+
+  ; get length from code
+  mov   rdi, [rsp]
+  mov   rsi, [rsp+0x8]
+  shl   rsi, 1    ; rsi *= 2
+  mov   ax, [err_code_to_len_table+rsi]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+  movzx rdx, ax  ; save payload len
+
+  ; get message from code
+  mov   rdi, [rsp]
+  mov   rsi, [rsp+0x8]
+  shl   rsi, 3    ; rsi *= 8
+  mov   rsi, [err_code_to_msg_table+rsi]
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rcx, rdx
+  rep   movsb
+
+  mov   rax, rdx
+  add   rax, PACKET_T_HEADER_LEN
+
+  jmp   .return
+
+.internal_error:
+  ; build internal error
+  mov   rdi, [rsp]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], error_msg.internal_len
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, error_msg.internal
+  mov   rcx, error_msg.internal_len
+  rep   movsb
+
+  mov   rax, PACKET_T_HEADER_LEN + error_msg.internal_len
+  jmp   .return
+
+.error:
+  ; something went wrong and the error packet should not be sent
+  mov   rax, -1
+
+.return:
+  add   rsp, 0x10
   ret
