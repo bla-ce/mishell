@@ -30,10 +30,20 @@ packet_t:
   .flags        resb 1  ; message direction
   .payload_len  resw 1
   .payload      resb PAYLOAD_MAX_LEN
+packet_t_end:
 
 packet_len resq 1
 
 section .data
+
+; PACKET OFFSETS
+PACKET_T_LEN equ packet_t_end - packet_t
+
+PACKET_T_OFF_MAGIC        equ 0x0
+PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
+PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
+PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_FLAGS + 0x1
+PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
 ; FLAGS
 CLIENT_TO_SERVER equ 0
