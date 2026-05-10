@@ -127,6 +127,14 @@ op_auth:
   cmp   byte [curr_host_idx], HOST_MAX_LEN
   jge   .error
 
+  ; populate host struct
+  mov   al, byte [curr_host_idx]
+  lea   rdi, [host+al*HOST_T_LEN]
+  mov   rsi, [rsp+0x8]
+  call  host_init
+  mov   [rsp+0x10], rax
+  test  rax, rax
+  jz    .error
 
   ; build response packet
   mov   rdi, [rsp+0x8]
