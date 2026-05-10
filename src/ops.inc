@@ -128,26 +128,28 @@ op_auth:
   jge   .error
 
   ; populate host struct
-  mov   al, byte [curr_host_idx]
-  lea   rdi, [host+al*HOST_T_LEN]
-  mov   rsi, [rsp+0x8]
+  mov   qword [rsp+0x18], error_codes.INTERNAL
+  movzx eax, byte [curr_host_idx]
+  imul  eax, HOST_T_LEN
+  lea   rdi, [hosts+eax]
+  mov   rsi, [rsp+0x10]
   call  host_init
   mov   [rsp+0x10], rax
   test  rax, rax
-  jz    .error
+  jnz   .error
 
   ; build response packet
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ID_LEN
-  mov   qword [rdi+PACKET_T_OFF_PAYLOAD], rdx
-  mov   qword [rdi+PACKET_T_OFF_PAYLOAD+0x8], rax
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOST_T_LEN
 
-  ; add session id to host array
-  movzx rdi, byte [curr_host_idx]
-  shl   rdi, 4  ; rdi *= 16
-  mov   [hosts+rdi], rdx
-  mov   [hosts+rdi+0x8], rax
+  ; add id to payload
+  movzx eax, byte [curr_host_idx]
+  imul  eax, HOST_T_LEN
+  lea   rsi, [hosts+eax]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rcx, HOST_T_LEN
+  rep   movsb
 
   inc   byte [curr_host_idx]
 

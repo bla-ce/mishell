@@ -30,8 +30,7 @@ run:
 	./$(BIN_DIR)/$(MAIN_PATH)
 
 test:
-	cd client
-	python client.py
+	python3 client/client.py
 
 strace:
 	strace ./$(BIN_DIR)/$(MAIN_PATH)
