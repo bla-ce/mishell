@@ -140,21 +140,21 @@ verify_packet:
   mov   al, byte [rdi+PACKET_T_OFF_FLAGS]
 
   mov   qword [rsp+0x8], error_codes.INVALID_DIRECTION
-  mov   bl, al
-  and   bl, FL_SERVER_TO_CLIENT
-  test  bl, bl
+  mov   r9b, al
+  and   r9b, FL_SERVER_TO_CLIENT
+  test  r9b, r9b
   jnz   .error
 
   ; at least one of FL_HOST or FL_USER must be set
   mov   qword [rsp+0x8], error_codes.INVALID_MODE
-  mov   bl, al
-  and   bl, FL_HOST
-  test  bl, bl
+  mov   r9b, al
+  and   r9b, FL_HOST
+  test  r9b, r9b
   jnz   .check_op
 
-  mov   bl, al
-  and   bl, FL_USER
-  test  bl, bl
+  mov   r9b, al
+  and   r9b, FL_USER
+  test  r9b, r9b
   jz    .error
 
 .check_op:

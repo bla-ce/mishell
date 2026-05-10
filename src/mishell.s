@@ -207,7 +207,7 @@ _start:
   mov   rdi, [epoll_fd]
   mov   rsi, events
   mov   rdx, MAX_EVENTS
-  mov   rcx, -1
+  mov   r10, -1
   syscall
   cmp   rax, 0
   jl    .error
