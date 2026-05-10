@@ -13,7 +13,9 @@ curr_host_idx db 0
 section .text
 
 ; generates a random 64 bit number
-; @return rax: generated number
+; @return
+  ; rdx: error
+  ; rax: generated number
 rand_generate_number:
   mov   rax, 1
   cpuid
@@ -33,10 +35,12 @@ rand_generate_number:
   cmp   rcx, RDRAND_RETRY_LIMIT
   jge   .error
 
+  mov   rdx, SUCCESS_CODE
+
   jmp   .loop
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rdx, FAILURE_CODE
 
 .return:
   ret
@@ -51,13 +55,13 @@ generate_host_session_id:
   ; [rsp+0x8] -> second 64-bit generated number
 
   call  rand_generate_number
-  cmp   rax, FAILURE_CODE
+  cmp   rdx, FAILURE_CODE
   je    .error
 
   mov   [rsp], rax
 
   call  rand_generate_number
-  cmp   rax, FAILURE_CODE
+  cmp   rdx, FAILURE_CODE
   je    .error
 
   mov   [rsp+0x8], rax

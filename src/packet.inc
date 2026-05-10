@@ -92,7 +92,7 @@ handle_packet:
   lea   rsi, [rsp+0x18]
   syscall
 
-  mov   rax, 0
+  mov   rax, SUCCESS_CODE
   jmp   .return
 
 .error:
@@ -165,7 +165,7 @@ verify_packet:
   cmp   rax, req_ops.COUNT
   jge   .error
 
-  mov   rax, 0
+  mov   rax, SUCCESS_CODE
   jmp   .return
 
 .error:
@@ -186,7 +186,7 @@ reset_packet:
   mov   rcx, PACKET_T_LEN
   rep   stosb
 
-  mov   rax, 0
+  mov   rax, SUCCESS_CODE
   jmp   .return
 
 .error:
