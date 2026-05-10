@@ -96,15 +96,18 @@ op_AUTH:
   xor   r9, r9
 .loop:
   lea   rdi, [hosts+r9]
+
   mov   rsi, [rsp]
   lea   rsi, [rsi+PACKET_T_OFF_ID]
-  mov   rcx, 2
+  mov   rcx, SESSION_ID_QWORDS
   rep   cmpsq
   je    .loop_end
 
   add   r9, SESSION_ID_LEN
 
-  cmp   r9, HOST_MAX_LEN*SESSION_ID_LEN
+  movzx rax, byte [curr_host_idx]
+  shl   rax, 4  ; rax *= 16 (SESSION_ID_LEN)
+  cmp   r9, rax
   jge   .error
 
   jmp   .loop
@@ -115,7 +118,7 @@ op_AUTH:
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
 
-  mov   rax, PACKET_T_HEADER_LEN + SESSION_ID_LEN
+  mov   rax, PACKET_T_HEADER_LEN
 
   jmp   .return
 
@@ -134,7 +137,7 @@ op_AUTH:
 
   ; add session id to host array
   movzx rdi, byte [curr_host_idx]
-  shl   rdi, 4  ; rax *= 4
+  shl   rdi, 4  ; rdi *= 16
   mov   [hosts+rdi], rdx
   mov   [hosts+rdi+0x8], rax
 

@@ -4,8 +4,9 @@ hosts resb HOST_MAX_LEN * SESSION_ID_LEN
 
 section .data
 
-HOST_MAX_LEN equ 8
-SESSION_ID_LEN equ 16
+HOST_MAX_LEN      equ 8
+SESSION_ID_LEN    equ 16
+SESSION_ID_QWORDS equ SESSION_ID_LEN / 8
 
 curr_host_idx db 0
 
@@ -17,7 +18,7 @@ rand_generate_number:
   mov   rax, 1
   cpuid
 
-  shr   rcx, 30 ; RDRAND_CPUID_POS
+  shr   rcx, RDRAND_CPUID_POS
   and   rcx, 1
   test  rcx, rcx
   jz    .error
@@ -29,7 +30,7 @@ rand_generate_number:
 
   inc   rcx
 
-  cmp   rcx, 10   ; RDRAND_RETRY_LIMIT
+  cmp   rcx, RDRAND_RETRY_LIMIT
   jge   .error
 
   jmp   .loop

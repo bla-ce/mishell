@@ -39,3 +39,7 @@ EPOLLIN       equ 1
 EPOLLET       equ 0x80000000
 EPOLL_CTL_ADD equ 1
 EPOLL_CTL_DEL equ 2
+
+; rand
+RDRAND_CPUID_POS    equ 30
+RDRAND_RETRY_LIMIT  equ 10
