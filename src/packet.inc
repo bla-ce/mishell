@@ -6,6 +6,7 @@ packet_t:
   .magic        resw 1
   .op           resb 1
   .flags        resb 1
+  .id           resq 2
   .payload_len  resw 1
   .payload      resb PAYLOAD_MAX_LEN
 packet_t_end:
@@ -19,7 +20,8 @@ PACKET_T_HEADER_LEN equ packet_t.payload - packet_t
 PACKET_T_OFF_MAGIC        equ 0x0
 PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
 PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
-PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_FLAGS + 0x1
+PACKET_T_OFF_ID           equ PACKET_T_OFF_FLAGS + 0x1
+PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_ID + 0x10
 PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
 ; DIRECTION FLAGS
