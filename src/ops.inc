@@ -81,7 +81,6 @@ op_AUTH:
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
   or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
   mov   qword [rdi+PACKET_T_OFF_ID], 0
@@ -115,6 +114,7 @@ op_AUTH:
 
   ; valid host id
   mov   rdi, [rsp+0x8]
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
 
@@ -131,6 +131,7 @@ op_AUTH:
   je    .error
 
   mov   rdi, [rsp+0x8]
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SESSION_ID_LEN
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], rdx
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD+0x8], rax
