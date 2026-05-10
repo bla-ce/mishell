@@ -78,6 +78,19 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     assert resp.id == 0, f"bad id: {resp}"
     assert len(resp.payload) == 16, f"payload should be 16 bytes long: {resp}"
 
-    host_id = resp.payload
+    host_id = int.from_bytes(resp.payload, byteorder='little')
+
+print("TEST (tcp): sending AUTH with id should return empty payload")
+with socket.create_connection(('127.0.0.1', 7474)) as sock:
+    sock.sendall(Packet(op=OP_AUTH,
+                        flags=FL_CLIENT_TO_SERVER | FL_USER,
+                        id=host_id).pack())
+    sock.shutdown(socket.SHUT_WR)
+    resp = recv_packet(sock)
+    assert resp.magic == MAGIC, f"bad magic: {resp}"
+    assert resp.op == OP_AUTH_OK, f"expected AUTH_OK: {resp}"
+    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
+    assert resp.id == 0, f"bad id: {resp}"
+    assert len(resp.payload) == 0, f"payload should be empty: {resp}"
 
 print("All tests passed!")

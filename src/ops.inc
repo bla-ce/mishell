@@ -79,10 +79,6 @@ op_AUTH:
   test  rsi, rsi
   jz    .error
 
-  call  generate_user_session_id
-  cmp   rax, FAILURE_CODE
-  je    .error
-
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
@@ -90,8 +86,27 @@ op_AUTH:
   or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SESSION_ID_LEN
 
+  mov   rdi, [rsp]
+  movups  xmm1, [rdi+PACKET_T_OFF_ID]
+  ptest   xmm1, xmm1
+  jz    .new_host
+
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+  mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
+
+  mov   rax, PACKET_T_HEADER_LEN + SESSION_ID_LEN
+
+  jmp   .return
+
+.new_host:
+  call  generate_user_session_id
+  cmp   rax, FAILURE_CODE
+  je    .error
+
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SESSION_ID_LEN
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], rdx
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD+0x8], rax
 
