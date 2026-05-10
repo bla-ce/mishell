@@ -33,11 +33,10 @@ FL_USER   equ 0010b
 FL_HOST   equ 0100b
 FL_SERVER equ 1000b
 
-HEADER_LEN      equ 0x5
 MAGIC_VALUE     equ 0xCAFE
 PAYLOAD_MAX_LEN equ 0xFFFF
 
-PACKET_MAX_LEN  equ HEADER_LEN + PAYLOAD_MAX_LEN
+PACKET_MAX_LEN  equ PACKET_T_HEADER_LEN + PAYLOAD_MAX_LEN
 
 section .text
 
@@ -110,7 +109,7 @@ handle_packet:
   syscall
 
 .skip_send:
-  mov   rax, -1
+  mov   rax, FAILURE_CODE
 
 .return:
   add   rsp, 0x18 + PACKET_T_LEN
@@ -146,7 +145,7 @@ verify_packet:
   test  bl, bl
   jnz   .error
 
-  ; make sure the mode is not host or user
+  ; at least one of FL_HOST or FL_USER must be set
   mov   qword [rsp+0x8], error_codes.INVALID_MODE
   mov   bl, al
   and   bl, FL_HOST
@@ -191,7 +190,7 @@ reset_packet:
   jmp   .return
 
 .error:
-  mov   rax, -1
+  mov   rax, FAILURE_CODE
 
 .return:
   ret
@@ -267,7 +266,7 @@ build_err_packet:
 
 .error:
   ; something went wrong and the error packet should not be sent
-  mov   rax, -1
+  mov   rax, FAILURE_CODE
 
 .return:
   add   rsp, 0x10

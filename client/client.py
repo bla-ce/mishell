@@ -64,6 +64,8 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
     assert resp.payload == b'', f"unexpected payload: {resp}"
 
+host_id = 0
+
 print("TEST (tcp): sending AUTH should work and return a AUTH_OK op with 16 bytes payload")
 with socket.create_connection(('127.0.0.1', 7474)) as sock:
     sock.sendall(Packet(op=OP_AUTH,
@@ -75,5 +77,7 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
     assert resp.id == 0, f"bad id: {resp}"
     assert len(resp.payload) == 16, f"payload should be 16 bytes long: {resp}"
+
+    host_id = resp.payload
 
 print("All tests passed!")

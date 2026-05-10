@@ -52,7 +52,7 @@ op_HELLO:
   jmp   .return
 
 .error:
-  mov   rax, -1
+  mov   rax, FAILURE_CODE
 
 .return:
   add   rsp, 0x10
@@ -80,7 +80,7 @@ op_AUTH:
   jz    .error
 
   call  generate_user_session_id
-  cmp   rax, -1
+  cmp   rax, FAILURE_CODE
   je    .error
 
   mov   rdi, [rsp+0x8]
@@ -100,7 +100,7 @@ op_AUTH:
   jmp   .return
 
 .error:
-  mov   rax, -1
+  mov   rax, FAILURE_CODE
 
 .return:
   add   rsp, 0x10

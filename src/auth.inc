@@ -35,7 +35,7 @@ rand_generate_number:
   jmp   .loop
 
 .error:
-  mov   rax, -1
+  mov   rax, FAILURE_CODE
 
 .return:
   ret
@@ -47,16 +47,16 @@ generate_user_session_id:
 
   ; STACK USAGE
   ; [rsp]     -> first 64-bit generated number
-  ; [rsp+0x8] -> first 64-bit generated number
+  ; [rsp+0x8] -> second 64-bit generated number
 
   call  rand_generate_number
-  cmp   rax, -1
+  cmp   rax, FAILURE_CODE
   je    .error
 
   mov   [rsp], rax
 
   call  rand_generate_number
-  cmp   rax, -1
+  cmp   rax, FAILURE_CODE
   je    .error
 
   mov   [rsp+0x8], rax
@@ -66,7 +66,7 @@ generate_user_session_id:
   jmp   .return
 
 .error:
-  mov   rax, -1
+  mov   rax, FAILURE_CODE
 
 .return:
   add   rsp, 0x10

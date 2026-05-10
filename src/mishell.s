@@ -1,5 +1,6 @@
 %include "ops.inc"
 %include "packet.inc"
+%include "constants.inc"
 
 global _start
 
@@ -68,9 +69,9 @@ _start:
   ; [rsp]   -> pointer to the packet struct
 
   ; create tcp socket
-  mov   rax, 41 ; SOCKET
-  mov   rdi, 2  ; AF_INET
-  mov   rsi, 1  ; SOCK_STREAM
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_INET
+  mov   rsi, SOCK_STREAM
   mov   rdx, 0
   syscall
   cmp   rax, 0
@@ -79,10 +80,10 @@ _start:
   mov   [tcp_fd], rax
 
   ; enable reuse address
-  mov   rax, 54         ; SETSOCKOPT
+  mov   rax, SYS_SETSOCKOPT
   mov   rdi, [tcp_fd]
-  mov   rsi, 1          ; SOL_SOCKET
-  mov   rdx, 2          ; SO_REUSEADDR
+  mov   rsi, SOL_SOCKET
+  mov   rdx, SO_REUSEADDR
   mov   r10, enable
   mov   r8, 4
   syscall
@@ -93,12 +94,12 @@ _start:
   mov   ax, tcp_port
   xchg  al, ah ; bswap 16-bit registers
 
-  mov   word [sockaddr_in_t.sin_family], 2  ; AF_INET
+  mov   word [sockaddr_in_t.sin_family], AF_INET
   mov   word [sockaddr_in_t.sin_port], ax
   mov   dword [sockaddr_in_t.sin_addr], 0
   mov   qword [sockaddr_in_t.sin_zero], 0
 
-  mov   rax, 49 ; BIND
+  mov   rax, SYS_BIND
   mov   rdi, [tcp_fd]
   mov   rsi, sockaddr_in_t
   mov   rdx, [sockaddr_in_t_len]
@@ -107,15 +108,15 @@ _start:
   jl    .error
 
   ; listen to tcp
-  mov   rax, 50 ; LISTEN
+  mov   rax, SYS_LISTEN
   mov   rdi, [tcp_fd]
   mov   rsi, LISTEN_BACKLOG
   syscall
   cmp   rax, 0
   jl    .error
 
-  mov   rax, 1  ; WRITE
-  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rax, SYS_WRITE
+  mov   rdi, STDOUT_FILENO
   mov   rsi, log.listen_tcp
   mov   rdx, log.listen_tcp_len
   syscall
@@ -123,9 +124,9 @@ _start:
   jl    .error
 
   ; create unix socket
-  mov   rax, 41 ; SOCKET
-  mov   rdi, 1  ; AF_LOCAL
-  mov   rsi, 1  ; SOCK_STREAM
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_LOCAL
+  mov   rsi, SOCK_STREAM
   mov   rdx, 0
   syscall
   cmp   rax, 0
@@ -134,12 +135,12 @@ _start:
   mov   [unix_fd], rax
 
   ; unlink unix socket
-  mov   rax, 87 ; UNLINK
+  mov   rax, SYS_UNLINK
   mov   rdi, sockaddr_un_t.sun_path
   syscall ; fine to error here
 
   ; bind unix socket
-  mov   rax, 49 ; BIND
+  mov   rax, SYS_BIND
   mov   rdi, [unix_fd]
   mov   rsi, sockaddr_un_t
   mov   rdx, sockaddr_un_t_len
@@ -148,15 +149,15 @@ _start:
   jl    .error
 
   ; listen to unix
-  mov   rax, 50 ; LISTEN
+  mov   rax, SYS_LISTEN
   mov   rdi, [unix_fd]
   mov   rsi, LISTEN_BACKLOG
   syscall
   cmp   rax, 0
   jl    .error
 
-  mov   rax, 1  ; WRITE
-  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rax, SYS_WRITE
+  mov   rdi, STDOUT_FILENO
   mov   rsi, log.listen_unix
   mov   rdx, log.listen_unix_len
   syscall
@@ -164,7 +165,7 @@ _start:
   jl    .error
 
   ; initialise epoll instance
-  mov   rax, 291  ; EPOLL_CREATE1
+  mov   rax, SYS_EPOLL_CREATE1
   xor   rdi, rdi
   syscall
   cmp   rax, 0
@@ -173,13 +174,13 @@ _start:
   mov   [epoll_fd], rax
 
   ; add tcp socket to the epoll interest list
-  mov   dword [epoll_event_t.events], 1 ; EPOLLIN
+  mov   dword [epoll_event_t.events], EPOLLIN
   mov   rax, [tcp_fd]
   mov   [epoll_event_t.data], rax
 
-  mov   rax, 233    ; EPOLL_CTL
+  mov   rax, SYS_EPOLL_CTL
   mov   rdi, [epoll_fd]
-  mov   rsi, 1      ; EPOLL_CTL_ADD
+  mov   rsi, EPOLL_CTL_ADD
   mov   rdx, [tcp_fd]
   mov   r10, epoll_event_t
   syscall
@@ -187,13 +188,13 @@ _start:
   jl    .error
 
   ; add unix socket to the epoll interest list
-  mov   dword [epoll_event_t.events], 1 ; EPOLLIN
+  mov   dword [epoll_event_t.events], EPOLLIN
   mov   rax, [unix_fd]
   mov   qword [epoll_event_t.data], rax
 
-  mov   rax, 233    ; EPOLL_CTL
+  mov   rax, SYS_EPOLL_CTL
   mov   rdi, [epoll_fd]
-  mov   rsi, 1      ; EPOLL_CTL_ADD
+  mov   rsi, EPOLL_CTL_ADD
   mov   rdx, [unix_fd]
   mov   r10, epoll_event_t
   syscall
@@ -202,7 +203,7 @@ _start:
 
 .outer_loop:
   ; epoll wait
-  mov   rax, 232  ; EPOLL_WAIT
+  mov   rax, SYS_EPOLL_WAIT
   mov   rdi, [epoll_fd]
   mov   rsi, events
   mov   rdx, MAX_EVENTS
@@ -223,8 +224,10 @@ _start:
   ; get the conn fd of this event
   mov   rdi, events
 
-  imul  r12, EPOLL_EVENT_T_LEN
-  mov   rax, [rdi + r12 + 4]
+  imul  rcx, r12, EPOLL_EVENT_T_LEN
+  mov   rax, [rdi + rcx + 4]
+
+  mov   [conn_fd], rax
 
   ; check if conn fd is a new connection
   cmp   rax, [tcp_fd]
@@ -237,18 +240,18 @@ _start:
 
 .new_connection:
   ; accept connection
-  mov   rdi, rax
+  mov   rax, SYS_ACCEPT
+  mov   rdi, [conn_fd]
   mov   rsi, 0
   mov   rdx, 0
-  mov   rax, 43 ; ACCEPT
   syscall
   cmp   rax, 0
   jl    .next_connection
 
   mov   [conn_fd], rax
 
-  mov   rax, 1  ; WRITE
-  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rax, SYS_WRITE
+  mov   rdi, STDOUT_FILENO
   mov   rsi, log.accept_new_conn
   mov   rdx, log.accept_new_conn_len
   syscall
@@ -256,33 +259,33 @@ _start:
   jl    .error
 
   ; set conn fd non blocking
-  mov   rax, 72         ; FCNTL
+  mov   rax, SYS_FCNTL
   mov   rdi, [conn_fd]
-  mov   rsi, 3          ; F_GETFL
+  mov   rsi, F_GETFL
   syscall
   cmp   rax, 0
   jl    .clear_connection
 
   mov   rdx, rax
-  or    rdx, 2048
-  mov   rax, 72         ; FCNTL
+  or    rdx, O_NONBLOCK
+  mov   rax, SYS_FCNTL
   mov   rdi, [conn_fd]
-  mov   rsi, 4          ; F_SETFL
+  mov   rsi, F_SETFL
   syscall
   cmp   rax, 0
   jl    .clear_connection
 
   ; add conn fd to epoll instance
-  mov   edx, 1          ; EPOLLIN
-  mov   ecx, 0x80000000 ; EPOLLET
+  mov   edx, EPOLLIN
+  mov   ecx, EPOLLET
   or    edx, ecx
-  mov   dword [epoll_event_t.events], edx ; EPOLLIN
+  mov   dword [epoll_event_t.events], edx
   mov   rax, [conn_fd]
   mov   [epoll_event_t.data], rax
 
-  mov   rax, 233    ; EPOLL_CTL
+  mov   rax, SYS_EPOLL_CTL
   mov   rdi, [epoll_fd]
-  mov   rsi, 1      ; EPOLL_CTL_ADD
+  mov   rsi, EPOLL_CTL_ADD
   mov   rdx, [conn_fd]
   mov   r10, epoll_event_t
   syscall
@@ -299,7 +302,7 @@ _start:
   jl    .error
 
   ; get packet
-  mov   rax, 0
+  mov   rax, SYS_READ
   mov   rdi, [conn_fd]
   lea   rsi, [rsp]
   mov   rdx, PACKET_MAX_LEN
@@ -307,8 +310,8 @@ _start:
   cmp   rax, 0
   jle   .clear_connection
 
-  mov   rax, 1  ; WRITE
-  mov   rdi, 1  ; STDOUT_FILENO
+  mov   rax, SYS_WRITE
+  mov   rdi, STDOUT_FILENO
   mov   rsi, log.recv_packet
   mov   rdx, log.recv_packet_len
   syscall
@@ -324,15 +327,15 @@ _start:
 
 .clear_connection:
   ; remove conn fd from epoll instance
-  mov   rax, 233    ; EPOLL_CTL
+  mov   rax, SYS_EPOLL_CTL
   mov   rdi, [epoll_fd]
-  mov   rsi, 2      ; EPOLL_CTL_DEL
+  mov   rsi, EPOLL_CTL_DEL
   mov   rdx, [conn_fd]
   mov   r10, epoll_event_t
   syscall
 
   ; close conn fd socket
-  mov   rax, 3  ; CLOSE
+  mov   rax, SYS_CLOSE
   mov   rdi, [conn_fd]
   syscall
 
@@ -345,17 +348,17 @@ _start:
 
 .cleanup:
   ; close tcp socket
-  mov   rax, 3  ; CLOSE
+  mov   rax, SYS_CLOSE
   mov   rdi, [tcp_fd]
   syscall
 
   ; close unix socket
-  mov   rax, 3  ; CLOSE
+  mov   rax, SYS_CLOSE
   mov   rdi, [unix_fd]
   syscall
 
   ; close epoll socket
-  mov   rax, 3  ; CLOSE
+  mov   rax, SYS_CLOSE
   mov   rdi, [epoll_fd]
   syscall
 
@@ -364,24 +367,24 @@ _start:
 
 .error:
   ; close tcp socket
-  mov   rax, 3  ; CLOSE
+  mov   rax, SYS_CLOSE
   mov   rdi, [tcp_fd]
   syscall
 
   ; close unix socket
-  mov   rax, 3  ; CLOSE
+  mov   rax, SYS_CLOSE
   mov   rdi, [unix_fd]
   syscall
 
   ; close epoll socket
-  mov   rax, 3  ; CLOSE
+  mov   rax, SYS_CLOSE
   mov   rdi, [epoll_fd]
   syscall
 
-  mov   rax, 60
-  mov   rdi, -1
+  mov   rax, SYS_EXIT
+  mov   rdi, FAILURE_CODE
   syscall
 
 .exit:
-  mov   rax, 60
+  mov   rax, SYS_EXIT
   syscall
