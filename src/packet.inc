@@ -6,7 +6,7 @@ packet_t:
   .magic        resw 1
   .op           resb 1
   .flags        resb 1
-  .id           resq 2
+  .id           resb ID_LEN
   .payload_len  resw 1
   .payload      resb PAYLOAD_MAX_LEN
 packet_t_end:

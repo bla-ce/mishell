@@ -100,14 +100,14 @@ op_AUTH:
 
   mov   rsi, [rsp]
   lea   rsi, [rsi+PACKET_T_OFF_ID]
-  mov   rcx, SESSION_ID_QWORDS
+  mov   rcx, ID_QWORDS
   rep   cmpsq
   je    .loop_end
 
-  add   r9, SESSION_ID_LEN
+  add   r9, ID_LEN
 
   movzx rax, byte [curr_host_idx]
-  shl   rax, 4  ; rax *= 16 (SESSION_ID_LEN)
+  shl   rax, 4  ; rax *= 16 (ID_LEN)
 
   mov   qword [rsp+0x10], error_codes.INVALID_TOKEN
   cmp   r9, rax
@@ -132,13 +132,13 @@ op_AUTH:
   jge   .error
 
   mov   qword [rsp+0x10], error_codes.INTERNAL
-  call  generate_host_session_id
+  call  generate_id
   cmp   rax, FAILURE_CODE
   je    .error
 
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SESSION_ID_LEN
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ID_LEN
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], rdx
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD+0x8], rax
 

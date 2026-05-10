@@ -1,14 +1,7 @@
-section .bss
-
-hosts resb HOST_MAX_LEN * SESSION_ID_LEN
-
 section .data
 
-HOST_MAX_LEN      equ 8
-SESSION_ID_LEN    equ 16
-SESSION_ID_QWORDS equ SESSION_ID_LEN / 8
-
-curr_host_idx db 0
+ID_LEN    equ 0x10
+ID_QWORDS equ ID_LEN / 0x8
 
 section .text
 
@@ -45,9 +38,9 @@ rand_generate_number:
 .return:
   ret
 
-; generates a 16 bytes long session id for the host
-; @return rdx:rax: session id
-generate_host_session_id:
+; generates a 16 bytes long id
+; @return rdx:rax: id
+generate_id:
   sub   rsp, 0x10
 
   ; STACK USAGE
