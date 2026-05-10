@@ -1,4 +1,4 @@
-name: Herve CI
+name: Mishell CI
 
 on:
   push:
