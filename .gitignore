@@ -5,3 +5,4 @@ docs/
 *.sock
 TODO.md
 THOUGHTS.md
+__pycache__/

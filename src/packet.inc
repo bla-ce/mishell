@@ -81,7 +81,8 @@ handle_packet:
   shl   rax, 3 ; rax *= 8
 
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
-  lea   rdi, [rsp+0x18]
+  mov   rdi, [rsp]
+  lea   rsi, [rsp+0x18]
   call  qword [req_op_fn_table+rax]
   cmp   rax, 0
   jl    .error
@@ -212,12 +213,15 @@ build_err_packet:
   test  rdi, rdi
   jz    .error
 
-  ; set magic, op and flags
+  ; set magic, op, id and flags
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.ERROR
 
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
   or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
 
   cmp   rsi, 0
   jl    .internal_error

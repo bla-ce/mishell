@@ -63,6 +63,7 @@ generate_user_session_id:
 
   mov   rdx, [rsp]
   mov   rax, [rsp+0x8]
+  jmp   .return
 
 .error:
   mov   rax, -1
