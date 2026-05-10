@@ -298,7 +298,7 @@ _start:
 .existing_connection:
   ; reset packet
   lea   rdi, [rsp]
-  call  reset_packet
+  call  packet_reset
   cmp   rax, 0
   jl    .error
 
@@ -322,7 +322,7 @@ _start:
   ; handle the packet
   lea   rdi, [rsp]
   mov   rsi, [conn_fd]
-  call  handle_packet
+  call  packet_dispatch
   cmp   rax, 0
   jl    .clear_connection
 

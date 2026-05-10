@@ -14,25 +14,17 @@ res_ops:
   .COUNT    equ 0x3
 
 req_op_fn_table:
-  .HELLO  dq op_HELLO
-  .AUTH   dq op_AUTH
+  .HELLO  dq op_hello
+  .AUTH   dq op_auth
 
 section .text
 
 ; sends back a WELCOME op with an empty payload for now
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
+; @param  rdx: connection fd
 ; @return rax: packet size
-op_HELLO:
-  sub   rsp, 0x10
-
-  ; STACK USAGE
-  ; [rsp]     -> pointer to the request packet
-  ; [rsp+0x8] -> pointer to the response packet
-
-  mov   [rsp], rdi
-  mov   [rsp+0x8], rsi
-
+op_hello:
   test  rdi, rdi
   jz    .error
 
@@ -55,25 +47,27 @@ op_HELLO:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x10
   ret
 
 ; checks payload to see if host has been registered, otherwise
 ; creates a session id and adds it to the host array
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
+; @param  rdx: connection fd
 ; @return rax: packet size
-op_AUTH:
-  sub   rsp, 0x18
+op_auth:
+  sub   rsp, 0x20
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> connection fd
   ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+  mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -81,6 +75,7 @@ op_AUTH:
   test  rsi, rsi
   jz    .error
 
+  ; build base packet
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
@@ -88,6 +83,7 @@ op_AUTH:
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
 
+  ; check if id is set
   mov   rdi, [rsp]
   movups  xmm1, [rdi+PACKET_T_OFF_ID]
   ptest   xmm1, xmm1
@@ -109,13 +105,12 @@ op_AUTH:
   movzx rax, byte [curr_host_idx]
   shl   rax, 4  ; rax *= 16 (ID_LEN)
 
-  mov   qword [rsp+0x10], error_codes.INVALID_TOKEN
+  mov   qword [rsp+0x18], error_codes.INVALID_TOKEN
   cmp   r9, rax
   jge   .error
 
   jmp   .loop
 .loop_end:
-
   ; valid host id
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
@@ -127,15 +122,13 @@ op_AUTH:
   jmp   .return
 
 .new_host:
-  mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
+  ; make sure we haven't reached the host limit
+  mov   qword [rsp+0x18], error_codes.HOST_LIMIT_REACHED
   cmp   byte [curr_host_idx], HOST_MAX_LEN
   jge   .error
 
-  mov   qword [rsp+0x10], error_codes.INTERNAL
-  call  generate_id
-  cmp   rax, FAILURE_CODE
-  je    .error
 
+  ; build response packet
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ID_LEN
@@ -155,8 +148,8 @@ op_AUTH:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x10]
+  mov   rax, [rsp+0x18]
 
 .return:
-  add   rsp, 0x18
+  add   rsp, 0x20
   ret

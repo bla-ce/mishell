@@ -29,6 +29,10 @@ run:
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
 	./$(BIN_DIR)/$(MAIN_PATH)
 
+test:
+	cd client
+	python client.py
+
 strace:
 	strace ./$(BIN_DIR)/$(MAIN_PATH)
 

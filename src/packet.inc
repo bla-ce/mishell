@@ -44,7 +44,7 @@ section .text
 ; @param  rdi: pointer to the packet struct
 ; @param  rsi: connection fd
 ; @return rax: return code
-handle_packet:
+packet_dispatch:
   sub   rsp, 0x18 + PACKET_T_LEN
 
   ; STACK USAGE
@@ -59,7 +59,7 @@ handle_packet:
 
   ; reset response packet
   lea   rdi, [rsp+0x18]
-  call  reset_packet
+  call  packet_reset
   cmp   rax, 0
   jl    .error
 
@@ -69,7 +69,7 @@ handle_packet:
   ; verify packet
   mov   rdi, [rsp]
   lea   rsi, [rsp+0x18]
-  call  verify_packet
+  call  packet_verify
   mov   [rsp+0x10], rax ; save error code if it failed
   test  rax, rax
   jnz   .error
@@ -83,6 +83,7 @@ handle_packet:
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
   mov   rdi, [rsp]
   lea   rsi, [rsp+0x18]
+  mov   rdx, [rsp+0x8]
   call  qword [req_op_fn_table+rax]
   mov   [rsp+0x10], rax ; save error code if it failed
   test  rax, rax
@@ -106,7 +107,7 @@ handle_packet:
 .error:
   lea   rdi, [rsp+0x18]
   mov   rsi, [rsp+0x10]
-  call  build_err_packet
+  call  packet_build_error
   cmp   rax, 0
   jl    .skip_send
 
@@ -126,7 +127,7 @@ handle_packet:
 ; verifies that the packet received is a valid packet
 ; @param  rdi: pointer to the packet struct
 ; @return rax: 0 if valid, err code if invalid
-verify_packet:
+packet_verify:
   sub   rsp, 0x10
 
   ; STACK USAGE
@@ -186,7 +187,7 @@ verify_packet:
 ; resets a packet struct
 ; @param  rdi: pointer to the packet struct
 ; @return rax: return code
-reset_packet:
+packet_reset:
   test  rdi, rdi
   jz    .error
 
@@ -207,7 +208,7 @@ reset_packet:
 ; @param  rdi: pointer to the packet struct
 ; @param  rsi: error code
 ; @return rax: packet size
-build_err_packet:
+packet_build_error:
   sub   rsp, 0x10
 
   ; STACK USAGE
