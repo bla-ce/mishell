@@ -74,22 +74,30 @@ handle_packet:
   test  rax, rax
   jnz   .error
 
-  ; call op
+  ; get op
   mov   rdi, [rsp]
   movzx rax, byte [rdi+PACKET_T_OFF_OP]
   shl   rax, 3 ; rax *= 8
 
+  ; call op
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
   mov   rdi, [rsp]
   lea   rsi, [rsp+0x18]
   call  qword [req_op_fn_table+rax]
-  cmp   rax, 0
-  jl    .error
+  mov   [rsp+0x10], rax ; save error code if it failed
+  test  rax, rax
+  jnz   .error
 
-  mov   rdx, rax
-  mov   rax, 1  ; WRITE
+  ; get packet size
+  lea   rdi, [rsp+0x18]
+  movzx rdx, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
+  add   rdx, PACKET_T_HEADER_LEN
+
+  ; send response packet
+  mov   rax, SYS_WRITE
   mov   rdi, [rsp+0x8]
   lea   rsi, [rsp+0x18]
+  ; rdx already populated
   syscall
 
   mov   rax, SUCCESS_CODE
@@ -103,7 +111,7 @@ handle_packet:
   jl    .skip_send
 
   mov   rdx, rax
-  mov   rax, 1  ; WRITE
+  mov   rax, SYS_WRITE
   mov   rdi, [rsp+0x8]
   lea   rsi, [rsp+0x18]
   syscall

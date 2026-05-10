@@ -47,7 +47,7 @@ op_HELLO:
   mov   qword [rsi+PACKET_T_OFF_ID+0x8], 0
   mov   word [rsi+PACKET_T_OFF_PAYLOAD_LEN], 0
 
-  mov   rax, PACKET_T_HEADER_LEN
+  mov   rax, SUCCESS_CODE
 
   jmp   .return
 
@@ -64,14 +64,16 @@ op_HELLO:
 ; @param  rsi: pointer to the response packet
 ; @return rax: packet size
 op_AUTH:
-  sub   rsp, 0x10
+  sub   rsp, 0x18
 
   ; STACK USAGE
-  ; [rsp]     -> pointer to the request packet
-  ; [rsp+0x8] -> pointer to the response packet
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -106,6 +108,8 @@ op_AUTH:
 
   movzx rax, byte [curr_host_idx]
   shl   rax, 4  ; rax *= 16 (SESSION_ID_LEN)
+
+  mov   qword [rsp+0x10], error_codes.INVALID_TOKEN
   cmp   r9, rax
   jge   .error
 
@@ -118,14 +122,16 @@ op_AUTH:
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
 
-  mov   rax, PACKET_T_HEADER_LEN
+  mov   rax, SUCCESS_CODE
 
   jmp   .return
 
 .new_host:
+  mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
   cmp   byte [curr_host_idx], HOST_MAX_LEN
   jge   .error
 
+  mov   qword [rsp+0x10], error_codes.INTERNAL
   call  generate_host_session_id
   cmp   rax, FAILURE_CODE
   je    .error
@@ -144,13 +150,13 @@ op_AUTH:
 
   inc   byte [curr_host_idx]
 
-  mov   rax, PACKET_T_HEADER_LEN + SESSION_ID_LEN
+  mov   rax, SUCCESS_CODE
 
   jmp   .return
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rax, [rsp+0x10]
 
 .return:
-  add   rsp, 0x10
+  add   rsp, 0x18
   ret

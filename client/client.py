@@ -106,6 +106,7 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
     assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
     assert resp.id == 0, f"bad id: {resp}"
+    assert resp.payload == b'invalid host token', f"bad payload: {resp}"
 
 print("TEST (tcp): sending AUTH should return after registering too many hosts")
 for _ in range(HOST_MAX_LEN-1): # we already registered one
@@ -122,5 +123,6 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     sock.shutdown(socket.SHUT_WR)
     resp = recv_packet(sock)
     assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
+    assert resp.payload == b'max host limit has been reached', f"bad payload: {resp}"
 
 print("All tests passed!")
