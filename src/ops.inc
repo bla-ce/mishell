@@ -92,6 +92,25 @@ op_AUTH:
   ptest   xmm1, xmm1
   jz    .new_host
 
+  ; check if host is in the array
+  xor   r9, r9
+.loop:
+  lea   rdi, [hosts+r9]
+  mov   rsi, [rsp]
+  lea   rsi, [rsi+PACKET_T_OFF_ID]
+  mov   rcx, 2
+  rep   cmpsq
+  je    .loop_end
+
+  add   r9, SESSION_ID_LEN
+
+  cmp   r9, HOST_MAX_LEN*SESSION_ID_LEN
+  jge   .error
+
+  jmp   .loop
+.loop_end:
+
+  ; valid host id
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
@@ -101,7 +120,10 @@ op_AUTH:
   jmp   .return
 
 .new_host:
-  call  generate_user_session_id
+  cmp   byte [curr_host_idx], HOST_MAX_LEN
+  jge   .error
+
+  call  generate_host_session_id
   cmp   rax, FAILURE_CODE
   je    .error
 
@@ -109,6 +131,14 @@ op_AUTH:
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SESSION_ID_LEN
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], rdx
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD+0x8], rax
+
+  ; add session id to host array
+  movzx rdi, byte [curr_host_idx]
+  shl   rdi, 4  ; rax *= 4
+  mov   [hosts+rdi], rdx
+  mov   [hosts+rdi+0x8], rax
+
+  inc   byte [curr_host_idx]
 
   mov   rax, PACKET_T_HEADER_LEN + SESSION_ID_LEN
 

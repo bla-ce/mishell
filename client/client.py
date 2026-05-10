@@ -7,6 +7,8 @@ from packet import (
     FL_USER, FL_HOST, FL_SERVER,
 )
 
+HOST_MAX_LEN = 8
+
 def recv_packet(sock: socket.socket) -> Packet:
     return Packet.unpack(sock.recv(4096))
 
@@ -92,5 +94,33 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
     assert resp.id == 0, f"bad id: {resp}"
     assert len(resp.payload) == 0, f"payload should be empty: {resp}"
+
+print("TEST (tcp): sending AUTH with wrong id should return ERROR")
+with socket.create_connection(('127.0.0.1', 7474)) as sock:
+    sock.sendall(Packet(op=OP_AUTH,
+                        flags=FL_CLIENT_TO_SERVER | FL_USER,
+                        id=0x12345).pack())
+    sock.shutdown(socket.SHUT_WR)
+    resp = recv_packet(sock)
+    assert resp.magic == MAGIC, f"bad magic: {resp}"
+    assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
+    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
+    assert resp.id == 0, f"bad id: {resp}"
+
+print("TEST (tcp): sending AUTH should return after registering too many hosts")
+for _ in range(HOST_MAX_LEN-1): # we already registered one
+    with socket.create_connection(('127.0.0.1', 7474)) as sock:
+        sock.sendall(Packet(op=OP_AUTH,
+                            flags=FL_CLIENT_TO_SERVER | FL_USER).pack())
+        sock.shutdown(socket.SHUT_WR)
+        resp = recv_packet(sock)
+        assert resp.op == OP_AUTH_OK, f"expected AUTH_OK: {resp}"
+
+with socket.create_connection(('127.0.0.1', 7474)) as sock:
+    sock.sendall(Packet(op=OP_AUTH,
+                        flags=FL_CLIENT_TO_SERVER | FL_USER).pack())
+    sock.shutdown(socket.SHUT_WR)
+    resp = recv_packet(sock)
+    assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
 
 print("All tests passed!")

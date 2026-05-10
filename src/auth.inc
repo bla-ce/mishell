@@ -42,7 +42,7 @@ rand_generate_number:
 
 ; generates a 16 bytes long session id for the host
 ; @return rdx:rax: session id
-generate_user_session_id:
+generate_host_session_id:
   sub   rsp, 0x10
 
   ; STACK USAGE
