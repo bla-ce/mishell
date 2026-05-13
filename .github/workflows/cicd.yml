@@ -28,5 +28,4 @@ jobs:
           sleep 1
 
       - name: Run python client script
-        working-directory: client/
-        run: python client.py
+        run: make test
