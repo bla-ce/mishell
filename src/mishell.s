@@ -1,9 +1,7 @@
-%include "constants.inc"
 %include "host.inc"
-%include "net.inc"
+%include "lib.inc"
 %include "ops.inc"
 %include "packet.inc"
-%include "string.inc"
 
 global _start
 
