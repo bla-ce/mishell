@@ -119,9 +119,8 @@ op_auth:
   lea   rdi, [hosts+eax]
   mov   rsi, [rsp+0x10]
   call  host_init
-  mov   [rsp+0x10], rax
-  test  rax, rax
-  jnz   .error
+  cmp   rax, 0
+  jl    .error
 
   ; build response packet
   mov   rdi, [rsp+0x8]

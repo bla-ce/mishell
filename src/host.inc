@@ -2,7 +2,7 @@ section .bss
 
 host_t:
   .id   resb ID_LEN
-  .ip   resb NET_IP_MAX_LEN
+  .ipv4 resb NET_IPV4_MAX_LEN
 host_t_end:
 
 hosts resb HOST_MAX_LEN * HOST_T_LEN
@@ -71,18 +71,16 @@ host_get_by_id:
 ; populates the host struct with ip and generates its id
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: connection fd
-; @return rax: error code
+; @return rax: return code
 host_init:
-  sub   rsp, 0x18
+  sub   rsp, 0x10
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the host struct
   ; [rsp+0x8]   -> connection fd
-  ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   qword [rsp+0x10], error_codes.INTERNAL
 
   test  rdi, rdi
   jz    .error
@@ -98,9 +96,15 @@ host_init:
   mov   qword [rsi+HOST_T_OFF_ID], rdx
   mov   qword [rsi+HOST_T_OFF_ID+0x8], rax
 
+  ; set ip to 0
+  lea   rdi, [rsi+HOST_T_OFF_IP]
+  xor   rax, rax
+  mov   rcx, NET_IPV4_MAX_LEN
+  rep   stosb
+
   mov   rdi, [rsp+0x8]
   add   rsi, HOST_T_OFF_IP
-  call  net_get_ip_from_fd
+  call  net_get_ipv4_from_fd
   cmp   rax, 0
   jl    .error
 
@@ -108,8 +112,8 @@ host_init:
   jmp    .return
 
 .error:
-  mov   rax, [rsp+0x10]
+  mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x18
+  add   rsp, 0x10
   ret

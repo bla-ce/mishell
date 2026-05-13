@@ -27,7 +27,7 @@ enable dd 1
 MAX_EVENTS        equ 10
 EPOLL_EVENT_T_LEN equ epoll_event_t_end - epoll_event_t
 
-NET_IP_MAX_LEN equ 0x10
+NET_IPV4_MAX_LEN equ 0x10
 
 sockaddr_un_t:
   .sun_family dw 1
@@ -41,15 +41,14 @@ sockaddr_in_t_len dq sockaddr_in_t_end - sockaddr_in_t
 
 LISTEN_BACKLOG  equ 50
 
-
 section .text
 
 ; gets the string representation of the ipv4 of a file descriptor
 ; @param  rdi: file descriptor of the client
 ; @param  rsi: pointer to the string holding the IP
 ; @return rax: return code
-net_get_ip_from_fd:
-  sub   rsp, 0x28
+net_get_ipv4_from_fd:
+  sub   rsp, 0x30
   sub   rsp, qword [sockaddr_in_t_len]
 
   ; STACK USAGE
@@ -58,6 +57,7 @@ net_get_ip_from_fd:
   ; [rsp+0x10]  -> dynamic pointer for the string
   ; [rsp+0x18]  -> dynamic pointer sockaddr_addr_in
   ; [rsp+0x20]  -> tmp str to store int to str (8 bytes is enough)
+  ; [rsp+0x28]  -> addrlen pointer
   ; [rsp+0x28]  -> sockaddr struct
 
   mov   [rsp], rdi
@@ -70,23 +70,26 @@ net_get_ip_from_fd:
   ; getpeername
   mov   rax, SYS_GETPEERNAME
   mov   rdi, [rsp]
-  lea   rsi, [rsp+0x28]
-  lea   rdx, [sockaddr_in_t_len]
+  lea   rsi, [rsp+0x30]
+  lea   rdx, [rsp+0x28]
   syscall
   cmp   rax, 0
   jl    .error
 
+  ; make sure the fd is AF_INET
+  lea   rdi, [rsp+0x30]
+  cmp   word [rdi], AF_INET
+  jne   .done
+
   ; get addr_in
-  lea   rax, [rsp+0x28]
-  add   rax, 0x4
-  mov   [rsp+0x18], rax
+  add   rdi, 0x4  ; go to addr_in
+  mov   [rsp+0x18], rdi
 
   mov   r9, 3 ; three dots for IPV4
 
 .loop:
   mov   rax, [rsp+0x18]
-  mov   dil, byte [rax]
-  movzx rdi, dil
+  movzx rdi, byte [rax]
   inc   rax
   mov   [rsp+0x18], rax
 
@@ -124,6 +127,7 @@ net_get_ip_from_fd:
   mov   rax, NULL_CHAR
   stosb
 
+.done:
   mov   rax, SUCCESS_CODE
 
   jmp   .return
@@ -133,5 +137,5 @@ net_get_ip_from_fd:
 
 .return:
   add   rsp, qword [sockaddr_in_t_len]
-  add   rsp, 0x28
+  add   rsp, 0x30
   ret
