@@ -8,7 +8,8 @@ error_codes:
   .INVALID_MODE       equ 4
   .INVALID_TOKEN      equ 5
   .HOST_LIMIT_REACHED equ 6
-  .COUNT              equ 7
+  .HOST_NOT_FOUND     equ 7
+  .COUNT              equ 8
 
 err_code_to_msg_table:
   .INTERNAL           dq error_msg.internal
@@ -18,6 +19,7 @@ err_code_to_msg_table:
   .INVALID_MODE       dq error_msg.invalid_mode
   .INVALID_TOKEN      dq error_msg.invalid_token
   .HOST_LIMIT_REACHED dq error_msg.host_limit_reached
+  .HOST_NOT_FOUND     dq error_msg.host_not_found
 
 err_code_to_len_table:
   .INTERNAL           dw error_msg.internal_len
@@ -27,6 +29,7 @@ err_code_to_len_table:
   .INVALID_MODE       dw error_msg.invalid_mode_len
   .INVALID_TOKEN      dw error_msg.invalid_token_len
   .HOST_LIMIT_REACHED dw error_msg.host_limit_reached_len
+  .HOST_NOT_FOUND     dw error_msg.host_not_found_len
 
 error_msg:
   .internal db "internal error"
@@ -43,3 +46,5 @@ error_msg:
   .invalid_token_len equ $ - error_msg.invalid_token
   .host_limit_reached db "max host limit has been reached"
   .host_limit_reached_len equ $ - error_msg.host_limit_reached
+  .host_not_found db "host not found"
+  .host_not_found_len equ $ - error_msg.host_not_found

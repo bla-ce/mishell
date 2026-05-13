@@ -84,33 +84,18 @@ op_auth:
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
 
   ; check if id is set
-  mov   rdi, [rsp]
-  movups  xmm1, [rdi+PACKET_T_OFF_ID]
+  mov   rax, [rsp]
+  movups  xmm1, [rax+PACKET_T_OFF_ID]
   ptest   xmm1, xmm1
   jz    .new_host
 
-  ; check if host is in the array
-  xor   r9, r9
-.loop:
-  lea   rdi, [hosts+r9]
+  mov   qword [rsp+0x18], error_codes.HOST_NOT_FOUND
+  mov   rdi, [rax+PACKET_T_OFF_ID]
+  mov   rsi, [rax+PACKET_T_OFF_ID+0x8]
+  call  host_get_by_id
+  cmp   rax, 0
+  jl    .error
 
-  mov   rsi, [rsp]
-  lea   rsi, [rsi+PACKET_T_OFF_ID]
-  mov   rcx, ID_QWORDS
-  rep   cmpsq
-  je    .loop_end
-
-  add   r9, ID_LEN
-
-  movzx rax, byte [curr_host_idx]
-  shl   rax, 4  ; rax *= 16 (ID_LEN)
-
-  mov   qword [rsp+0x18], error_codes.INVALID_TOKEN
-  cmp   r9, rax
-  jge   .error
-
-  jmp   .loop
-.loop_end:
   ; valid host id
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK

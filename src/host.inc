@@ -18,6 +18,54 @@ HOST_T_OFF_ID   equ 0x0
 
 section .text
 
+; returns the host struct from the host id or -1 if the host is
+; not registered
+; @param  rdi: first 64bit of the id
+; @param  rsi: second 64bit of the id
+; @return rax: pointer to the host struct or -1
+host_get_by_id:
+  sub   rsp, 0x18
+
+  ; STACK USAGE
+  ; [rsp]       -> first 64bit of the id
+  ; [rsp+0x8]   -> second 64bit of the id
+  ; [rsp+0x10]  -> pointer to the host struct
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  xor   r9, r9
+.loop:
+  lea   rdi, [hosts+r9]
+
+  mov   [rsp+0x10], rax
+
+  lea   rsi, [rsp]
+  mov   rcx, ID_QWORDS
+  rep   cmpsq
+  je    .loop_end
+
+  add   r9, ID_LEN
+
+  movzx rax, byte [curr_host_idx]
+  shl   rax, 4  ; rax *= 16 (ID_LEN)
+
+  cmp   r9, rax
+  jge   .error
+
+  jmp   .loop
+
+.loop_end:
+  mov   rax, [rsp+0x10]
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18
+  ret
+
 ; populates the host struct with ip and generates its id
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: connection fd

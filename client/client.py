@@ -95,7 +95,7 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     assert resp.id == 0, f"bad id: {resp}"
     assert len(resp.payload) == 0, f"payload should be empty: {resp}"
 
-print("TEST (tcp): sending AUTH with wrong id should return ERROR")
+print("TEST (tcp): sending AUTH with wrong id should return ERROR: host not found")
 with socket.create_connection(('127.0.0.1', 7474)) as sock:
     sock.sendall(Packet(op=OP_AUTH,
                         flags=FL_CLIENT_TO_SERVER | FL_USER,
@@ -106,9 +106,9 @@ with socket.create_connection(('127.0.0.1', 7474)) as sock:
     assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
     assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
     assert resp.id == 0, f"bad id: {resp}"
-    assert resp.payload == b'invalid host token', f"bad payload: {resp}"
+    assert resp.payload == b'host not found', f"bad payload: {resp}"
 
-print("TEST (tcp): sending AUTH should return after registering too many hosts")
+print("TEST (tcp): sending AUTH should return a message after registering too many hosts")
 for _ in range(HOST_MAX_LEN-1): # we already registered one
     with socket.create_connection(('127.0.0.1', 7474)) as sock:
         sock.sendall(Packet(op=OP_AUTH,
