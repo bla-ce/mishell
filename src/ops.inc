@@ -177,6 +177,19 @@ op_register:
   test  rsi, rsi
   jz    .error
 
+  ; verify host
+  mov   qword [rsp+0x18], error_codes.UNAUTHORIZED
+  mov   rax, [rsp]
+  movups  xmm1, [rax+PACKET_T_OFF_ID]
+  ptest   xmm1, xmm1
+  jz    .error
+
+  mov   rdi, [rax+PACKET_T_OFF_ID]
+  mov   rsi, [rax+PACKET_T_OFF_ID+0x8]
+  call  host_get_by_id
+  cmp   rax, 0
+  jl    .error
+
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
@@ -191,7 +204,7 @@ op_register:
   jmp   .return
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rax, [rsp+0x18]
 
 .return:
   add   rsp, 0x20
