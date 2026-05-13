@@ -5,17 +5,20 @@ section .data
 req_ops:
   .HELLO    equ 0x0
   .AUTH     equ 0x1
-  .COUNT    equ 0x2
-
-res_ops:
-  .WELCOME  equ 0x0
-  .AUTH_OK  equ 0x1
-  .ERROR    equ 0x2
+  .REGISTER equ 0x2
   .COUNT    equ 0x3
 
+res_ops:
+  .WELCOME      equ 0x0
+  .AUTH_OK      equ 0x1
+  .REGISTER_OK  equ 0x2
+  .ERROR        equ 0x3
+  .COUNT        equ 0x4
+
 req_op_fn_table:
-  .HELLO  dq op_hello
-  .AUTH   dq op_auth
+  .HELLO    dq op_hello
+  .AUTH     dq op_auth
+  .REGISTER dq op_register
 
 section .text
 
@@ -143,6 +146,52 @@ op_auth:
 
 .error:
   mov   rax, [rsp+0x18]
+
+.return:
+  add   rsp, 0x20
+  ret
+
+; registers a new service for the host
+; at the moment, it just returns REGISTER_OK without doing anything
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @param  rdx: connection fd
+; @return rax: packet size
+op_register:
+  sub   rsp, 0x20
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> connection fd
+  ; [rsp+0x10]  -> error code
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
+  or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.REGISTER_OK
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+  mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
 
 .return:
   add   rsp, 0x20

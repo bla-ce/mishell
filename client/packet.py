@@ -1,4 +1,5 @@
 import struct
+import socket
 from dataclasses import dataclass
 
 # Magic
@@ -6,13 +7,15 @@ MAGIC       = 0xCAFE
 WRONG_MAGIC = 0xBEEF
 
 # Request OP codes
-OP_HELLO = 0x00
-OP_AUTH  = 0x01
+OP_HELLO    = 0x00
+OP_AUTH     = 0x01
+OP_REGISTER = 0x02
 
 # Return OP codes
-OP_WELCOME = 0x0
-OP_AUTH_OK = 0x1
-OP_ERROR   = 0x2
+OP_WELCOME      = 0x0
+OP_AUTH_OK      = 0x1
+OP_REGISTER_OK  = 0x2
+OP_ERROR        = 0x3
 
 # Flags
 FL_CLIENT_TO_SERVER = 0b0000
@@ -22,6 +25,9 @@ FL_HOST             = 0b0100
 FL_SERVER           = 0b1000
 
 PAYLOAD_MAX_LEN = 0xFFFF
+
+SOCKET_PATH = 'mishell.sock'
+SOCKET_PORT = 7474
 
 # Wire format: little-endian
 # H  = uint16  magic       (2 bytes)
@@ -91,9 +97,14 @@ class Packet:
             OP_WELCOME: 'WELCOME',
             OP_AUTH: 'AUTH',
             OP_AUTH_OK: 'AUTH_OK',
+            OP_REGISTER: 'REGISTER',
+            OP_REGISTER_OK: 'REGISTER_OK',
             OP_ERROR: 'ERROR'
         }.get(self.op, f'0x{self.op:02X}')
 
         return (f"Packet(magic=0x{self.magic:04X}, op={op_name}, "
                 f"flags=[{' | '.join(flag_names)}], id={self.id}, "
                 f"payload={self.payload!r})")
+
+def recv_packet(sock: socket.socket) -> Packet:
+    return Packet.unpack(sock.recv(4096))

@@ -30,7 +30,7 @@ EPOLL_EVENT_T_LEN equ epoll_event_t_end - epoll_event_t
 NET_IPV4_MAX_LEN equ 0x10
 
 sockaddr_un_t:
-  .sun_family dw 1
+  .sun_family dw AF_LOCAL
   .sun_path   db "mishell.sock", 0
 sockaddr_un_t_end:
 
