@@ -11,6 +11,7 @@ SYS_SOCKET        equ 41
 SYS_ACCEPT        equ 43
 SYS_BIND          equ 49
 SYS_LISTEN        equ 50
+SYS_GETPEERNAME   equ 52
 SYS_SETSOCKOPT    equ 54
 SYS_EXIT          equ 60
 SYS_FCNTL         equ 72
@@ -44,3 +45,9 @@ EPOLL_CTL_DEL equ 2
 ; rand
 RDRAND_CPUID_POS    equ 30
 RDRAND_RETRY_LIMIT  equ 10
+
+; ASCII
+NULL_CHAR equ 0
+HYPHEN    equ 0x2D
+DOT       equ 0x2E
+ZERO_CHAR equ 0x30

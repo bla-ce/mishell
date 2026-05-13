@@ -1,52 +1,15 @@
 %include "constants.inc"
 %include "host.inc"
+%include "net.inc"
 %include "ops.inc"
 %include "packet.inc"
+%include "string.inc"
 
 global _start
 
-section .bss
-
-epoll_fd  resq 1
-tcp_fd    resq 1
-unix_fd   resq 1
-conn_fd   resq 1
-nfds      resq 1
-
-epoll_event_t:
-  .events resd 1
-  .data   resq 1
-epoll_event_t_end:
-
-sockaddr_in_t:
-  .sin_family resw 1
-  .sin_port   resw 1
-  .sin_addr   resd 1
-  .sin_zero   resq 1
-sockaddr_in_t_end:
-
-events resb EPOLL_EVENT_T_LEN * MAX_EVENTS
-
 section .data
 
-enable dd 1
-
-MAX_EVENTS        equ 10
-EPOLL_EVENT_T_LEN equ epoll_event_t_end - epoll_event_t
-
 tcp_port  equ 7474
-
-sockaddr_in_t_len dq sockaddr_in_t_end - sockaddr_in_t
-
-LISTEN_BACKLOG  equ 50
-
-sockaddr_un_t:
-  .sun_family dw 1
-  .sun_path   db "mishell.sock", 0
-sockaddr_un_t_end:
-
-unix_path_len     equ sockaddr_un_t_end - sockaddr_un_t.sun_path
-sockaddr_un_t_len equ sockaddr_un_t_end - sockaddr_un_t
 
 log:
   .listen_tcp     db "[mishell] listening on TCP port 7474", 10

@@ -2,6 +2,7 @@ section .bss
 
 host_t:
   .id   resb ID_LEN
+  .ip   resb NET_IP_MAX_LEN
 host_t_end:
 
 hosts resb HOST_MAX_LEN * HOST_T_LEN
@@ -15,6 +16,7 @@ curr_host_idx db 0
 HOST_T_LEN equ host_t_end - host_t
 
 HOST_T_OFF_ID   equ 0x0
+HOST_T_OFF_IP   equ HOST_T_OFF_ID + ID_LEN
 
 section .text
 
@@ -92,11 +94,15 @@ host_init:
   cmp   rax, FAILURE_CODE
   je    .error
 
-  mov   rdi, [rsp]
-  mov   qword [rdi+HOST_T_OFF_ID], rdx
-  mov   qword [rdi+HOST_T_OFF_ID+0x8], rax
+  mov   rsi, [rsp]
+  mov   qword [rsi+HOST_T_OFF_ID], rdx
+  mov   qword [rsi+HOST_T_OFF_ID+0x8], rax
 
-  ; TODO: get ip from connection fd
+  mov   rdi, [rsp+0x8]
+  add   rsi, HOST_T_OFF_IP
+  call  net_get_ip_from_fd
+  cmp   rax, 0
+  jl    .error
 
   mov   rax, SUCCESS_CODE
   jmp    .return

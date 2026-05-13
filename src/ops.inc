@@ -126,14 +126,14 @@ op_auth:
   ; build response packet
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOST_T_LEN
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ID_LEN
 
   ; add id to payload
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rsi, [hosts+eax]
   add   rdi, PACKET_T_OFF_PAYLOAD
-  mov   rcx, HOST_T_LEN
+  mov   rcx, ID_LEN
   rep   movsb
 
   inc   byte [curr_host_idx]
