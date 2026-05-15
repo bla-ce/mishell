@@ -20,6 +20,7 @@ rand_generate_number:
 
   xor   rcx, rcx
 .loop:
+  mov   rdx, SUCCESS_CODE
   rdrand  rax
   jc    .return
 
@@ -27,8 +28,6 @@ rand_generate_number:
 
   cmp   rcx, RDRAND_RETRY_LIMIT
   jge   .error
-
-  mov   rdx, SUCCESS_CODE
 
   jmp   .loop
 

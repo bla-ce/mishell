@@ -12,14 +12,14 @@ _start:
 
   ; generate_id should generate a 16 bytes id without error
   call  generate_id
-  cmp   rax, SUCCESS_CODE
-  jne   .error
+  cmp   rax, FAILURE_CODE
+  je    .error
 
   mov   rdi, SUCCESS_CODE
   jmp   .exit
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rdi, FAILURE_CODE
 
 .exit:
   mov   rax, SYS_EXIT

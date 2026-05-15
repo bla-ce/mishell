@@ -90,9 +90,6 @@ host_init:
   test  rdi, rdi
   jz    .error
 
-  test  rsi, rsi
-  jz    .error
-
   call  generate_id
   cmp   rax, FAILURE_CODE
   je    .error
