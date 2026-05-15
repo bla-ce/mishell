@@ -49,5 +49,5 @@ jobs:
       - name: Install nasm
         run: sudo apt-get update && sudo apt-get install -y nasm
 
-      - name: Run python client script
+      - name: Run unit tests
         run: make test-unit
