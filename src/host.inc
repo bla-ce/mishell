@@ -3,16 +3,16 @@ section .bss
 host_t:
   .id             resb ID_LEN
   .ipv4           resb NET_IPV4_MAX_LEN
-  .services       resq 1
-  .services_count resb 1
-  .pad            resb 7
+  .services       resb SERVICE_T_LEN * SERVICE_MAX_COUNT_PER_HOST
+  .services_count resb 0x1
+  .pad            resb 0x7
 host_t_end:
 
-hosts resb HOST_MAX_LEN * HOST_T_LEN
+hosts resb HOST_T_LEN * HOST_MAX_COUNT
 
 section .data
 
-HOST_MAX_LEN equ 0x8
+HOST_MAX_COUNT equ 0x5
 
 curr_host_idx db 0
 
@@ -100,13 +100,18 @@ host_init:
   mov   rsi, [rsp]
   mov   qword [rsi+HOST_T_OFF_ID], rdx
   mov   qword [rsi+HOST_T_OFF_ID+0x8], rax
-  mov   qword [rsi+HOST_T_OFF_SERVICES], 0
   mov   qword [rsi+HOST_T_OFF_SERVICES_COUNT], 0
 
   ; set ip to 0
   lea   rdi, [rsi+HOST_T_OFF_IP]
   xor   rax, rax
   mov   rcx, NET_IPV4_MAX_LEN
+  rep   stosb
+
+  ; set services to 0
+  lea   rdi, [rsi+HOST_T_OFF_SERVICES]
+  xor   rax, rax
+  mov   rcx, SERVICE_T_LEN * SERVICE_MAX_COUNT_PER_HOST
   rep   stosb
 
   mov   rdi, [rsp+0x8]

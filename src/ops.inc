@@ -112,7 +112,7 @@ op_auth:
 .new_host:
   ; make sure we haven't reached the host limit
   mov   qword [rsp+0x18], error_codes.HOST_LIMIT_REACHED
-  cmp   byte [curr_host_idx], HOST_MAX_LEN
+  cmp   byte [curr_host_idx], HOST_MAX_COUNT
   jge   .error
 
   ; populate host struct

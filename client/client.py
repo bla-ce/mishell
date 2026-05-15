@@ -11,7 +11,7 @@ from packet import (
     SOCKET_PATH, SOCKET_PORT
 )
 
-HOST_MAX_LEN = 8
+HOST_MAX_COUNT = 5
 
 # -- TCP tests --
 
@@ -111,7 +111,7 @@ with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
     assert resp.payload == b'host not found', f"bad payload: {resp}"
 
 print("TEST (tcp): sending AUTH should return a message after registering too many hosts")
-for _ in range(HOST_MAX_LEN-1): # we already registered one
+for _ in range(HOST_MAX_COUNT-1): # we already registered one
     with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
         sock.sendall(Packet(op=OP_AUTH,
                             flags=FL_CLIENT_TO_SERVER | FL_USER).pack())

@@ -2,6 +2,7 @@
 %include "lib.inc"
 %include "ops.inc"
 %include "packet.inc"
+%include "service.inc"
 
 global _start
 
