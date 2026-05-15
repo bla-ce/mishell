@@ -190,6 +190,10 @@ op_register:
   cmp   rax, 0
   jl    .error
 
+  ; make sure we can add a new service
+
+  ; TODO: deserialize payload
+
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT

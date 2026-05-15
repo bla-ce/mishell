@@ -1,9 +1,6 @@
 .venv/
 bin/
 build/
-docs/
 *.sock
-TODO.md
-THOUGHTS.md
 __pycache__/
 _test_template.s
