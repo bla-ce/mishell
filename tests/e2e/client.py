@@ -1,155 +1,79 @@
 import socket
-from packet import (
-    Packet, recv_packet,
-    MAGIC, WRONG_MAGIC,
-    OP_HELLO, OP_WELCOME,
-    OP_AUTH, OP_AUTH_OK,
-    OP_REGISTER, OP_REGISTER_OK,
-    OP_ERROR,
-    FL_CLIENT_TO_SERVER, FL_SERVER_TO_CLIENT,
-    FL_USER, FL_HOST, FL_SERVER,
-    SOCKET_PATH, SOCKET_PORT
-)
+from packet import *
+from service import *
 
 HOST_MAX_COUNT = 5
 
-# -- TCP tests --
+def tcp_connection(packet):
+    with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
+        sock.sendall(packet.pack())
+        sock.shutdown(socket.SHUT_WR)
+        return recv_packet(sock)
+
+def unix_connection(packet):
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.connect(SOCKET_PATH)
+        sock.sendall(packet.pack())
+        sock.shutdown(socket.SHUT_WR)
+        return recv_packet(sock)
+
+def assert_server_response(resp, *, op, payload=None, id=0):
+    assert resp.magic == MAGIC,                          f"wrong magic: {resp}"
+    assert resp.op == op,                                f"expected {op}: {resp}"
+    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
+    assert resp.id == id,                                f"wrong id: {resp}"
+    if payload is not None:
+        assert resp.payload == payload,                  f"wrong payload: {resp}"
 
 print("TEST (tcp): sending invalid magic value should fail")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(magic=WRONG_MAGIC, op=OP_HELLO,
-                        flags=FL_CLIENT_TO_SERVER | FL_HOST).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.magic == MAGIC, f"wrong magic: {resp}"
-    assert resp.op == OP_ERROR, f"expected ERROR op: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.payload == b'invalid magic value in packet', f"wrong payload: {resp}"
+resp = tcp_connection(Packet(magic=WRONG_MAGIC, op=OP_HELLO, flags=FL_CLIENT_TO_SERVER | FL_HOST))
+assert_server_response(resp, op=OP_ERROR, payload=b'invalid magic value in packet')
 
 print("TEST (tcp): sending wrong direction should fail")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_HELLO,
-                        flags=FL_SERVER_TO_CLIENT | FL_HOST).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.op == OP_ERROR, f"expected ERROR op: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.payload == b'invalid direction flag in packet', f"wrong payload: {resp}"
+resp = tcp_connection(Packet(op=OP_HELLO, flags=FL_SERVER_TO_CLIENT | FL_HOST))
+assert_server_response(resp, op=OP_ERROR, payload=b'invalid direction flag in packet')
 
 print("TEST (tcp): sending wrong mode should fail")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_HELLO,
-                        flags=FL_CLIENT_TO_SERVER | FL_SERVER).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.op == OP_ERROR, f"expected ERROR op: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.payload == b'invalid mode flag in packet', f"wrong payload: {resp}"
+resp = tcp_connection(Packet(op=OP_HELLO, flags=FL_CLIENT_TO_SERVER | FL_SERVER))
+assert_server_response(resp, op=OP_ERROR, payload=b'invalid mode flag in packet')
 
 print("TEST (tcp): sending wrong op should fail")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=0x4,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.op == OP_ERROR, f"expected ERROR op: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.payload == b'invalid op value in packet', f"wrong payload: {resp}"
+resp = tcp_connection(Packet(op=0x4, flags=FL_CLIENT_TO_SERVER | FL_USER))
+assert_server_response(resp, op=OP_ERROR, payload=b'invalid op value in packet')
 
 print("TEST (tcp): sending HELLO should work and return a WELCOME op")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_HELLO,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.magic == MAGIC, f"wrong magic: {resp}"
-    assert resp.op == OP_WELCOME, f"expected WELCOME: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.payload == b'', f"unexpected payload: {resp}"
-
-host_id = 0
+resp = tcp_connection(Packet(op=OP_HELLO, flags=FL_CLIENT_TO_SERVER | FL_USER))
+assert_server_response(resp, op=OP_WELCOME, payload=b'')
 
 print("TEST (unix): sending AUTH should work and return a AUTH_OK op with 16 bytes payload")
-with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-    sock.connect(SOCKET_PATH)
-    sock.sendall(Packet(op=OP_AUTH,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.magic == MAGIC, f"wrong magic: {resp}"
-    assert resp.op == OP_AUTH_OK, f"expected AUTH_OK: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.id == 0, f"wrong id: {resp}"
-    assert len(resp.payload) == 16, f"payload should be 16 bytes long: {resp}"
-
-    host_id = int.from_bytes(resp.payload, byteorder='little')
+resp = unix_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
+assert_server_response(resp, op=OP_AUTH_OK)
+assert len(resp.payload) == 16, f"payload should be 16 bytes long: {resp}"
+host_id = int.from_bytes(resp.payload, byteorder='little')
 
 print("TEST (tcp): sending AUTH with id should return empty payload")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_AUTH,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER,
-                        id=host_id).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.magic == MAGIC, f"wrong magic: {resp}"
-    assert resp.op == OP_AUTH_OK, f"expected AUTH_OK: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
-    assert resp.id == 0, f"bad id: {resp}"
-    assert len(resp.payload) == 0, f"payload should be empty: {resp}"
+resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER, id=host_id))
+assert_server_response(resp, op=OP_AUTH_OK, payload=b'')
 
 print("TEST (tcp): sending AUTH with wrong id should return ERROR: host not found")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_AUTH,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER,
-                        id=0x12345).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.magic == MAGIC, f"bad magic: {resp}"
-    assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"bad flags: {resp}"
-    assert resp.id == 0, f"bad id: {resp}"
-    assert resp.payload == b'host not found', f"bad payload: {resp}"
+resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER, id=0x12345))
+assert_server_response(resp, op=OP_ERROR, payload=b'host not found')
 
 print("TEST (tcp): sending AUTH should return a message after registering too many hosts")
-for _ in range(HOST_MAX_COUNT-1): # we already registered one
-    with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-        sock.sendall(Packet(op=OP_AUTH,
-                            flags=FL_CLIENT_TO_SERVER | FL_USER).pack())
-        sock.shutdown(socket.SHUT_WR)
-        resp = recv_packet(sock)
-        assert resp.op == OP_AUTH_OK, f"expected AUTH_OK: {resp}"
+for _ in range(HOST_MAX_COUNT - 1):  # one already registered
+    resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
+    assert resp.op == OP_AUTH_OK, f"expected AUTH_OK: {resp}"
 
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_AUTH,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
-    assert resp.payload == b'max host limit has been reached', f"bad payload: {resp}"
-
-print("TEST (tcp): sending REGISTER with id should return empty payload and REGISTER_OK")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_REGISTER,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER,
-                        id=host_id).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.magic == MAGIC, f"wrong magic: {resp}"
-    assert resp.op == OP_REGISTER_OK, f"expected REGISTER_OK: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.id == 0, f"wrong id: {resp}"
-    assert len(resp.payload) == 0, f"payload should be empty: {resp}"
+resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
+assert_server_response(resp, op=OP_ERROR, payload=b'max host limit has been reached')
 
 print("TEST (tcp): sending REGISTER with empty id should return unauthorized error")
-with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
-    sock.sendall(Packet(op=OP_REGISTER,
-                        flags=FL_CLIENT_TO_SERVER | FL_USER,
-                        id=0).pack())
-    sock.shutdown(socket.SHUT_WR)
-    resp = recv_packet(sock)
-    assert resp.magic == MAGIC, f"wrong magic: {resp}"
-    assert resp.op == OP_ERROR, f"expected ERROR: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
-    assert resp.payload == b"user is unauthorized to perform this request", f"wrong payload: {resp}"
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_USER, id=0))
+assert_server_response(resp, op=OP_ERROR, payload=b'user is unauthorized to perform this request')
+
+print("TEST (tcp): sending REGISTER with service payload should return empty payload and REGISTER_OK")
+svc = Service(name="my-service", type=0x00)
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_USER, id=host_id, payload=svc.pack()))
+assert_server_response(resp, op=OP_REGISTER_OK, payload=b'')
 
 print("All tests passed!")
