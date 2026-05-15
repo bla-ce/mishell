@@ -31,8 +31,11 @@ run:
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
 	./$(BIN_DIR)/$(MAIN_PATH)
 
-test:
-	python3 client/client.py
+test-e2e:
+	python3 tests/e2e/client.py
+
+test-unit:
+	$(MAKE) -C tests/unit
 
 strace:
 	strace ./$(BIN_DIR)/$(MAIN_PATH)
