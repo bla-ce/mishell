@@ -3,6 +3,7 @@ from packet import *
 from service import *
 
 HOST_MAX_COUNT = 5
+SERVICE_MAX_COUNT_PER_HOST = 5
 
 def tcp_connection(packet):
     with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
@@ -59,21 +60,30 @@ print("TEST (tcp): sending AUTH with wrong id should return ERROR: host not foun
 resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER, id=0x12345))
 assert_server_response(resp, op=OP_ERROR, payload=b'host not found')
 
-print("TEST (tcp): sending AUTH should return a message after registering too many hosts")
-for _ in range(HOST_MAX_COUNT - 1):  # one already registered
+print("TEST (tcp): sending AUTH should return a message after adding too many hosts")
+for _ in range(HOST_MAX_COUNT - 1):  # one already added
     resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
     assert resp.op == OP_AUTH_OK, f"expected AUTH_OK: {resp}"
+    host_id = int.from_bytes(resp.payload, byteorder='little')
 
 resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
-assert_server_response(resp, op=OP_ERROR, payload=b'max host limit has been reached')
+assert_server_response(resp, op=OP_ERROR, payload=b'host limit has been reached')
 
 print("TEST (tcp): sending REGISTER with empty id should return unauthorized error")
-resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_USER, id=0))
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=0))
 assert_server_response(resp, op=OP_ERROR, payload=b'user is unauthorized to perform this request')
 
 print("TEST (tcp): sending REGISTER with service payload should return empty payload and REGISTER_OK")
 svc = Service(name="my-service", type=0x00)
-resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_USER, id=host_id, payload=svc.pack()))
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
 assert_server_response(resp, op=OP_REGISTER_OK, payload=b'')
+
+print("TEST (tcp): sending REGISTER should return ERROR after registering too many services")
+for _ in range(SERVICE_MAX_COUNT_PER_HOST - 1):  # one already registered
+    resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+    assert resp.op == OP_REGISTER_OK, f"expected REGISTER_OK: {resp}"
+
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+assert_server_response(resp, op=OP_ERROR, payload=b'service limit per host has been reached')
 
 print("All tests passed!")

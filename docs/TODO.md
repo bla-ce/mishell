@@ -1,7 +1,7 @@
 ## Priority 1
 - deserialize_service method
 - test for serialize_service and string functions
-- check service count before adding one
+- FL_USER should not be able to do host operations
 - do some verification against the service
 - think about some uniqueness
 

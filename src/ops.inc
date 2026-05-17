@@ -158,18 +158,19 @@ op_auth:
 ; @param  rdx: connection fd
 ; @return rax: packet size
 op_register:
-  sub   rsp, 0x20
+  sub   rsp, 0x28
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
   ; [rsp+0x10]  -> connection fd
-  ; [rsp+0x10]  -> error code
+  ; [rsp+0x18]  -> pointer to the host
+  ; [rsp+0x20]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
   mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
+  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -178,21 +179,33 @@ op_register:
   jz    .error
 
   ; verify host
-  mov   qword [rsp+0x18], error_codes.UNAUTHORIZED
+  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
   mov   rax, [rsp]
   movups  xmm1, [rax+PACKET_T_OFF_ID]
   ptest   xmm1, xmm1
   jz    .error
 
+  mov   qword [rsp+0x20], error_codes.INTERNAL
   mov   rdi, [rax+PACKET_T_OFF_ID]
   mov   rsi, [rax+PACKET_T_OFF_ID+0x8]
   call  host_get_by_id
   cmp   rax, 0
   jl    .error
 
-  ; make sure we can add a new service
+  mov   [rsp+0x18], rax
 
-  ; TODO: deserialize payload
+  ; make sure we can add a new service
+  mov   qword [rsp+0x20], error_codes.SERVICE_PER_HOST_LIMIT_REACHED
+  cmp   byte [rax+HOST_T_OFF_SERVICES_COUNT], SERVICE_MAX_COUNT_PER_HOST
+  jge   .error
+
+  ; initialises a new service
+  mov   qword [rsp+0x20], error_codes.INTERNAL
+  mov   rdi, [rsp]
+  mov   rsi, [rsp+0x18]
+  call  service_init
+  cmp   rax, 0
+  jl    .error
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
@@ -208,8 +221,8 @@ op_register:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x18]
+  mov   rax, [rsp+0x20]
 
 .return:
-  add   rsp, 0x20
+  add   rsp, 0x28
   ret
