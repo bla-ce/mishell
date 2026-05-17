@@ -1,27 +1,30 @@
 ## Priority 1
+- Define service type struct
 - Create Pong service type
 - Actually start a service
 
 ## Priority 2
-- README
+- Define host expiration or host removal process
+- add fd to logs
+- clean up is never reached, graceful shutdown
+
+## Ongoing
+- Update README
 - tests for service.inc
 - tests for strcpy and strncpy
 - tests for net.inc
 - tests for ops.inc
 - tests for packet.inc
 
-## Priority 3
-- Define host expiration or host removal process
-- add fd to logs
-- clean up is never reached, graceful shutdown
-
 ## Polishing
 - make the packet creation generic
 - event_t should not be global but statically allocated
-- _start is not respecting SRP
-- op_AUTH is not respecting SRP
+- Check for clean architecture and SOLID principles
 
 ## Ideas to think about
 - authentication for REGISTER, START, STOP and UNREGISTER command
     - who is allow to do what?
+- Checksum for payload
 - no central server, blockchain example
+    - why doing that?
+    - are there real benefits or is that just fancy?
