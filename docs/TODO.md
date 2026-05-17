@@ -1,5 +1,4 @@
 ## Priority 1
-- Implement START command
 - Create Pong service type
 - Actually start a service
 

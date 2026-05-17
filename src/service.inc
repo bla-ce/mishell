@@ -28,6 +28,70 @@ service_status:
   .COUNT      equ 0x3
 
 section .text
+; returns the service struct from the host id and service id or -1
+; if the service is not registered
+; @param  rdi: pointer to the id of the host
+; @param  rsi: pointer to the id of the service
+; @return rax: pointer to the service struct or -1
+service_get_by_id:
+  sub   rsp, 0x20
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the id of the host
+  ; [rsp+0x8]   -> pointer to the id of the service
+  ; [rsp+0x10]  -> pointer to the services array of the host
+  ; [rsp+0x18]  -> pointer to the service struct
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  ; get host by id
+  call  host_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  add   rax, HOST_T_OFF_SERVICES
+
+  mov   [rsp+0x10], rax
+
+  xor   r9, r9
+
+.loop:
+  mov   rsi, [rsp+0x10]
+  lea   rdi, [rsi+r9]
+
+  mov   [rsp+0x18], rdi
+
+  add   rdi, SERVICE_T_OFF_ID
+  mov   rsi, [rsp+0x8]
+  mov   rcx, ID_QWORDS
+  rep   cmpsq
+  je    .loop_end
+
+  add   r9, SERVICE_T_LEN
+
+  cmp   r9, SERVICES_LEN
+  jge   .error
+
+  jmp   .loop
+
+.loop_end:
+  mov   rax, [rsp+0x18]
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x20
+  ret
+
 ; initialises a new service from a REGISTER packet and adds it to
 ; the host struct list of services
 ; @param  rdi: pointer to the packet struct
@@ -56,7 +120,7 @@ service_init:
   lea   rdi, [rax+HOST_T_OFF_SERVICES]
 
   imul  rax, r9, SERVICE_T_LEN
-  lea   rdi, [rdi+rax]
+  add   rdi, rax
 
   mov   [rsp+0x10], rdi
 

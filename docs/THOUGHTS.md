@@ -78,3 +78,5 @@ We have two options here, either create a start_req_t, so we do not have to any 
 We don't even need to define start_req_t, just assume the payload as the right format, we already know the offsets.
 
 We can just return OK? instead of having multiple different response ops
+
+Right now, there is a bit of a misconception on authentication and who's allowed to register and start host, we'll get to that later.

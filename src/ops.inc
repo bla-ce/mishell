@@ -6,7 +6,8 @@ req_ops:
   .HELLO    equ 0x0
   .AUTH     equ 0x1
   .REGISTER equ 0x2
-  .COUNT    equ 0x3
+  .START    equ 0x3
+  .COUNT    equ 0x4
 
 res_ops:
   .OK     equ 0x0
@@ -17,6 +18,7 @@ req_op_fn_table:
   .HELLO    dq op_hello
   .AUTH     dq op_auth
   .REGISTER dq op_register
+  .START    dq op_start
 
 section .text
 
@@ -283,11 +285,18 @@ op_start:
 
   mov   [rsp+0x18], rax
 
-  ; find host
-
   ; find service inside host struct
+  ; payload is host id followed by service id
+  mov   qword [rsp+0x20], error_codes.SERVICE_NOT_FOUND
+  mov   rax, [rsp]
+  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
+  call  service_get_by_id
+  cmp   rax, 0
+  jl    .error
 
   ; change status
+  mov   byte [rax+SERVICE_T_OFF_STATUS], service_status.UP
 
   ; TODO: actually start it
 
@@ -298,7 +307,8 @@ op_start:
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD], 0
 
   mov   rax, SUCCESS_CODE
   jmp   .return

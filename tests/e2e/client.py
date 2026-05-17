@@ -86,6 +86,7 @@ resp_svc = Service.unpack(resp.payload)
 assert(resp_svc.id != 0x0),                             f"id not generated"
 assert(resp_svc.name != service_name),                  f"wrong name: {resp_svc.name}"
 assert(resp_svc.status == SERVICE_STATUS_REGISTERED),   f"wrong status: {resp_svc.status}"
+service_id = resp_svc.id
 
 print("TEST (tcp): sending REGISTER should return ERROR after registering too many services")
 for _ in range(SERVICE_MAX_COUNT_PER_HOST - 1):  # one already registered
@@ -94,5 +95,25 @@ for _ in range(SERVICE_MAX_COUNT_PER_HOST - 1):  # one already registered
 
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
 assert_server_response(resp, op=OP_ERROR, payload=b'service limit per host has been reached')
+
+print("TEST (tcp): sending START with empty id should return unauthorized error")
+resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=0))
+assert_server_response(resp, op=OP_ERROR, payload=b'user is unauthorized to perform this request')
+
+print("TEST (tcp): sending START with wrong server host id should return service not found")
+wrong_host_id_payload = (0x12345).to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=wrong_host_id_payload))
+assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
+
+print("TEST (tcp): sending START with correct host id but wrong service id should return service not found")
+wrong_service_id_payload = host_id.to_bytes(16, 'little') + (0x12345).to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=wrong_service_id_payload))
+assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
+
+
+print("TEST (tcp): sending START with correct host id and correct service id should return OK")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_OK, payload=b'')
 
 print("All tests passed!")

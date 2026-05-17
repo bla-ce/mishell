@@ -18,8 +18,9 @@ error_codes:
 
   ; service errors
   .SERVICE_PER_HOST_LIMIT_REACHED equ 10
+  .SERVICE_NOT_FOUND              equ 11
 
-  .COUNT                          equ 11
+  .COUNT                          equ 12
 
 err_code_to_msg_table:
   .NULL                           dq 0
@@ -33,6 +34,7 @@ err_code_to_msg_table:
   .HOST_LIMIT_REACHED             dq error_msg.host_limit_reached
   .HOST_NOT_FOUND                 dq error_msg.host_not_found
   .SERVICE_PER_HOST_LIMIT_REACHED dq error_msg.service_per_host_limit_reached
+  .SERVICE_NOT_FOUND              dq error_msg.service_not_found
 
 err_code_to_len_table:
   .NULL                           dw 0
@@ -46,6 +48,7 @@ err_code_to_len_table:
   .HOST_LIMIT_REACHED             dw error_msg.host_limit_reached_len
   .HOST_NOT_FOUND                 dw error_msg.host_not_found_len
   .SERVICE_PER_HOST_LIMIT_REACHED dw error_msg.service_per_host_limit_reached_len
+  .SERVICE_NOT_FOUND              dw error_msg.service_not_found_len
 
 error_msg:
   .internal db "internal error"
@@ -68,3 +71,5 @@ error_msg:
   .host_not_found_len equ $ - error_msg.host_not_found
   .service_per_host_limit_reached db "service limit per host has been reached"
   .service_per_host_limit_reached_len equ $ - error_msg.service_per_host_limit_reached
+  .service_not_found db "service not found"
+  .service_not_found_len equ $ - error_msg.service_not_found

@@ -52,6 +52,7 @@ host_get_by_id:
 
   mov   [rsp+0x8], rdi
 
+  add   rdi, HOST_T_OFF_ID
   mov   rsi, [rsp]
   mov   rcx, ID_QWORDS
   rep   cmpsq
