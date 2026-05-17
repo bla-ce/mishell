@@ -178,3 +178,40 @@ strcpy:
 .return:
   add   rsp, 0x10
   ret
+
+; returns the index of the next occurence of the char
+; relative to current address
+; @param  rdi: pointer to the string
+; @parma  rsi: string size
+; @param  dl: char to find
+; @return rax: index or -1 if not there
+find_next_char:
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  xor   r9, r9
+
+.loop:
+  mov   al, byte [rdi+r9]
+  cmp   al, dl
+  je    .loop_end
+
+  inc   r9
+
+  cmp   r9, rsi
+  jge   .error
+
+  jmp   .loop
+.loop_end:
+
+  mov   rax, r9
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  ret
