@@ -43,16 +43,18 @@ jobs:
 
   test-unit:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - unit/src/auth
+          - unit/src/host
+          - unit/src/service
+          - unit/lib/string
     steps:
       - uses: actions/checkout@v4
-
       - name: Install nasm
         run: sudo apt-get update && sudo apt-get install -y nasm
-
-      - name: Run src unit tests
-        working-directory: tests/unit/src
-        run: make
-
-      - name: Run lib unit tests
-        working-directory: tests/unit/lib
+      - name: Run ${{ matrix.suite }} tests
+        working-directory: tests/${{ matrix.suite }}
         run: make
