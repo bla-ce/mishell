@@ -4,3 +4,11 @@ repos:
   hooks:
   -   id: end-of-file-fixer
   -   id: trailing-whitespace
+
+- repo: local
+  hooks:
+    - id: unit-test
+      name: unit-test
+      entry: bash -c 'make test-unit'
+      language: system
+      pass_filenames: false

@@ -49,5 +49,10 @@ jobs:
       - name: Install nasm
         run: sudo apt-get update && sudo apt-get install -y nasm
 
-      - name: Run unit tests
-        run: make test-unit
+      - name: Run src unit tests
+        working-directory: tests/unit/src
+        run: make
+
+      - name: Run lib unit tests
+        working-directory: tests/unit/lib
+        run: make
