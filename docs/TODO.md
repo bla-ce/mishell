@@ -1,8 +1,6 @@
 ## Priority 1
 - test for service and string functions
-- deserialize_service method
-- do some verification against the service
-- think about some uniqueness
+- verify received type in service_init
 
 ## Priority 2
 - README

@@ -215,14 +215,19 @@ op_register:
   jl    .error
 
   mov   rdi, [rsp+0x8]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, rax
+  mov   rcx, SERVICE_T_LEN
+  rep   movsb
+
+  mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
   or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.REGISTER_OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
-  mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
 
   mov   rax, SUCCESS_CODE
   jmp   .return

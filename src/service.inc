@@ -54,17 +54,21 @@ service_init:
   lea   rdi, [rax+HOST_T_OFF_SERVICES]
 
   imul  rax, r9, SERVICE_T_LEN
-  lea   rdx, [rdi+rax]
+  lea   rdi, [rdi+rax]
 
-  mov   [rsp+0x10], rdx
+  mov   [rsp+0x10], rdi
 
-  ; deserialize the service payload
-  mov   rax, [rsp]
-  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD_LEN]
-  call  service_deserialize
-  cmp   rax, 0
-  jl    .error
+  ; memset service
+  xor   rax, rax
+  mov   rcx, SERVICE_T_LEN
+  rep   stosb
+
+  ; copy service packet
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, [rsp+0x10]
+  mov   rcx, SERVICE_T_LEN
+  rep   movsb
 
   ; generate id for the service
   call  generate_id
@@ -82,7 +86,7 @@ service_init:
   mov   rdi, [rsp+0x8]
   inc   byte [rdi+HOST_T_OFF_SERVICES_COUNT]
 
-  mov   rax, SUCCESS_CODE
+  mov   rax, [rsp+0x10]
   jmp   .return
 
 .error:
@@ -90,53 +94,4 @@ service_init:
 
 .return:
   add   rsp, 0x18
-  ret
-
-; deserializes a service from packet payload into a service struct
-; expected payload format
-; name=service_name\n
-; type=storage
-; @param  rdi: pointer to the payload
-; @param  rsi: payload size
-; @param  rdx: pointer to the service struct
-; @return rax: return code
-service_deserialize:
-  sub   rsp, 0x20
-
-  ; STACK USAGE
-  ; [rsp]       -> pointer to the payload
-  ; [rsp+0x8]   -> payload size
-  ; [rsp+0x10]  -> pointer to the service struct
-
-  mov   [rsp], rdi
-  mov   [rsp+0x8],rsi
-  mov   [rsp+0x10], rdx
-
-  test  rdi, rdi
-  jz    .error
-
-  test  rsi, rsi
-  jz    .error
-
-  test  rdx, rdx
-  jz    .error
-
-  ; get service name index
-
-  ; copy service name into struct
-
-  ; get service type index
-
-  ; string type to type enum value
-
-  ; copy service type into struct
-
-  mov   rax, SUCCESS_CODE
-  jmp   .return
-
-.error:
-  mov   rax, FAILURE_CODE
-
-.return:
-  add   rsp, 0x20
   ret
