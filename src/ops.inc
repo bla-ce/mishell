@@ -178,9 +178,16 @@ op_register:
   test  rsi, rsi
   jz    .error
 
-  ; verify host
   mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  ; make sure the entity flag is FL_HOST
   mov   rax, [rsp]
+  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
+  mov   r9b, bl
+  and   r9b, FL_HOST
+  test  r9b, r9b
+  jz    .error
+
+  ; verify host
   movups  xmm1, [rax+PACKET_T_OFF_ID]
   ptest   xmm1, xmm1
   jz    .error

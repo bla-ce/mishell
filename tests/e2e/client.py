@@ -73,6 +73,10 @@ print("TEST (tcp): sending REGISTER with empty id should return unauthorized err
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=0))
 assert_server_response(resp, op=OP_ERROR, payload=b'user is unauthorized to perform this request')
 
+print("TEST (tcp): sending REGISTER with FL_USER flag should return unauthorized error")
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_USER, id=host_id))
+assert_server_response(resp, op=OP_ERROR, payload=b'user is unauthorized to perform this request')
+
 print("TEST (tcp): sending REGISTER with service payload should return empty payload and REGISTER_OK")
 svc = Service(name="my-service", type=0x00)
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
