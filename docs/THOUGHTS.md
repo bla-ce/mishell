@@ -51,3 +51,30 @@ For now, a host is able to register itself using the HELLO command to ensure tha
 We can implement the REGISTER command, it will receive a payload with the service name, the service type and that should be enough to set it up. Mishell will return the REGISTER_OK command with the service payload including the id, the name, the type and the status of the service. The host will gain a service property which will be a linked list of services. We are going to need to define the service struct but that shall be fine.
 
 For now, we keep key value pairs as above for the format. It's fine for single object, we'll see if that becomes annoying with arrays, but we shall be fine I reckon
+
+We did not have to define a specific format for the payload as we could just put the data as defined in the code. It'll be the clients responsability to serialize the structs into meaningful and human readable format.
+
+One thing we need to define now is how the service will be run. A first thing to define is whether a host will be running an instance of mishell. If that's the case, we'll need to know how do we set the central server, do we ever set one?
+
+Blockchain is using a similar pattern where there is no central entity. Mishell architecture could just be several hosts communicating to each other. Each host is aware of the other hosts. Admin would be a user, not a host. That's a later question, but quite a cool one.
+
+The next natural step is integrating users into the flow. We need a way to authenticate users, it can be as simple as what we've done for the hosts. A simple array of users that will later have permissions over specific hosts.
+
+A user would have the same flow that a host to authenticate, the only difference would be the mode flag sent. We should be expecting a different authentication process for hosts and users.
+
+Compared to hosts, services don't register themselves, they are registered by the host, but the incoming request can from from any entity.
+
+Now that they are registered, we need a way to actually start them. We also need a dummy service type. We need to define a service type contract that any service would have to respect in order to be run with mishell. We can create a pong service, easy.
+
+To query a service, you just set the mode CLIENT_TO_SERVICE. Mishell won't try to understand the command but instead, will transfer the packet to the right host.
+
+Let's add the START command, it will accept FL_CLIENT_TO_SERVER, id of the host (fine for now, I know it counterintuitive with the no-central server plan but we need to start somewhere), the host id and the service id to run in the payload.
+
+host=<host_id>\n
+service=<service_id>\n
+
+We have two options here, either create a start_req_t, so we do not have to any parsing, or parsing the above. I reckon the first option is best as only other instances of mishell or dedicated CLI will talk to it, no need to worry with parsing.
+
+We don't even need to define start_req_t, just assume the payload as the right format, we already know the offsets.
+
+We can just return OK? instead of having multiple different response ops

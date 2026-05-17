@@ -23,7 +23,9 @@ SERVICE_T_OFF_STATUS  equ SERVICE_T_OFF_TYPE + 0x1
 
 service_status:
   .REGISTERED equ 0x0
-  .COUNT      equ 0x1
+  .UP         equ 0x1
+  .DOWN       equ 0x2
+  .COUNT      equ 0x3
 
 section .text
 ; initialises a new service from a REGISTER packet and adds it to

@@ -9,11 +9,9 @@ req_ops:
   .COUNT    equ 0x3
 
 res_ops:
-  .WELCOME      equ 0x0
-  .AUTH_OK      equ 0x1
-  .REGISTER_OK  equ 0x2
-  .ERROR        equ 0x3
-  .COUNT        equ 0x4
+  .OK     equ 0x0
+  .ERROR  equ 0x1
+  .COUNT  equ 0x2
 
 req_op_fn_table:
   .HELLO    dq op_hello
@@ -35,7 +33,7 @@ op_hello:
   jz    .error
 
   mov   word [rsi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   byte [rsi+PACKET_T_OFF_OP], res_ops.WELCOME
+  mov   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
   mov   byte [rsi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
   or    byte [rsi+PACKET_T_OFF_FLAGS], FL_SERVER
   mov   qword [rsi+PACKET_T_OFF_ID], 0
@@ -101,7 +99,7 @@ op_auth:
 
   ; valid host id
   mov   rdi, [rsp+0x8]
-  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
 
@@ -127,7 +125,7 @@ op_auth:
 
   ; build response packet
   mov   rdi, [rsp+0x8]
-  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.AUTH_OK
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ID_LEN
 
   ; add id to payload
@@ -152,7 +150,6 @@ op_auth:
   ret
 
 ; registers a new service for the host
-; at the moment, it just returns REGISTER_OK without doing anything
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
@@ -226,7 +223,76 @@ op_register:
   or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
-  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.REGISTER_OK
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, [rsp+0x20]
+
+.return:
+  add   rsp, 0x28
+  ret
+
+; starts a service from START command with host and service id
+; returns START_OK
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @param  rdx: connection fd
+; @return rax: packet size
+op_start:
+  sub   rsp, 0x28
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> connection fd
+  ; [rsp+0x18]  -> pointer to the host
+  ; [rsp+0x20]  -> error code
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  ; make sure the entity flag is FL_HOST
+  mov   rax, [rsp]
+  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
+  mov   r9b, bl
+  and   r9b, FL_HOST
+  test  r9b, r9b
+  jz    .error
+
+  ; verify host
+  movups  xmm1, [rax+PACKET_T_OFF_ID]
+  ptest   xmm1, xmm1
+  jz    .error
+
+  mov   qword [rsp+0x20], error_codes.INTERNAL
+  mov   rdi, [rax+PACKET_T_OFF_ID]
+  mov   rsi, [rax+PACKET_T_OFF_ID+0x8]
+  call  host_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x18], rax
+
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
+  or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
 
   mov   rax, SUCCESS_CODE

@@ -12,10 +12,8 @@ OP_AUTH     = 0x01
 OP_REGISTER = 0x02
 
 # Return OP codes
-OP_WELCOME      = 0x0
-OP_AUTH_OK      = 0x1
-OP_REGISTER_OK  = 0x2
-OP_ERROR        = 0x3
+OP_OK    = 0x0
+OP_ERROR = 0x1
 
 # Flags
 FL_CLIENT_TO_SERVER = 0b0000
@@ -94,11 +92,9 @@ class Packet:
         if self.flags & FL_SERVER: flag_names.append('SERVER')
         op_name = {
             OP_HELLO: 'HELLO',
-            OP_WELCOME: 'WELCOME',
             OP_AUTH: 'AUTH',
-            OP_AUTH_OK: 'AUTH_OK',
             OP_REGISTER: 'REGISTER',
-            OP_REGISTER_OK: 'REGISTER_OK',
+            OP_OK: 'OK',
             OP_ERROR: 'ERROR'
         }.get(self.op, f'0x{self.op:02X}')
 
