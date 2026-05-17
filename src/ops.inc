@@ -91,8 +91,7 @@ op_auth:
   jz    .new_host
 
   mov   qword [rsp+0x18], error_codes.HOST_NOT_FOUND
-  mov   rdi, [rax+PACKET_T_OFF_ID]
-  mov   rsi, [rax+PACKET_T_OFF_ID+0x8]
+  lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
   cmp   rax, 0
   jl    .error
@@ -190,8 +189,7 @@ op_register:
   jz    .error
 
   mov   qword [rsp+0x20], error_codes.INTERNAL
-  mov   rdi, [rax+PACKET_T_OFF_ID]
-  mov   rsi, [rax+PACKET_T_OFF_ID+0x8]
+  lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
   cmp   rax, 0
   jl    .error
@@ -278,13 +276,20 @@ op_start:
   jz    .error
 
   mov   qword [rsp+0x20], error_codes.INTERNAL
-  mov   rdi, [rax+PACKET_T_OFF_ID]
-  mov   rsi, [rax+PACKET_T_OFF_ID+0x8]
+  lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
   cmp   rax, 0
   jl    .error
 
   mov   [rsp+0x18], rax
+
+  ; find host
+
+  ; find service inside host struct
+
+  ; change status
+
+  ; TODO: actually start it
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE

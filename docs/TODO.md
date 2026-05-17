@@ -1,7 +1,7 @@
 ## Priority 1
 - Implement START command
-- Use OK instead of REGISTER_OK, AUTH_OK etc...
 - Create Pong service type
+- Actually start a service
 
 ## Priority 2
 - README

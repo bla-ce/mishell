@@ -31,28 +31,28 @@ section .text
 
 ; returns the host struct from the host id or -1 if the host is
 ; not registered
-; @param  rdi: first 64bit of the id
-; @param  rsi: second 64bit of the id
+; @param  rdi: pointer to the id of the host
 ; @return rax: pointer to the host struct or -1
 host_get_by_id:
-  sub   rsp, 0x18
+  sub   rsp, 0x10
 
   ; STACK USAGE
-  ; [rsp]       -> first 64bit of the id
-  ; [rsp+0x8]   -> second 64bit of the id
-  ; [rsp+0x10]  -> pointer to the host struct
+  ; [rsp]     -> pointer to the id of the host
+  ; [rsp+0x8] -> pointer to the host struct
 
   mov   [rsp], rdi
-  mov   [rsp+0x8], rsi
+
+  test  rdi, rdi
+  jz    .error
 
   xor   r9, r9
 
 .loop:
   lea   rdi, [hosts+r9]
 
-  mov   [rsp+0x10], rdi
+  mov   [rsp+0x8], rdi
 
-  lea   rsi, [rsp]
+  mov   rsi, [rsp]
   mov   rcx, ID_QWORDS
   rep   cmpsq
   je    .loop_end
@@ -65,14 +65,14 @@ host_get_by_id:
   jmp   .loop
 
 .loop_end:
-  mov   rax, [rsp+0x10]
+  mov   rax, [rsp+0x8]
   jmp   .return
 
 .error:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x18
+  add   rsp, 0x10
   ret
 
 ; populates the host struct with ip and generates its id
