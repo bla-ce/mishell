@@ -77,9 +77,21 @@ print("TEST (tcp): sending REGISTER with FL_USER flag should return unauthorized
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_USER, id=host_id))
 assert_server_response(resp, op=OP_ERROR, payload=b'user is unauthorized to perform this request')
 
+print("TEST (tcp): sending REGISTER with service payload and wrong type should return error")
+service_name = "my-service"
+svc = Service(name=service_name, type=0x03)
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+assert_server_response(resp, op=OP_ERROR, payload=b'invalid service type')
+
+print("TEST (tcp): sending REGISTER with service payload with invalid name should return error")
+service_name = 'a' * SERVICE_NAME_MAX_LEN
+svc = Service(name=service_name, type=SERVICE_TYPE_PING)
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+assert_server_response(resp, op=OP_ERROR, payload=b'invalid service name')
+
 print("TEST (tcp): sending REGISTER with service payload should return service and OK")
 service_name = "my-service"
-svc = Service(name=service_name, type=0x00)
+svc = Service(name=service_name, type=SERVICE_TYPE_PING)
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
 assert_server_response(resp, op=OP_OK)
 resp_svc = Service.unpack(resp.payload)
@@ -109,7 +121,6 @@ print("TEST (tcp): sending START with correct host id but wrong service id shoul
 wrong_service_id_payload = host_id.to_bytes(16, 'little') + (0x12345).to_bytes(16, 'little')
 resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=wrong_service_id_payload))
 assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
-
 
 print("TEST (tcp): sending START with correct host id and correct service id should return OK")
 payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')

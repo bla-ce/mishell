@@ -1,6 +1,7 @@
 ROOT_DIR = ../../../..
 LIB_DIR = $(ROOT_DIR)/lib
 SRC_DIR = $(ROOT_DIR)/src
+SERVICE_TYPES_DIR = $(ROOT_DIR)/service_types
 
 BIN_DIR = bin
 BUILD_DIR = build
@@ -8,9 +9,10 @@ BUILD_DIR = build
 TEST_PATH = auth_test
 
 LIB_DIRS = $(shell find $(LIB_DIR) -type d -printf '-I$(LIB_DIR)/%P ')
+SERVICE_TYPES_DIRS = $(shell find $(SERVICE_TYPES_DIR) -type d -printf '-I$(SERVICE_TYPES_DIR)/%P ')
 SRC_DIRS = $(shell find $(SRC_DIR) -type d -printf '-I$(SRC_DIR)/%P ')
 
-INCLUDE_FLAGS = $(LIB_DIRS) $(SRC_DIRS)
+INCLUDE_FLAGS = $(SRC_DIRS) $(LIB_DIRS) $(SERVICE_TYPES_DIRS)
 
 DEBUG_FLAGS = -g
 BASE_FLAGS = -felf64 -w+all

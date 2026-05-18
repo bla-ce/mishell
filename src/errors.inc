@@ -19,8 +19,10 @@ error_codes:
   ; service errors
   .SERVICE_PER_HOST_LIMIT_REACHED equ 10
   .SERVICE_NOT_FOUND              equ 11
+  .SERVICE_INVALID_NAME           equ 12
+  .SERVICE_INVALID_TYPE           equ 13
 
-  .COUNT                          equ 12
+  .COUNT                          equ 14
 
 err_code_to_msg_table:
   .NULL                           dq 0
@@ -35,6 +37,8 @@ err_code_to_msg_table:
   .HOST_NOT_FOUND                 dq error_msg.host_not_found
   .SERVICE_PER_HOST_LIMIT_REACHED dq error_msg.service_per_host_limit_reached
   .SERVICE_NOT_FOUND              dq error_msg.service_not_found
+  .SERVICE_INVALID_NAME           dq error_msg.service_invalid_name
+  .SERVICE_INVALID_TYPE           dq error_msg.service_invalid_type
 
 err_code_to_len_table:
   .NULL                           dw 0
@@ -49,6 +53,8 @@ err_code_to_len_table:
   .HOST_NOT_FOUND                 dw error_msg.host_not_found_len
   .SERVICE_PER_HOST_LIMIT_REACHED dw error_msg.service_per_host_limit_reached_len
   .SERVICE_NOT_FOUND              dw error_msg.service_not_found_len
+  .SERVICE_INVALID_NAME           dw error_msg.service_invalid_name_len
+  .SERVICE_INVALID_TYPE           dw error_msg.service_invalid_type_len
 
 error_msg:
   .internal db "internal error"
@@ -73,3 +79,7 @@ error_msg:
   .service_per_host_limit_reached_len equ $ - error_msg.service_per_host_limit_reached
   .service_not_found db "service not found"
   .service_not_found_len equ $ - error_msg.service_not_found
+  .service_invalid_name db "invalid service name"
+  .service_invalid_name_len equ $ - error_msg.service_invalid_name
+  .service_invalid_type db "invalid service type"
+  .service_invalid_type_len equ $ - error_msg.service_invalid_type

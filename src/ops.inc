@@ -208,8 +208,9 @@ op_register:
   mov   rdi, [rsp]
   mov   rsi, [rsp+0x18]
   call  service_init
-  cmp   rax, 0
-  jl    .error
+  mov   [rsp+0x20], rdx ; save error code if it failed
+  test  rdx, rdx
+  jnz   .error
 
   mov   rdi, [rsp+0x8]
   add   rdi, PACKET_T_OFF_PAYLOAD

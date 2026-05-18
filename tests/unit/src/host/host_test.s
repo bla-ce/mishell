@@ -1,10 +1,12 @@
 global _start
 
-%include "lib.inc"
+%include "command.inc"
 %include "host.inc"
+%include "lib.inc"
+%include "ops.inc"
 %include "packet.inc"
 %include "service.inc"
-%include "ops.inc"
+%include "service_type.inc"
 
 section .bss
 

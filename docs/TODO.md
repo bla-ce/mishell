@@ -1,6 +1,6 @@
 ## Priority 1
-- Define service type struct
-- Create Pong service type
+- Create Ping service type
+- Add specific errors to service_init
 - Actually start a service
 - Stop a service
 - Unregister a service

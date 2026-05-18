@@ -6,15 +6,12 @@ ID_LEN                     = 0x10  # 16 bytes (128-bit, matches Packet.id)
 SERVICE_NAME_MAX_LEN       = 0xF   # 15 bytes
 SERVICE_MAX_COUNT_PER_HOST = 0x5
 
-# Define type / status values and name maps here:
-#   SERVICE_TYPE_TCP      = 0x01
-#   SERVICE_TYPE_NAMES    = {SERVICE_TYPE_TCP: 'TCP'}
-#   SERVICE_STATUS_UP     = 0x01
-#   SERVICE_STATUS_NAMES  = {SERVICE_STATUS_UP: 'UP'}
+SERVICE_TYPE_PING = 0x0
 
 SERVICE_STATUS_REGISTERED = 0x0
 
 SERVICE_TYPE_NAMES   = {
+    SERVICE_TYPE_PING: 'PING'
 }
 SERVICE_STATUS_NAMES = {
     SERVICE_STATUS_REGISTERED: 'REGISTERED'
