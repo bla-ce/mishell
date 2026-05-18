@@ -84,3 +84,5 @@ Right now, there is a bit of a misconception on authentication and who's allowed
 A service type defines a set of commands that a single service can performed.
 
 The service type struct will be as simple as a commands fixed array, a description and that's basically it. We will have to define the command struct.
+
+No need for a command struct, they can just be pointer to functions for now.
