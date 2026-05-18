@@ -5,6 +5,7 @@ global _start
 %include "packet.inc"
 %include "service.inc"
 %include "ops.inc"
+%include "service_type.inc"
 
 section .bss
 

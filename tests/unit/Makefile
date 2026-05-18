@@ -3,4 +3,5 @@
 test-unit:
 	$(MAKE) -C src program=auth_test
 	$(MAKE) -C src program=host_test
+	$(MAKE) -C src program=service_test
 	$(MAKE) -C lib program=string_test

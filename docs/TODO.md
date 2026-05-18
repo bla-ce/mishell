@@ -1,6 +1,5 @@
 ## Priority 1
 - Create Ping service type
-- Add specific errors to service_init
 - Actually start a service
 - Stop a service
 - Unregister a service
