@@ -2,7 +2,7 @@ section .bss
 
 host_t:
   .id             resb ID_LEN
-  .ipv4           resb NET_IPV4_MAX_LEN
+  .ipv4           resw 0x1
   .services       resb SERVICES_LEN
   .services_count resb 0x1
   .pad            resb 0x7
@@ -24,7 +24,7 @@ SERVICES_LEN equ SERVICE_T_LEN * SERVICE_MAX_COUNT_PER_HOST
 
 HOST_T_OFF_ID             equ 0x0
 HOST_T_OFF_IP             equ HOST_T_OFF_ID + ID_LEN
-HOST_T_OFF_SERVICES       equ HOST_T_OFF_IP + NET_IPV4_MAX_LEN
+HOST_T_OFF_SERVICES       equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 section .text
@@ -108,10 +108,12 @@ host_init:
   mov   qword [rsi+HOST_T_OFF_ID+0x8], rax
 
   mov   rdi, [rsp+0x8]
-  add   rsi, HOST_T_OFF_IP
   call  net_get_ipv4_from_fd
-  cmp   rax, 0
+  cmp   eax, 0
   jl    .error
+
+  mov   rsi, [rsp]
+  mov   dword [rsi+HOST_T_OFF_IP], eax
 
   mov   rax, SUCCESS_CODE
   jmp    .return

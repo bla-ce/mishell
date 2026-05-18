@@ -1,4 +1,6 @@
 ## Priority 1
+- No need to store ip as str
+- Make sure we can't have two host on the same ip
 - Find a way to validate service types (description and commands length)
 - Receive command (even if the service has not started yet)
 - Actually start a service
@@ -14,7 +16,6 @@
 ## Ongoing
 - Update README
 - tests for service.inc
-- tests for strcpy and strncpy
 - tests for net.inc
 - tests for ops.inc
 - tests for packet.inc

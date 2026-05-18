@@ -43,26 +43,19 @@ LISTEN_BACKLOG  equ 50
 
 section .text
 
-; gets the string representation of the ipv4 of a file descriptor
+; gets the ipv4 of a file descriptor
 ; @param  rdi: file descriptor of the client
-; @param  rsi: pointer to the string holding the IP
-; @return rax: return code
+; @return rax: ipv4
 net_get_ipv4_from_fd:
-  sub   rsp, 0x30
+  sub   rsp, 0x10
   sub   rsp, qword [sockaddr_in_t_len]
 
   ; STACK USAGE
   ; [rsp]       -> client fd
-  ; [rsp+0x8]   -> pointer to the string representation of the ip
-  ; [rsp+0x10]  -> dynamic pointer for the string
-  ; [rsp+0x18]  -> dynamic pointer sockaddr_addr_in
-  ; [rsp+0x20]  -> tmp str to store int to str (8 bytes is enough)
-  ; [rsp+0x28]  -> addrlen pointer
-  ; [rsp+0x28]  -> sockaddr struct
+  ; [rsp+0x8]   -> addrlen
+  ; [rsp+0x10]  -> sockaddr struct
 
   mov   [rsp], rdi
-  mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rsi
 
   test  rsi, rsi
   jz    .error
@@ -70,72 +63,29 @@ net_get_ipv4_from_fd:
   ; getpeername
   mov   rax, SYS_GETPEERNAME
   mov   rdi, [rsp]
-  lea   rsi, [rsp+0x30]
-  lea   rdx, [rsp+0x28]
+  lea   rsi, [rsp+0x10]
+  lea   rdx, [rsp+0x8]
   syscall
   cmp   rax, 0
   jl    .error
 
   ; make sure the fd is AF_INET
-  lea   rdi, [rsp+0x30]
+  lea   rdi, [rsp+0x10]
   cmp   word [rdi], AF_INET
   jne   .done
 
-  ; get addr_in
-  add   rdi, 0x4  ; go to addr_in
-  mov   [rsp+0x18], rdi
-
-  mov   r9, 3 ; three dots for IPV4
-
-.loop:
-  mov   rax, [rsp+0x18]
-  movzx rdi, byte [rax]
-  inc   rax
-  mov   [rsp+0x18], rax
-
-  cmp   r9, 0
-  jl   .loop_end
-
-  lea   rsi, [rsp+0x20]
-  mov   rdx, 4  ; add one for null char
-  call  itoa
-  cmp   rax, 0
-  jl    .error
-
-  ; copy
-  mov   rdi, [rsp+0x10]
-  mov   rsi, rax
-  call  strcpy
-  cmp   rax, 0
-  jl    .error
-
-  ; add dot
-  mov   rdi, rax
-  mov   rax, DOT
-  stosb
-
-  mov   [rsp+0x10], rdi
-
-  dec   r9
-
-  jmp   .loop
-
-.loop_end:
-  ; ip has an extra dot, go back one and add null char
-  mov   rdi, [rsp+0x10]
-  dec   rdi
-  mov   rax, NULL_CHAR
-  stosb
+  ; copy dword
+  mov   eax, dword [rdi+0x4] ; get addr_in
+  jmp   .return
 
 .done:
-  mov   rax, SUCCESS_CODE
-
+  mov   eax, SUCCESS_CODE
   jmp   .return
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   eax, FAILURE_CODE
 
 .return:
   add   rsp, qword [sockaddr_in_t_len]
-  add   rsp, 0x30
+  add   rsp, 0x10
   ret
