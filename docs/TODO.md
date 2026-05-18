@@ -2,6 +2,8 @@
 - Define service type struct
 - Create Pong service type
 - Actually start a service
+- Stop a service
+- Unregister a service
 
 ## Priority 2
 - Define host expiration or host removal process

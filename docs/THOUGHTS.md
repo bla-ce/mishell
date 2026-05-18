@@ -79,4 +79,8 @@ We don't even need to define start_req_t, just assume the payload as the right f
 
 We can just return OK? instead of having multiple different response ops
 
-Right now, there is a bit of a misconception on authentication and who's allowed to register and start host, we'll get to that later.
+Right now, there is a bit of a misconception on authentication and who's allowed to register and start service, we'll get to that later.
+
+A service type defines a set of commands that a single service can performed.
+
+The service type struct will be as simple as a commands fixed array, a description and that's basically it. We will have to define the command struct.
