@@ -142,9 +142,9 @@ service_init:
   rep   stosb
 
   ; copy service packet
-  mov   rdi, [rsp]
-  add   rdi, PACKET_T_OFF_PAYLOAD
-  mov   rsi, [rsp+0x10]
+  mov   rdi, [rsp+0x10]
+  mov   rsi, [rsp]
+  add   rsi, PACKET_T_OFF_PAYLOAD
   mov   rcx, SERVICE_T_LEN
   rep   movsb
 

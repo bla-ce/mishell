@@ -1,5 +1,7 @@
 ## Priority 1
-- Create Ping service type
+- Potentially add destination field to packet
+- Find a way to validate service types (description and commands length)
+- Receive command (even if the service has not started yet)
 - Actually start a service
 - Stop a service
 - Unregister a service

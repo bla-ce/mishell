@@ -86,3 +86,5 @@ A service type defines a set of commands that a single service can performed.
 The service type struct will be as simple as a commands fixed array, a description and that's basically it. We will have to define the command struct.
 
 No need for a command struct, they can just be pointer to functions for now.
+
+To query a service, we need to set the new flag FL_CLIENT_TO_SERVICE. We need to find a way to include service and host id in the request. Payload would be fine but I'd like to avoid this, we are potentially wasting 4 bytes of payload. We could have a destination field inside the packet with the service id. The host is already known because the host receiving the request is responsible for the service.
