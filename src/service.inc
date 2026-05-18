@@ -1,7 +1,7 @@
 section .bss
 
 service_t:
-  .ip     resb ID_LEN
+  .id     resb ID_LEN
   .name   resb SERVICE_NAME_MAX_LEN
   .type   resb 0x1
   .status resb 0x1
