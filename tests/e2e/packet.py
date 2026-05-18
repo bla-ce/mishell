@@ -33,27 +33,31 @@ SOCKET_PORT = 7474
 # B  = uint8   op          (1 byte)
 # B  = uint8   flags       (1 byte)
 # QQ = uint128 id          (16 bytes, two uint64s)
+# QQ = uint128 destination (16 bytes, two uint64s)
 # H  = uint16  payload_len (2 bytes)
 # Total header: 22 bytes
-_HEADER_FMT  = '<HBBQQH'
+_HEADER_FMT  = '<HBBQQQQH'
 _HEADER_SIZE = struct.calcsize(_HEADER_FMT)
 
 
 @dataclass
 class Packet:
-    magic:   int   = MAGIC
-    op:      int   = 0
-    flags:   int   = 0
-    id:      int   = 0      # 128-bit value stored as Python int
-    payload: bytes = b''
+    magic:       int   = MAGIC
+    op:          int   = 0
+    flags:       int   = 0
+    id:          int   = 0      # 128-bit value stored as Python int
+    destination: int   = 0      # 128-bit value stored as Python int
+    payload:     bytes = b''
 
     # Serialisation
     def pack(self) -> bytes:
         id_hi  = self.id >> 64
         id_lo  = self.id & 0xFFFFFFFFFFFFFFFF
+        destination_hi  = self.destination >> 64
+        destination_lo  = self.destination & 0xFFFFFFFFFFFFFFFF
         header = struct.pack(_HEADER_FMT,
                              self.magic, self.op, self.flags,
-                             id_lo, id_hi,
+                             id_lo, id_hi, destination_lo, destination_hi,
                              len(self.payload))
         return header + self.payload
 
@@ -68,7 +72,7 @@ class Packet:
             raise ValueError(
                 f"Buffer too short: need {_HEADER_SIZE} bytes, got {len(data)}"
             )
-        magic, op, flags, id_lo, id_hi, payload_len = \
+        magic, op, flags, id_lo, id_hi, destination_lo, destination_hi, payload_len = \
             struct.unpack_from(_HEADER_FMT, data)
         payload = data[_HEADER_SIZE : _HEADER_SIZE + payload_len]
         return cls(magic=magic, op=op, flags=flags,
@@ -78,11 +82,12 @@ class Packet:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Packet):
             return NotImplemented
-        return (self.magic   == other.magic   and
-                self.op      == other.op      and
-                self.flags   == other.flags   and
-                self.id      == other.id      and
-                self.payload == other.payload)
+        return (self.magic       == other.magic         and
+                self.op          == other.op            and
+                self.flags       == other.flags         and
+                self.id          == other.id            and
+                self.destination == other.destination   and
+                self.payload     == other.payload)
 
     def __repr__(self) -> str:
         flag_names = []
@@ -100,7 +105,7 @@ class Packet:
         }.get(self.op, f'0x{self.op:02X}')
 
         return (f"Packet(magic=0x{self.magic:04X}, op={op_name}, "
-                f"flags=[{' | '.join(flag_names)}], id={self.id}, "
+                f"flags=[{' | '.join(flag_names)}], id={self.id}, destination={self.destination} "
                 f"payload={self.payload!r})")
 
 def recv_packet(sock: socket.socket) -> Packet:

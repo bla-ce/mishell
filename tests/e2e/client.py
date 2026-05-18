@@ -96,7 +96,7 @@ resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST
 assert_server_response(resp, op=OP_OK)
 resp_svc = Service.unpack(resp.payload)
 assert(resp_svc.id != 0x0),                             f"id not generated"
-assert(resp_svc.name != service_name),                  f"wrong name: {resp_svc.name}"
+assert(resp_svc.name == service_name),                  f"wrong name: {resp_svc.name}"
 assert(resp_svc.status == SERVICE_STATUS_REGISTERED),   f"wrong status: {resp_svc.status}"
 service_id = resp_svc.id
 

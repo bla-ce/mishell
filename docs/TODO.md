@@ -1,5 +1,4 @@
 ## Priority 1
-- Potentially add destination field to packet
 - Find a way to validate service types (description and commands length)
 - Receive command (even if the service has not started yet)
 - Actually start a service
@@ -7,6 +6,7 @@
 - Unregister a service
 
 ## Priority 2
+- for host and service get by id, don't look up the whole array
 - Define host expiration or host removal process
 - add fd to logs
 - clean up is never reached, graceful shutdown
@@ -31,3 +31,4 @@
 - no central server, blockchain example
     - why doing that?
     - are there real benefits or is that just fancy?
+    - more peer-to-peer model

@@ -128,7 +128,7 @@ service_init:
 
   ; get pointer to the service
   mov   rax, [rsp+0x8]
-  mov   r9, [rax+HOST_T_OFF_SERVICES_COUNT]
+  movzx r9, byte [rax+HOST_T_OFF_SERVICES_COUNT]
   lea   rdi, [rax+HOST_T_OFF_SERVICES]
 
   imul  rax, r9, SERVICE_T_LEN

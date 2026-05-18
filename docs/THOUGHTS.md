@@ -88,3 +88,5 @@ The service type struct will be as simple as a commands fixed array, a descripti
 No need for a command struct, they can just be pointer to functions for now.
 
 To query a service, we need to set the new flag FL_CLIENT_TO_SERVICE. We need to find a way to include service and host id in the request. Payload would be fine but I'd like to avoid this, we are potentially wasting 4 bytes of payload. We could have a destination field inside the packet with the service id. The host is already known because the host receiving the request is responsible for the service.
+
+Discovered a software called Consul which is quite similar in terms of managing services. There are a lot of interesting ideas that I can think about, like putting all services into maintenance mode for a single service, potential use cases and so on. The software is still different from Mishell but the idea is similar. The services are not (yet, maybe that will change?) interconnected.
