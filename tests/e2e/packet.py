@@ -7,12 +7,13 @@ MAGIC       = 0xCAFE
 WRONG_MAGIC = 0xBEEF
 
 # Request OP codes
-OP_HELLO    = 0x00
-OP_AUTH     = 0x01
-OP_REGISTER = 0x02
-OP_START    = 0x03
-OP_STOP     = 0x04
-OP_COUNT    = 0x05
+OP_HELLO        = 0x00
+OP_AUTH         = 0x01
+OP_REGISTER     = 0x02
+OP_START        = 0x03
+OP_STOP         = 0x04
+OP_UNREGISTER   = 0x05
+OP_COUNT        = 0x06
 
 # Return OP codes
 OP_OK    = 0x0
@@ -104,6 +105,7 @@ class Packet:
             OP_REGISTER: 'REGISTER',
             OP_START: 'START',
             OP_STOP: 'STOP',
+            OP_UNREGISTER: 'UNREGISTER',
             OP_OK: 'OK',
             OP_ERROR: 'ERROR'
         }.get(self.op, f'0x{self.op:02X}')

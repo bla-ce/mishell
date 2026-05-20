@@ -21,8 +21,9 @@ error_codes:
   .SERVICE_NOT_FOUND              equ 11
   .SERVICE_INVALID_NAME           equ 12
   .SERVICE_INVALID_TYPE           equ 13
+  .SERVICE_STOP_BEFORE_UNREGISTER equ 14
 
-  .COUNT                          equ 14
+  .COUNT                          equ 15
 
 err_code_to_msg_table:
   .NULL                           dq 0
@@ -39,6 +40,7 @@ err_code_to_msg_table:
   .SERVICE_NOT_FOUND              dq error_msg.service_not_found
   .SERVICE_INVALID_NAME           dq error_msg.service_invalid_name
   .SERVICE_INVALID_TYPE           dq error_msg.service_invalid_type
+  .SERVICE_STOP_BEFORE_UNREGISTER dq error_msg.service_stop_before_unregister
 
 err_code_to_len_table:
   .NULL                           dw 0
@@ -55,6 +57,7 @@ err_code_to_len_table:
   .SERVICE_NOT_FOUND              dw error_msg.service_not_found_len
   .SERVICE_INVALID_NAME           dw error_msg.service_invalid_name_len
   .SERVICE_INVALID_TYPE           dw error_msg.service_invalid_type_len
+  .SERVICE_STOP_BEFORE_UNREGISTER dw error_msg.service_stop_before_unregister_len
 
 error_msg:
   .internal db "internal error"
@@ -83,3 +86,5 @@ error_msg:
   .service_invalid_name_len equ $ - error_msg.service_invalid_name
   .service_invalid_type db "invalid service type"
   .service_invalid_type_len equ $ - error_msg.service_invalid_type
+  .service_stop_before_unregister db "stop service before unregistering it"
+  .service_stop_before_unregister_len equ $ - error_msg.service_stop_before_unregister

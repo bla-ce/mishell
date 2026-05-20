@@ -137,9 +137,25 @@ wrong_service_id_payload = host_id.to_bytes(16, 'little') + (0x12345).to_bytes(1
 resp = tcp_connection(Packet(op=OP_STOP, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=wrong_service_id_payload))
 assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
 
+
+print("TEST (tcp): sending UNREGISTER on running service should return error")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_UNREGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_ERROR, payload=b'stop service before unregistering it')
+
 print("TEST (tcp): sending STOP with correct host id and correct service id should return OK")
 payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
 resp = tcp_connection(Packet(op=OP_STOP, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
 assert_server_response(resp, op=OP_OK, payload=b'')
+
+print("TEST (tcp): sending UNREGISTER on stopped service should return OK")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_UNREGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_OK, payload=b'')
+
+print("TEST (tcp): sending START on unregistered service should return ERROR")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
 
 print("All tests passed!")

@@ -3,12 +3,13 @@
 section .data
 
 req_ops:
-  .HELLO    equ 0x0
-  .AUTH     equ 0x1
-  .REGISTER equ 0x2
-  .START    equ 0x3
-  .STOP     equ 0x4
-  .COUNT    equ 0x5
+  .HELLO      equ 0x0
+  .AUTH       equ 0x1
+  .REGISTER   equ 0x2
+  .START      equ 0x3
+  .STOP       equ 0x4
+  .UNREGISTER equ 0x5
+  .COUNT      equ 0x6
 
 res_ops:
   .OK     equ 0x0
@@ -16,11 +17,12 @@ res_ops:
   .COUNT  equ 0x2
 
 req_op_fn_table:
-  .HELLO    dq op_hello
-  .AUTH     dq op_auth
-  .REGISTER dq op_register
-  .START    dq op_start
-  .STOP     dq op_stop
+  .HELLO      dq op_hello
+  .AUTH       dq op_auth
+  .REGISTER   dq op_register
+  .START      dq op_start
+  .STOP       dq op_stop
+  .UNREGISTER dq op_unregister
 
 section .text
 
@@ -240,7 +242,7 @@ op_register:
   ret
 
 ; starts a service from START command with host and service id
-; returns START_OK
+; returns OK
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
@@ -280,7 +282,6 @@ op_start:
   ptest   xmm1, xmm1
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.INTERNAL
   lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
   cmp   rax, 0
@@ -322,7 +323,7 @@ op_start:
   ret
 
 ; stops a service from STOP command with host and service id
-; returns START_OK
+; returns OK
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
@@ -362,7 +363,6 @@ op_stop:
   ptest   xmm1, xmm1
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.INTERNAL
   lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
   cmp   rax, 0
@@ -382,6 +382,94 @@ op_stop:
 
   ; change status
   mov   byte [rax+SERVICE_T_OFF_STATUS], service_status.DOWN
+
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
+  or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD], 0
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, [rsp+0x20]
+
+.return:
+  add   rsp, 0x28
+  ret
+
+; unregisters a service, removing it from the host array of services
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @param  rdx: connection fd
+; @return rax: packet size
+op_unregister:
+  sub   rsp, 0x28
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> connection fd
+  ; [rsp+0x18]  -> pointer to the host
+  ; [rsp+0x20]  -> error code
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  ; make sure the entity flag is FL_HOST
+  mov   rax, [rsp]
+  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
+  mov   r9b, bl
+  and   r9b, FL_HOST
+  test  r9b, r9b
+  jz    .error
+
+  ; verify host
+  movups  xmm1, [rax+PACKET_T_OFF_ID]
+  ptest   xmm1, xmm1
+  jz    .error
+
+  lea   rdi, [rax+PACKET_T_OFF_ID]
+  call  host_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x18], rax
+
+  ; find service inside host struct
+  ; payload is host id followed by service id
+  mov   qword [rsp+0x20], error_codes.SERVICE_NOT_FOUND
+  mov   rax, [rsp]
+  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
+  call  service_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  ; make sure the status is not UP
+  mov   qword [rsp+0x20], error_codes.SERVICE_STOP_BEFORE_UNREGISTER
+  cmp   byte [rax+SERVICE_T_OFF_STATUS], service_status.UP
+  je    .error
+
+  ; clear out service
+  mov   rdi, rax
+  xor   rax, rax
+  mov   rcx, SERVICE_T_LEN
+  rep   stosb
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE

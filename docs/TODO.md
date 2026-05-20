@@ -1,6 +1,5 @@
 ## Priority 1
 - Receive command
-- Unregister a service
 - populate port for host
 - check padding and alignment for structs
 - Make sure we can't have two host on the same ip
