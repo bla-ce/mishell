@@ -1,5 +1,6 @@
 ## Priority 1
-- No need to store ip as str
+- populate port for host
+- check padding and alignment for structs
 - Make sure we can't have two host on the same ip
 - Find a way to validate service types (description and commands length)
 - Receive command (even if the service has not started yet)
@@ -29,7 +30,3 @@
 - authentication for REGISTER, START, STOP and UNREGISTER command
     - who is allow to do what?
 - Checksum for payload
-- no central server, blockchain example
-    - why doing that?
-    - are there real benefits or is that just fancy?
-    - more peer-to-peer model

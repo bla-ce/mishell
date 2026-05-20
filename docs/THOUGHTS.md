@@ -94,3 +94,36 @@ Discovered a software called Consul which is quite similar in terms of managing 
 We are allowing two hosts on the same ip address - Sidenote, we are storing string representation of ip address, we don't need that at all - we should have verification so that only one host can run on a single ip address.
 
 Actually, do we want to allow the same ip address but a different port? That could work, we'd need to include the port inside the host struct, that sounds fine.
+
+Before going further, we need to decide if Mishell will have a central server or if we use a peer-to-peer model for hosts. We also need to figure out how users will communicate with mishell.
+
+Not having a central server is quite nice, it removes single point of failure, if the central server crashes, everything goes down with it. We don't want a whole network to depend on one entity. The peer-to-peer model sounds like a solution - we don't have a central server but instead a network of different hosts that will be responsible for their own services. A host will register itself through any available target host. The target host will be responsible for distributing the newly added host to the network. This will introduce a bunch of verification and race condition issues but we'll get to that later.
+
+This means that each host will have a copy of the hosts array. The host array should be small enough to be sent in a packet payload. When a host wants to register itself, the target host verifies that there is enough room for another host, if yes. The host is added to the array and distributed to the other host. We'll have a race condition here because two hosts can register at the same time. We'll have to figure out how we priorise a host over another.
+
+With this architecture in mind, we need to update the code because right now, we are registering a host with the FL_CLIENT_TO_SERVER flag which is incorrect. It is not obvious now, what the flow actually is. In the e2e tests, we are simulating a request done by another host so we'll have to implement that as well. Another thing to figure out is how do we send request to a host. It feels to me that we have to create a CLI tool for mishell.
+
+So the flow would be the following:
+    - a host is started (mishell instance)
+    - a mishell CLI instance called an existing mishell instance to register the new host, specifying the ip or the port of the host
+    - the mishell instance receiving the request makes some verification from the request payload and sends a HELLO to the host to be added. If a OK is returned, the host is being added to the array
+
+A problem here is how do we reference the first host? Well, that's a problem for later but we'll find a solution
+
+Well, that's not a problem for later, in order to test the behaviour correctly, we need to define that. We could create a command INIT. This command would allow a host to initialises the network. It won't be set as an admin host because there's none of that in this project. It will add itself to the list host and that's basically it.
+
+A few things have become clearer about the overall vision. Mishell is a control plane and proxy. Clients never talk to services directly, they always go through mishell. Mishell finds the right host and forwards the request. The client doesn't know or care where the service physically runs.
+
+Services are stateful. A service lives on a specific host and that host is responsible for it. If the host goes down, its services go down with it. We don't want mishell to replicate service state, that's too much. This also confirms the P2P model - we don't want a central mishell taking everything down if it crashes. Unlike Consul, we don't expect services to be interconnected. The only relationships are mishell peers talking to each other and clients querying services through mishell. That keeps the gossip layer simple - we only need to replicate host membership, not service data.
+
+We need a CLI tool, mishell-cli. There's no other option for humans to interact with mishell without crafting raw packets. It'll be a separate binary but keeping it in assembly to stay consistent. One-shot - connect, send a packet, print the response, exit. No daemon. Default to the local unix socket, --host flag for remote. That covers the common case with no extra typing.
+
+Now, auth is broken. The current auth was designed with a central server in mind - a host connects and gets an ID back from the central mishell. In the P2P model there's no central authority handing out IDs. Who generates the ID? Who decides if a new host is accepted? We'll need to rethink that entirely when we get to P2P.
+
+We have two paths - fix auth and P2P first, or get a single host working end to end first. Going with single host first. The service lifecycle stuff - actually starting services, proxying, stopping - is independent of the auth model. We'll stub auth for now and the rework when we get to P2P will mostly be in ops.inc. We should keep a clear line where auth is stubbed so we know what to come back to.
+
+The plan:
+    - Phase 1: single host works end to end - fix the service_init bug, actually start a service, FL_CLIENT_TO_SERVICE routing, stop and unregister
+    - Phase 2: mishell-cli
+    - Phase 3: P2P - fix auth, INIT command, FL_PEER mode for mishell-to-mishell traffic, host join flow, cross-host routing
+    - Phase 4: access control, users, permissions

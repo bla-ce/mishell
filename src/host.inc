@@ -2,10 +2,11 @@ section .bss
 
 host_t:
   .id             resb ID_LEN
-  .ipv4           resw 0x1
+  .ipv4           resd 0x1
+  .port           resw 0x1
   .services       resb SERVICES_LEN
   .services_count resb 0x1
-  .pad            resb 0x7
+  .pad            resb 0x5
 host_t_end:
 
 hosts resb HOSTS_LEN
@@ -24,7 +25,8 @@ SERVICES_LEN equ SERVICE_T_LEN * SERVICE_MAX_COUNT_PER_HOST
 
 HOST_T_OFF_ID             equ 0x0
 HOST_T_OFF_IP             equ HOST_T_OFF_ID + ID_LEN
-HOST_T_OFF_SERVICES       equ HOST_T_OFF_IP + 0x4
+HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
+HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 section .text
