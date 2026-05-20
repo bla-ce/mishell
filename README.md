@@ -59,14 +59,15 @@ Current limits:
 
 Every message uses the same binary wire format.
 
-### Header (22 bytes, little-endian)
+### Header (39 bytes, little-endian)
 
 | Field | Size | Description |
 |-------|------|-------------|
 | `magic` | 2 bytes | Always `0xCAFE` |
 | `op` | 1 byte | Operation code |
-| `flags` | 1 byte | Direction + mode bits (see below) |
+| `flags` | 2 bytes | Direction + mode bits (see below) |
 | `id` | 16 bytes | 128-bit host identifier |
+| `destination` | 16 bytes | 128-bit destination identifier |
 | `payload_len` | 2 bytes | Byte length of the payload |
 
 Followed by `payload_len` bytes of payload (up to 65535 bytes).
@@ -77,11 +78,12 @@ Direction and mode bits are OR-ed together in the `flags` field.
 
 | Constant | Value | Meaning |
 |----------|-------|---------|
-| `FL_CLIENT_TO_SERVER` | `0b0000` | Request (client -> server) |
-| `FL_SERVER_TO_CLIENT` | `0b0001` | Response (server -> client) |
-| `FL_USER` | `0b0010` | Sender is a user |
-| `FL_HOST` | `0b0100` | Sender is a host |
-| `FL_SERVER` | `0b1000` | Sender is the server (responses only) |
+| `FL_CLIENT_TO_SERVER` | `0b0000_0000` | Request (client -> server) |
+| `FL_SERVER_TO_CLIENT` | `0b0000_0001` | Response (server -> client) |
+| `FL_CLIENT_TO_SERVICE` | `0b0000_0010` | Request (client -> service) |
+| `FL_USER` | `0b0001_0000` | Sender is a user |
+| `FL_HOST` | `0b0010_0000` | Sender is a host |
+| `FL_SERVER` | `0b0100_0000` | Sender is the server (responses only) |
 
 ### Request operations
 

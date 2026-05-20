@@ -20,11 +20,12 @@ OP_OK    = 0x0
 OP_ERROR = 0x1
 
 # Flags
-FL_CLIENT_TO_SERVER = 0b0000
-FL_SERVER_TO_CLIENT = 0b0001
-FL_USER             = 0b0010
-FL_HOST             = 0b0100
-FL_SERVER           = 0b1000
+FL_CLIENT_TO_SERVER  = 0b0000_0000
+FL_SERVER_TO_CLIENT  = 0b0000_0001
+FL_CLIENT_TO_SERVICE = 0b0000_0010
+FL_USER              = 0b0001_0000
+FL_HOST              = 0b0010_0000
+FL_SERVER            = 0b0100_0000
 
 PAYLOAD_MAX_LEN = 0xFFFF
 
@@ -34,12 +35,12 @@ SOCKET_PORT = 7474
 # Wire format: little-endian
 # H  = uint16  magic       (2 bytes)
 # B  = uint8   op          (1 byte)
-# B  = uint8   flags       (1 byte)
+# H  = uint16  flags       (2 bytes)
 # QQ = uint128 id          (16 bytes, two uint64s)
 # QQ = uint128 destination (16 bytes, two uint64s)
 # H  = uint16  payload_len (2 bytes)
-# Total header: 22 bytes
-_HEADER_FMT  = '<HBBQQQQH'
+# Total header: 39 bytes
+_HEADER_FMT  = '<HBHQQQQH'
 _HEADER_SIZE = struct.calcsize(_HEADER_FMT)
 
 

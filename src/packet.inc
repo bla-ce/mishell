@@ -5,7 +5,7 @@ section .bss
 packet_t:
   .magic        resw 1
   .op           resb 1
-  .flags        resb 1
+  .flags        resw 1
   .id           resb ID_LEN
   .destination  resb ID_LEN
   .payload_len  resw 1
@@ -21,19 +21,20 @@ PACKET_T_HEADER_LEN equ packet_t.payload - packet_t
 PACKET_T_OFF_MAGIC        equ 0x0
 PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
 PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
-PACKET_T_OFF_ID           equ PACKET_T_OFF_FLAGS + 0x1
+PACKET_T_OFF_ID           equ PACKET_T_OFF_FLAGS + 0x2
 PACKET_T_OFF_DESTINATION  equ PACKET_T_OFF_ID + ID_LEN
 PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_DESTINATION + ID_LEN
 PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
 ; DIRECTION FLAGS
-FL_CLIENT_TO_SERVER equ 0000b
-FL_SERVER_TO_CLIENT equ 0001b
+FL_CLIENT_TO_SERVER   equ 0000b
+FL_SERVER_TO_CLIENT   equ 0001b
+FL_CLIENT_TO_SERVICE  equ 0010b
 
 ; MODE FLAGS
-FL_USER   equ 0010b
-FL_HOST   equ 0100b
-FL_SERVER equ 1000b
+FL_USER   equ 00010000b
+FL_HOST   equ 00100000b
+FL_SERVER equ 01000000b
 
 MAGIC_VALUE     equ 0xCAFE
 PAYLOAD_MAX_LEN equ 0xFFFF
@@ -148,24 +149,24 @@ packet_verify:
   jne   .error
 
   ; make sure the direction is client to server
-  mov   al, byte [rdi+PACKET_T_OFF_FLAGS]
+  mov   ax, word [rdi+PACKET_T_OFF_FLAGS]
 
   mov   qword [rsp+0x8], error_codes.INVALID_DIRECTION
-  mov   r9b, al
-  and   r9b, FL_SERVER_TO_CLIENT
-  test  r9b, r9b
+  mov   r9w, ax
+  and   r9w, FL_SERVER_TO_CLIENT
+  test  r9w, r9w
   jnz   .error
 
   ; at least one of FL_HOST or FL_USER must be set
   mov   qword [rsp+0x8], error_codes.INVALID_MODE
-  mov   r9b, al
-  and   r9b, FL_HOST
-  test  r9b, r9b
+  mov   r9w, ax
+  and   r9w, FL_HOST
+  test  r9w, r9w
   jnz   .check_op
 
-  mov   r9b, al
-  and   r9b, FL_USER
-  test  r9b, r9b
+  mov   r9w, ax
+  and   r9w, FL_USER
+  test  r9w, r9w
   jz    .error
 
 .check_op:
@@ -227,8 +228,8 @@ packet_build_error:
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.ERROR
 
-  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    byte [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
 
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
