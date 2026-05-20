@@ -91,6 +91,8 @@ Direction and mode bits are OR-ed together in the `flags` field.
 | `AUTH` | `0x01` | `FL_USER` or `FL_HOST` | Register a new host (empty `id`) or verify an existing one (non-zero `id`). On success the server returns `OK`; new registrations include the 16-byte host `id` in the payload |
 | `REGISTER` | `0x02` | `FL_HOST` only | Register a new service under the authenticated host. Payload must be a serialised `service_t` (name + type). Response payload is the full `service_t` with the server-generated `id` |
 | `START` | `0x03` | `FL_HOST` only | Mark a service as running. Payload is the 16-byte host `id` followed by the 16-byte service `id` |
+| `STOP` | `0x04` | `FL_HOST` only | Mark a service as stopped. Payload is the 16-byte host `id` followed by the 16-byte service `id` |
+| `UNREGISTER` | `0x05` | `FL_HOST` only | Remove a service from the host. Service must be stopped first. Payload is the 16-byte host `id` followed by the 16-byte service `id` |
 
 ### Response operations
 
@@ -108,11 +110,15 @@ Direction and mode bits are OR-ed together in the `flags` field.
 | Bad op | `invalid op value in packet` |
 | Bad direction | `invalid direction flag in packet` |
 | Bad mode | `invalid mode flag in packet` |
+| Invalid token | `invalid host token` |
 | Unauthorised | `user is unauthorized to perform this request` |
 | Host limit | `host limit has been reached` |
 | Host not found | `host not found` |
 | Service limit | `service limit per host has been reached` |
 | Service not found | `service not found` |
+| Service invalid name | `invalid service name` |
+| Service invalid type | `invalid service type` |
+| Service not stopped | `stop service before unregistering it` |
 
 ## Testing
 
