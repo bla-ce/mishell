@@ -1,7 +1,9 @@
 ## Priority 1
 - Receive command
-- populate port for host
+- command should not be called if the service is not running
+- think about destination field
 - check padding and alignment for structs
+- populate port for host
 - Make sure we can't have two host on the same ip
 - Find a way to validate service types (description and commands length)
 

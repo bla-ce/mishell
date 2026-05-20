@@ -471,6 +471,10 @@ op_unregister:
   mov   rcx, SERVICE_T_LEN
   rep   stosb
 
+  ; decrease service count for the host
+  mov   rdi, [rsp+0x18]
+  dec   byte [rdi+HOST_T_OFF_SERVICES_COUNT]
+
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT

@@ -127,3 +127,5 @@ The plan:
     - Phase 2: mishell-cli
     - Phase 3: P2P - fix auth, INIT command, FL_PEER mode for mishell-to-mishell traffic, host join flow, cross-host routing
     - Phase 4: access control, users, permissions
+
+We are not using destination. For now, a service command can't have a payload because this payload is used to get the service id. That's fine. It's just for testing, then we will implement destination.

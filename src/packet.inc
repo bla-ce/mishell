@@ -30,11 +30,13 @@ PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 FL_CLIENT_TO_SERVER   equ 0000b
 FL_SERVER_TO_CLIENT   equ 0001b
 FL_CLIENT_TO_SERVICE  equ 0010b
+FL_SERVICE_TO_CLIENT  equ 0100b
 
 ; MODE FLAGS
-FL_USER   equ 00010000b
-FL_HOST   equ 00100000b
-FL_SERVER equ 01000000b
+FL_USER     equ 00010000b
+FL_HOST     equ 00100000b
+FL_SERVER   equ 01000000b
+FL_SERVICE  equ 10000000b
 
 MAGIC_VALUE     equ 0xCAFE
 PAYLOAD_MAX_LEN equ 0xFFFF
@@ -77,6 +79,47 @@ packet_dispatch:
   test  rax, rax
   jnz   .error
 
+  ; check if the request is for the host or a service
+  mov   rdi, [rsp]
+  mov   ax, word [rdi+PACKET_T_OFF_FLAGS]
+  and   ax, FL_CLIENT_TO_SERVICE
+  test  ax, ax
+  jz    .run_host_op
+
+.run_service_op:
+  ; find service inside host struct
+  ; payload should be host id followed by service id
+  mov   qword [rsp+0x20], error_codes.SERVICE_NOT_FOUND
+  mov   rax, [rsp]
+  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
+  call  service_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  ; TODO: check if the service is running
+
+  mov   qword [rsp+0x20], error_codes.COMMAND_NOT_FOUND
+  ; find command inside the service
+  mov   rdi, [rsp]
+  movzx rsi, byte [rdi+PACKET_T_OFF_OP]
+  mov   rdi, rax
+  call  command_get_by_op
+  cmp   rax, 0
+  jl    .error
+
+  ; call op
+  mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
+  mov   rdi, [rsp]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, [rsp+0x8]
+  call  rax
+  cmp   rax, 0
+  jl    .error
+
+  jmp   .send_packet
+
+.run_host_op:
   ; get op
   mov   rdi, [rsp]
   movzx rax, byte [rdi+PACKET_T_OFF_OP]
@@ -92,6 +135,7 @@ packet_dispatch:
   test  rax, rax
   jnz   .error
 
+.send_packet:
   ; get packet size
   lea   rdi, [rsp+0x18]
   movzx rdx, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]

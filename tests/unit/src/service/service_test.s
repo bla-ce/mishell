@@ -1,6 +1,7 @@
 global _start
 
 %include "lib.inc"
+%include "command.inc"
 %include "host.inc"
 %include "packet.inc"
 %include "service.inc"

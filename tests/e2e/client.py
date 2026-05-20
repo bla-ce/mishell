@@ -21,7 +21,7 @@ def unix_connection(packet):
 def assert_server_response(resp, *, op, payload=None, id=0):
     assert resp.magic == MAGIC,                          f"wrong magic: {resp}"
     assert resp.op == op,                                f"expected {op}: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER), f"wrong flags: {resp}"
+    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER) or (FL_SERVICE | FL_SERVICE_TO_CLIENT), f"wrong flags: {resp}"
     assert resp.id == id,                                f"wrong id: {resp}"
     if payload is not None:
         assert resp.payload == payload,                  f"wrong payload: {resp}"
@@ -137,7 +137,6 @@ wrong_service_id_payload = host_id.to_bytes(16, 'little') + (0x12345).to_bytes(1
 resp = tcp_connection(Packet(op=OP_STOP, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=wrong_service_id_payload))
 assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
 
-
 print("TEST (tcp): sending UNREGISTER on running service should return error")
 payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
 resp = tcp_connection(Packet(op=OP_UNREGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
@@ -157,5 +156,25 @@ print("TEST (tcp): sending START on unregistered service should return ERROR")
 payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
 resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
 assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
+
+# register and start service
+service_name = "my-service"
+svc = Service(name=service_name, type=SERVICE_TYPE_PING)
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+assert_server_response(resp, op=OP_OK)
+resp_svc = Service.unpack(resp.payload)
+assert(resp_svc.id != 0x0),                             f"id not generated"
+assert(resp_svc.name == service_name),                  f"wrong name: {resp_svc.name}"
+assert(resp_svc.status == SERVICE_STATUS_REGISTERED),   f"wrong status: {resp_svc.status}"
+service_id = resp_svc.id
+
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_OK, payload=b'')
+
+print("TEST (tcp): sending PONG commmand to service should return OK")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=0x0, flags=FL_CLIENT_TO_SERVICE | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_OK, payload=b'pong')
 
 print("All tests passed!")
