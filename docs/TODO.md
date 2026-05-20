@@ -1,6 +1,6 @@
 ## Priority 1
-- Receive command
 - command should not be called if the service is not running
+- we need to initialise service with the right type
 - think about destination field
 - check padding and alignment for structs
 - populate port for host

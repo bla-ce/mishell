@@ -48,7 +48,7 @@ Four logical entities interact with the server:
 | User | `FL_USER` | A client trying to access or manage services |
 | Host | `FL_HOST` | A machine that owns and runs services |
 | Server | `FL_SERVER` | Mishell itself (used in responses) |
-| Service | NOT DEFINED YET | A named process registered under a host |
+| Service | `FL_SERVICE` | A named process registered under a host |
 
 Current limits:
 
@@ -81,9 +81,11 @@ Direction and mode bits are OR-ed together in the `flags` field.
 | `FL_CLIENT_TO_SERVER` | `0b0000_0000` | Request (client -> server) |
 | `FL_SERVER_TO_CLIENT` | `0b0000_0001` | Response (server -> client) |
 | `FL_CLIENT_TO_SERVICE` | `0b0000_0010` | Request (client -> service) |
+| `FL_SERVICE_TO_CLIENT` | `0b0000_0100` | Response (service -> client) |
 | `FL_USER` | `0b0001_0000` | Sender is a user |
 | `FL_HOST` | `0b0010_0000` | Sender is a host |
 | `FL_SERVER` | `0b0100_0000` | Sender is the server (responses only) |
+| `FL_SERVICE` | `0b1000_0000` | Sender is a service (responses only) |
 
 ### Request operations
 
@@ -121,6 +123,7 @@ Direction and mode bits are OR-ed together in the `flags` field.
 | Service invalid name | `invalid service name` |
 | Service invalid type | `invalid service type` |
 | Service not stopped | `stop service before unregistering it` |
+| Command not found | `command not found` |
 
 ## Testing
 
@@ -145,8 +148,9 @@ make test-unit
 ```
 src/
   mishell.s       entry point, epoll event loop
-  ops.inc         HELLO / AUTH / REGISTER / START handlers
+  ops.inc         HELLO / AUTH / REGISTER / START / STOP / UNREGISTER handlers
   packet.inc      packet dispatch, verify, build_error helpers
+  command.inc     service command dispatch
   host.inc        host struct, host_init, host_get_by_id
   service.inc     service struct, service_init, service_get_by_id
   auth.inc        ID generation via RDRAND
@@ -156,6 +160,10 @@ lib/
   constants.inc   syscall numbers, socket and epoll constants
   net.inc         socket structs, net_get_ipv4_from_fd, epoll helpers
   string.inc      string helpers
+
+service_types/
+  service_type.inc        service_type_t struct and type constants
+  ping/ping_service.s     ping service type implementation
 
 tests/
   e2e/      end-to-end test suite
