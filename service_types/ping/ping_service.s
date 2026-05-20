@@ -7,8 +7,15 @@ ping_service_t:
   .description  db "A simple service printing pong when receiving ping"
 ping_service_t_end:
 
+pong_msg db "hello"
 
 section .text
 
 ping_command_ping:
+  mov   rax, SYS_WRITE
+  mov   rdi, STDOUT_FILENO
+  mov   rsi, pong_msg
+  mov   rdx, 4
+  syscall
+
   ret

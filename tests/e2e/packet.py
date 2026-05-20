@@ -11,6 +11,8 @@ OP_HELLO    = 0x00
 OP_AUTH     = 0x01
 OP_REGISTER = 0x02
 OP_START    = 0x03
+OP_STOP     = 0x04
+OP_COUNT    = 0x05
 
 # Return OP codes
 OP_OK    = 0x0
@@ -100,6 +102,8 @@ class Packet:
             OP_HELLO: 'HELLO',
             OP_AUTH: 'AUTH',
             OP_REGISTER: 'REGISTER',
+            OP_START: 'START',
+            OP_STOP: 'STOP',
             OP_OK: 'OK',
             OP_ERROR: 'ERROR'
         }.get(self.op, f'0x{self.op:02X}')

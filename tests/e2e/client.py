@@ -39,7 +39,7 @@ resp = tcp_connection(Packet(op=OP_HELLO, flags=FL_CLIENT_TO_SERVER | FL_SERVER)
 assert_server_response(resp, op=OP_ERROR, payload=b'invalid mode flag in packet')
 
 print("TEST (tcp): sending wrong op should fail")
-resp = tcp_connection(Packet(op=0x4, flags=FL_CLIENT_TO_SERVER | FL_USER))
+resp = tcp_connection(Packet(op=OP_COUNT, flags=FL_CLIENT_TO_SERVER | FL_USER))
 assert_server_response(resp, op=OP_ERROR, payload=b'invalid op value in packet')
 
 print("TEST (tcp): sending HELLO should work and return a OK op")
@@ -125,6 +125,21 @@ assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
 print("TEST (tcp): sending START with correct host id and correct service id should return OK")
 payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
 resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_OK, payload=b'')
+
+print("TEST (tcp): sending STOP with wrong server host id should return service not found")
+wrong_host_id_payload = (0x12345).to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_STOP, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=wrong_host_id_payload))
+assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
+
+print("TEST (tcp): sending STOP with correct host id but wrong service id should return service not found")
+wrong_service_id_payload = host_id.to_bytes(16, 'little') + (0x12345).to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_STOP, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=wrong_service_id_payload))
+assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
+
+print("TEST (tcp): sending STOP with correct host id and correct service id should return OK")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_STOP, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
 assert_server_response(resp, op=OP_OK, payload=b'')
 
 print("All tests passed!")

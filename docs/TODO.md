@@ -1,12 +1,10 @@
 ## Priority 1
+- Receive command
+- Unregister a service
 - populate port for host
 - check padding and alignment for structs
 - Make sure we can't have two host on the same ip
 - Find a way to validate service types (description and commands length)
-- Receive command (even if the service has not started yet)
-- Actually start a service
-- Stop a service
-- Unregister a service
 
 ## Priority 2
 - for host and service get by id, don't look up the whole array
