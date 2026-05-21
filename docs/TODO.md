@@ -1,5 +1,5 @@
 ## Priority 1
-- command_get_by_op
+- think about op being a byte (same value for two different types)
 - think about destination field
 
 ## Priority 2

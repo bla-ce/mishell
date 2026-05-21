@@ -123,6 +123,7 @@ Direction and mode bits are OR-ed together in the `flags` field.
 | Service invalid name | `invalid service name` |
 | Service invalid type | `invalid service type` |
 | Service not stopped | `stop service before unregistering it` |
+| Service not started | `service not started` |
 | Command not found | `command not found` |
 
 ## Testing
@@ -162,8 +163,9 @@ lib/
   string.inc      string helpers
 
 service_types/
-  service_type.inc        service_type_t struct and type constants
-  ping/ping_service.s     ping service type implementation
+  service_type.inc              service_type_t struct and type constants
+  ping/ping_service.s           ping service type implementation
+  storage/storage_service.s     storage service type implementation
 
 tests/
   e2e/      end-to-end test suite
