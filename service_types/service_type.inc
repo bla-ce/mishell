@@ -19,9 +19,15 @@ SERVICE_TYPE_DESC_MAX_LEN equ 0x100
 COMMANDS_MAX_COUNT_PER_SERVICE_TYPE equ 0x4
 
 service_types:
-  .PING   equ 0x0
-  .COUNT  equ 0x1
+  .PING     equ 0x0
+  .STORAGE  equ 0x1
+  .COUNT    equ 0x2
+
+service_types_table:
+  .ping     dq  ping_service_t
+  .storage  dq  storage_service_t
 
 section .text
 
 %include "ping_service.s"
+%include "storage_service.s"

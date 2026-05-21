@@ -78,7 +78,7 @@ resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_USER
 assert_server_response(resp, op=OP_ERROR, payload=b'user is unauthorized to perform this request')
 
 print("TEST (tcp): sending REGISTER with service payload and wrong type should return error")
-service_name = "my-service"
+service_name = "ping"
 svc = Service(name=service_name, type=0x03)
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
 assert_server_response(resp, op=OP_ERROR, payload=b'invalid service type')
@@ -90,7 +90,7 @@ resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST
 assert_server_response(resp, op=OP_ERROR, payload=b'invalid service name')
 
 print("TEST (tcp): sending REGISTER with service payload should return service and OK")
-service_name = "my-service"
+service_name = "ping"
 svc = Service(name=service_name, type=SERVICE_TYPE_PING)
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
 assert_server_response(resp, op=OP_OK)
@@ -99,14 +99,6 @@ assert(resp_svc.id != 0x0),                             f"id not generated"
 assert(resp_svc.name == service_name),                  f"wrong name: {resp_svc.name}"
 assert(resp_svc.status == SERVICE_STATUS_REGISTERED),   f"wrong status: {resp_svc.status}"
 service_id = resp_svc.id
-
-print("TEST (tcp): sending REGISTER should return ERROR after registering too many services")
-for _ in range(SERVICE_MAX_COUNT_PER_HOST - 1):  # one already registered
-    resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
-    assert resp.op == OP_OK, f"expected OK: {resp}"
-
-resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
-assert_server_response(resp, op=OP_ERROR, payload=b'service limit per host has been reached')
 
 print("TEST (tcp): sending START with empty id should return unauthorized error")
 resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=0))
@@ -158,7 +150,7 @@ resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, i
 assert_server_response(resp, op=OP_ERROR, payload=b'service not found')
 
 # register and start service
-service_name = "my-service"
+service_name = "ping"
 svc = Service(name=service_name, type=SERVICE_TYPE_PING)
 resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
 assert_server_response(resp, op=OP_OK)
@@ -181,5 +173,33 @@ print("TEST (tcp): sending PONG commmand to service should return OK")
 payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
 resp = tcp_connection(Packet(op=0x0, flags=FL_CLIENT_TO_SERVICE | FL_HOST, id=host_id, payload=payload))
 assert_server_response(resp, op=OP_OK, payload=b'pong')
+
+# register and start storage service
+service_name = "storage"
+svc = Service(name=service_name, type=SERVICE_TYPE_STORAGE)
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+assert_server_response(resp, op=OP_OK)
+resp_svc = Service.unpack(resp.payload)
+assert(resp_svc.id != 0x0),                             f"id not generated"
+assert(resp_svc.name == service_name),                  f"wrong name: {resp_svc.name}"
+assert(resp_svc.status == SERVICE_STATUS_REGISTERED),   f"wrong status: {resp_svc.status}"
+service_id = resp_svc.id
+
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_OK, payload=b'')
+
+print("TEST (tcp): sending TEST commmand to STORAGE service should return test")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=0x0, flags=FL_CLIENT_TO_SERVICE | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_OK, payload=b'test')
+
+print("TEST (tcp): sending REGISTER should return ERROR after registering too many services")
+for _ in range(SERVICE_MAX_COUNT_PER_HOST - 2):  # two already registered
+    resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+    assert resp.op == OP_OK, f"expected OK: {resp}"
+
+resp = tcp_connection(Packet(op=OP_REGISTER, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=svc.pack()))
+assert_server_response(resp, op=OP_ERROR, payload=b'service limit per host has been reached')
 
 print("All tests passed!")

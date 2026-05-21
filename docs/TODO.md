@@ -1,5 +1,5 @@
 ## Priority 1
-- we need to initialise service with the right type
+- command_get_by_op
 - think about destination field
 
 ## Priority 2

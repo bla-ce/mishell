@@ -136,3 +136,19 @@ systemd is quite similar too, cool stuff from it:
     - reload command
     - last updated? To know when the service has stopped/started
     - disable / enable command
+
+The goal is to have everything written in x86, a low level AWS kind of thing. All services are purpose-built for mishell, they speak the protocol natively. Contract-based is the only approach that makes sense here.
+
+Services don't run as separate processes. mishell is the runtime. Each service type is a single file with its commands defined as function pointers. You include the file, the service type exists. You remove it, it's gone. No separate process, no networking written twice. op_start doesn't need fork/execve, it just marks the service instance as UP. Stop marks it DOWN. The logic is already compiled into mishell.
+
+The plugin system is just a table:
+
+service_type_table:
+    dq ping_service_t
+    ; add more as files are included
+
+Adding a new service type is: add the file, add the %include, add a dq to the table. That's it.
+
+command_get_by_op is the missing piece, not service_init. service_init just needs to store the type byte correctly. command_get_by_op takes a type and an op, indexes into service_type_table to get the service_type_t, then indexes into its commands array to get the function pointer and calls it. That's the entire dispatcher.
+
+One thing to figure out for the CLI - different hosts can compile in different service types, so the type byte can mean different things on different hosts. We need a LIST_TYPES op so the CLI can ask mishell what service types it supports and get back their names and byte values. The byte is just a local index, the name is the canonical identifier. service_type_t will need a name field alongside the description for this to work. For now, we'll assume that the services are the same for everyone for the sake of simplicity
