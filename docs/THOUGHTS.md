@@ -129,3 +129,10 @@ The plan:
     - Phase 4: access control, users, permissions
 
 We are not using destination. For now, a service command can't have a payload because this payload is used to get the service id. That's fine. It's just for testing, then we will implement destination.
+
+systemd is quite similar too, cool stuff from it:
+    - restart command
+    - status command
+    - reload command
+    - last updated? To know when the service has stopped/started
+    - disable / enable command

@@ -22,11 +22,12 @@ error_codes:
   .SERVICE_INVALID_NAME           equ 12
   .SERVICE_INVALID_TYPE           equ 13
   .SERVICE_STOP_BEFORE_UNREGISTER equ 14
+  .SERVICE_NOT_STARTED            equ 15
 
   ; command errors
-  .COMMAND_NOT_FOUND              equ 15
+  .COMMAND_NOT_FOUND              equ 16
 
-  .COUNT                          equ 16
+  .COUNT                          equ 17
 
 err_code_to_msg_table:
   .NULL                           dq 0
@@ -44,6 +45,7 @@ err_code_to_msg_table:
   .SERVICE_INVALID_NAME           dq error_msg.service_invalid_name
   .SERVICE_INVALID_TYPE           dq error_msg.service_invalid_type
   .SERVICE_STOP_BEFORE_UNREGISTER dq error_msg.service_stop_before_unregister
+  .SERVICE_NOT_STARTED            dq error_msg.service_not_started
   .COMMAND_NOT_FOUND              dq error_msg.command_not_found
 
 err_code_to_len_table:
@@ -62,6 +64,7 @@ err_code_to_len_table:
   .SERVICE_INVALID_NAME           dw error_msg.service_invalid_name_len
   .SERVICE_INVALID_TYPE           dw error_msg.service_invalid_type_len
   .SERVICE_STOP_BEFORE_UNREGISTER dw error_msg.service_stop_before_unregister_len
+  .SERVICE_NOT_STARTED            dw error_msg.service_not_started_len
   .COMMAND_NOT_FOUND              dw error_msg.command_not_found_len
 
 error_msg:
@@ -93,5 +96,7 @@ error_msg:
   .service_invalid_type_len equ $ - error_msg.service_invalid_type
   .service_stop_before_unregister db "stop service before unregistering it"
   .service_stop_before_unregister_len equ $ - error_msg.service_stop_before_unregister
+  .service_not_started db "service not started"
+  .service_not_started_len equ $ - error_msg.service_not_started
   .command_not_found db "command not found"
   .command_not_found_len equ $ - error_msg.command_not_found

@@ -168,6 +168,11 @@ assert(resp_svc.name == service_name),                  f"wrong name: {resp_svc.
 assert(resp_svc.status == SERVICE_STATUS_REGISTERED),   f"wrong status: {resp_svc.status}"
 service_id = resp_svc.id
 
+print("TEST (tcp): sending PONG on stopped service should return service not started")
+payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
+resp = tcp_connection(Packet(op=0x0, flags=FL_CLIENT_TO_SERVICE | FL_HOST, id=host_id, payload=payload))
+assert_server_response(resp, op=OP_ERROR, payload=b'service not started')
+
 payload = host_id.to_bytes(16, 'little') + service_id.to_bytes(16, 'little')
 resp = tcp_connection(Packet(op=OP_START, flags=FL_CLIENT_TO_SERVER | FL_HOST, id=host_id, payload=payload))
 assert_server_response(resp, op=OP_OK, payload=b'')

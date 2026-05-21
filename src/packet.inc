@@ -89,7 +89,7 @@ packet_dispatch:
 .run_service_op:
   ; find service inside host struct
   ; payload should be host id followed by service id
-  mov   qword [rsp+0x20], error_codes.SERVICE_NOT_FOUND
+  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
   lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
   lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
@@ -97,9 +97,11 @@ packet_dispatch:
   cmp   rax, 0
   jl    .error
 
-  ; TODO: check if the service is running
+  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_STARTED
+  cmp   byte [rax+SERVICE_T_OFF_STATUS], service_status.UP
+  jne   .error
 
-  mov   qword [rsp+0x20], error_codes.COMMAND_NOT_FOUND
+  mov   qword [rsp+0x10], error_codes.COMMAND_NOT_FOUND
   ; find command inside the service
   mov   rdi, [rsp]
   movzx rsi, byte [rdi+PACKET_T_OFF_OP]
