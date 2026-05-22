@@ -11,7 +11,6 @@
 - Define host expiration or host removal process
 - add fd to logs
 - clean up is never reached, graceful shutdown
-- split e2e tests
 
 ## Ongoing
 - Update README
