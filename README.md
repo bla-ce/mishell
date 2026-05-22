@@ -59,7 +59,7 @@ Current limits:
 
 Every message uses the same binary wire format.
 
-### Header (39 bytes, little-endian)
+### Header (55 bytes, little-endian)
 
 | Field | Size | Description |
 |-------|------|-------------|
@@ -67,7 +67,8 @@ Every message uses the same binary wire format.
 | `op` | 1 byte | Operation code |
 | `flags` | 2 bytes | Direction + mode bits (see below) |
 | `id` | 16 bytes | 128-bit host identifier |
-| `destination` | 16 bytes | 128-bit destination identifier |
+| `dest_host` | 16 bytes | 128-bit host destination identifier |
+| `dest_service` | 16 bytes | 128-bit service destination identifier |
 | `payload_len` | 2 bytes | Byte length of the payload |
 
 Followed by `payload_len` bytes of payload (up to 65535 bytes).
