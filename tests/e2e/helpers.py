@@ -1,8 +1,23 @@
 import socket
+from contextlib import contextmanager
 from packet import *
 from service import *
 
 HOST_MAX_COUNT = 5
+
+GREEN = "\033[32m"
+RED   = "\033[31m"
+RESET = "\033[0m"
+
+@contextmanager
+def test(description):
+    print(description, end=" ... ", flush=True)
+    try:
+        yield
+        print(f"{GREEN}PASSED{RESET}")
+    except Exception:
+        print(f"{RED}FAILED{RESET}")
+        raise
 
 def tcp_connection(packet):
     with socket.create_connection(('127.0.0.1', SOCKET_PORT)) as sock:
