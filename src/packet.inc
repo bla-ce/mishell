@@ -7,7 +7,8 @@ packet_t:
   .op           resb 1
   .flags        resw 1
   .id           resb ID_LEN
-  .destination  resb ID_LEN
+  .dest_host    resb ID_LEN
+  .dest_service resb ID_LEN
   .payload_len  resw 1
   .payload      resb PAYLOAD_MAX_LEN
 packet_t_end:
@@ -22,8 +23,9 @@ PACKET_T_OFF_MAGIC        equ 0x0
 PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
 PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
 PACKET_T_OFF_ID           equ PACKET_T_OFF_FLAGS + 0x2
-PACKET_T_OFF_DESTINATION  equ PACKET_T_OFF_ID + ID_LEN
-PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_DESTINATION + ID_LEN
+PACKET_T_OFF_DEST_HOST    equ PACKET_T_OFF_ID + ID_LEN
+PACKET_T_OFF_DEST_SERVICE equ PACKET_T_OFF_DEST_HOST + ID_LEN
+PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_DEST_SERVICE + ID_LEN
 PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
 ; DIRECTION FLAGS
@@ -88,11 +90,10 @@ packet_dispatch:
 
 .run_service_op:
   ; find service inside host struct
-  ; payload should be host id followed by service id
   mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
-  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
+  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  lea   rsi, [rax+PACKET_T_OFF_DEST_SERVICE]
   call  service_get_by_id
   cmp   rax, 0
   jl    .error
@@ -270,15 +271,19 @@ packet_build_error:
   test  rdi, rdi
   jz    .error
 
+  ; memset packet
+  mov   rdi, [rsp]
+  xor   rax, rax
+  mov   rcx, PACKET_T_LEN
+  rep   stosb
+
   ; set magic, op, id and flags
+  mov   rdi, [rsp]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.ERROR
 
   mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
   or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
-
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
 
   cmp   rsi, 0
   jl    .internal_error

@@ -1,6 +1,5 @@
 ## Priority 1
-- think about op being a byte (same value for two different types)
-- think about destination field
+- destination field gets the host id and service id
 
 ## Priority 2
 - check padding and alignment for structs

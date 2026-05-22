@@ -39,31 +39,37 @@ SOCKET_PORT = 7474
 # B  = uint8   op          (1 byte)
 # H  = uint16  flags       (2 bytes)
 # QQ = uint128 id          (16 bytes, two uint64s)
-# QQ = uint128 destination (16 bytes, two uint64s)
+# QQ = uint128 host destination (16 bytes, two uint64s)
+# QQ = uint128 service destination (16 bytes, two uint64s)
 # H  = uint16  payload_len (2 bytes)
 # Total header: 39 bytes
-_HEADER_FMT  = '<HBHQQQQH'
+_HEADER_FMT  = '<HBHQQQQQQH'
 _HEADER_SIZE = struct.calcsize(_HEADER_FMT)
 
 
 @dataclass
 class Packet:
-    magic:       int   = MAGIC
-    op:          int   = 0
-    flags:       int   = 0
-    id:          int   = 0      # 128-bit value stored as Python int
-    destination: int   = 0      # 128-bit value stored as Python int
-    payload:     bytes = b''
+    magic:          int   = MAGIC
+    op:             int   = 0
+    flags:          int   = 0
+    id:             int   = 0      # 128-bit value stored as Python int
+    dest_host:      int   = 0      # 128-bit value stored as Python int
+    dest_service:   int   = 0      # 128-bit value stored as Python int
+    payload:        bytes = b''
 
     # Serialisation
     def pack(self) -> bytes:
         id_hi  = self.id >> 64
         id_lo  = self.id & 0xFFFFFFFFFFFFFFFF
-        destination_hi  = self.destination >> 64
-        destination_lo  = self.destination & 0xFFFFFFFFFFFFFFFF
+        dest_host_hi  = self.dest_host >> 64
+        dest_host_lo  = self.dest_host & 0xFFFFFFFFFFFFFFFF
+        dest_service_hi  = self.dest_service >> 64
+        dest_service_lo  = self.dest_service & 0xFFFFFFFFFFFFFFFF
         header = struct.pack(_HEADER_FMT,
                              self.magic, self.op, self.flags,
-                             id_lo, id_hi, destination_lo, destination_hi,
+                             id_lo, id_hi,
+                             dest_host_lo, dest_host_hi,
+                             dest_service_lo, dest_service_hi,
                              len(self.payload))
         return header + self.payload
 
@@ -78,7 +84,7 @@ class Packet:
             raise ValueError(
                 f"Buffer too short: need {_HEADER_SIZE} bytes, got {len(data)}"
             )
-        magic, op, flags, id_lo, id_hi, destination_lo, destination_hi, payload_len = \
+        magic, op, flags, id_lo, id_hi, dest_host_lo, dest_host_hi, dest_service_lo, dest_service_hi,, payload_len = \
             struct.unpack_from(_HEADER_FMT, data)
         payload = data[_HEADER_SIZE : _HEADER_SIZE + payload_len]
         return cls(magic=magic, op=op, flags=flags,
@@ -88,12 +94,13 @@ class Packet:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Packet):
             return NotImplemented
-        return (self.magic       == other.magic         and
-                self.op          == other.op            and
-                self.flags       == other.flags         and
-                self.id          == other.id            and
-                self.destination == other.destination   and
-                self.payload     == other.payload)
+        return (self.magic          == other.magic          and
+                self.op             == other.op             and
+                self.flags          == other.flags          and
+                self.id             == other.id             and
+                self.dest_host      == other.dest_host      and
+                self.dest_service   == other.dest_service   and
+                self.payload        == other.payload)
 
     def __repr__(self) -> str:
         flag_names = []
@@ -117,7 +124,9 @@ class Packet:
         }.get(self.op, f'0x{self.op:02X}')
 
         return (f"Packet(magic=0x{self.magic:04X}, op={op_name}, "
-                f"flags=[{' | '.join(flag_names)}], id={self.id}, destination={self.destination} "
+                f"flags=[{' | '.join(flag_names)}], id={self.id}, "
+                f"destination_host={self.dest_host} ,"
+                f"destination_service={self.dest_service} ,"
                 f"payload={self.payload!r})")
 
 def recv_packet(sock: socket.socket) -> Packet:

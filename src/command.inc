@@ -1,5 +1,7 @@
 section .data
 
+COMMANDS_MAX_COUNT_PER_SERVICE_TYPE equ 0x4
+
 section .text
 ; returns the command from a service type
 ; @param  rdi: pointer to the service struct
@@ -20,6 +22,9 @@ command_get_by_op:
 
   test  rsi, rsi
   jl    .error
+
+  cmp   rsi, COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
+  jge   .error
 
   ; get service type pointer
   movzx rax, byte [rdi+SERVICE_T_OFF_TYPE]
