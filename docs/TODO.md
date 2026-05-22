@@ -1,14 +1,13 @@
 ## Priority 1
-- destination field gets the host id and service id
 
 ## Priority 2
 - check padding and alignment for structs
+- any command for service / host status?
 - make the packet creation generic (zero it out and populate)
 - last updated for services?
 - populate port for host
 - Make sure we can't have two host on the same ip
 - Find a way to validate service types (description and commands length)
-- for host and service get by id, don't look up the whole array
 - Define host expiration or host removal process
 - add fd to logs
 - clean up is never reached, graceful shutdown

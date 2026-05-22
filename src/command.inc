@@ -1,7 +1,5 @@
 section .data
 
-COMMANDS_MAX_COUNT_PER_SERVICE_TYPE equ 0x4
-
 section .text
 ; returns the command from a service type
 ; @param  rdi: pointer to the service struct

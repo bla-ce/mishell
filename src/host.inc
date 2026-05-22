@@ -49,6 +49,10 @@ host_get_by_id:
 
   xor   r9, r9
 
+  ; get host max offset
+  movzx rax, byte [curr_host_idx]
+  imul  r10, rax, HOST_T_LEN
+
 .loop:
   lea   rdi, [hosts+r9]
 
@@ -62,7 +66,7 @@ host_get_by_id:
 
   add   r9, HOST_T_LEN
 
-  cmp   r9, HOSTS_LEN
+  cmp   r9, r10
   jge   .error
 
   jmp   .loop

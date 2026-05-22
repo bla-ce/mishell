@@ -56,6 +56,10 @@ service_get_by_id:
   cmp   rax, 0
   jl    .error
 
+  ; get service max offset
+  movzx rsi, byte [rax+HOST_T_OFF_SERVICES_COUNT]
+  imul  r10, rsi, SERVICE_T_LEN
+
   add   rax, HOST_T_OFF_SERVICES
 
   mov   [rsp+0x10], rax
@@ -76,7 +80,7 @@ service_get_by_id:
 
   add   r9, SERVICE_T_LEN
 
-  cmp   r9, SERVICES_LEN
+  cmp   r9, r10
   jge   .error
 
   jmp   .loop
