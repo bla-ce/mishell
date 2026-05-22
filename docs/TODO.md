@@ -3,6 +3,7 @@
 
 ## Priority 2
 - check padding and alignment for structs
+- make the packet creation generic (zero it out and populate)
 - last updated for services?
 - populate port for host
 - Make sure we can't have two host on the same ip
@@ -21,7 +22,6 @@
 - tests for packet.inc
 
 ## Polishing
-- make the packet creation generic
 - event_t should not be global but statically allocated
 - Check for clean architecture and SOLID principles
 

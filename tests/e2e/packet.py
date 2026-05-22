@@ -84,7 +84,7 @@ class Packet:
             raise ValueError(
                 f"Buffer too short: need {_HEADER_SIZE} bytes, got {len(data)}"
             )
-        magic, op, flags, id_lo, id_hi, dest_host_lo, dest_host_hi, dest_service_lo, dest_service_hi,, payload_len = \
+        magic, op, flags, id_lo, id_hi, dest_host_lo, dest_host_hi, dest_service_lo, dest_service_hi, payload_len = \
             struct.unpack_from(_HEADER_FMT, data)
         payload = data[_HEADER_SIZE : _HEADER_SIZE + payload_len]
         return cls(magic=magic, op=op, flags=flags,
