@@ -1,14 +1,4 @@
-section .bss
-
-service_type_t:
-  .commands     resq COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
-  .type         resb 1
-  .description  resb SERVICE_TYPE_DESC_MAX_LEN
-service_type_t_end:
-
-section .data
-
-SERVICE_TYPE_T_LEN equ service_type_t_end - service_type_t
+section .rodata
 
 SERVICE_TYPE_T_OFF_COMMANDS equ 0x0
 SERVICE_TYPE_T_OFF_TYPE     equ SERVICE_TYPE_T_OFF_COMMANDS + COMMANDS_MAX_COUNT_PER_SERVICE_TYPE * 0x8
@@ -26,6 +16,16 @@ service_types:
 service_types_table:
   .ping     dq  ping_service_t
   .storage  dq  storage_service_t
+
+SERVICE_TYPE_T_LEN equ service_type_t_end - service_type_t
+
+section .bss
+
+service_type_t:
+  .commands     resq COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
+  .type         resb 1
+  .description  resb SERVICE_TYPE_DESC_MAX_LEN
+service_type_t_end:
 
 section .text
 

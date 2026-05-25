@@ -1,3 +1,22 @@
+section .rodata
+
+FIRST_HOST_FLAG     db "--first-host"
+FIRST_HOST_FLAG_LEN equ $ - FIRST_HOST_FLAG -1
+
+HOST_MAX_COUNT equ 0x5
+
+HOSTS_LEN equ HOST_T_LEN * HOST_MAX_COUNT
+
+HOST_T_LEN equ host_t_end - host_t
+
+SERVICES_LEN equ SERVICE_T_LEN * SERVICE_MAX_COUNT_PER_HOST
+
+HOST_T_OFF_ID             equ 0x0
+HOST_T_OFF_IP             equ HOST_T_OFF_ID + ID_LEN
+HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
+HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
+HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
+
 section .bss
 
 host_t:
@@ -13,21 +32,7 @@ hosts resb HOSTS_LEN
 
 section .data
 
-HOST_MAX_COUNT equ 0x5
-
 curr_host_idx db 0
-
-HOSTS_LEN equ HOST_T_LEN * HOST_MAX_COUNT
-
-HOST_T_LEN equ host_t_end - host_t
-
-SERVICES_LEN equ SERVICE_T_LEN * SERVICE_MAX_COUNT_PER_HOST
-
-HOST_T_OFF_ID             equ 0x0
-HOST_T_OFF_IP             equ HOST_T_OFF_ID + ID_LEN
-HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
-HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
-HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 section .text
 

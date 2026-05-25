@@ -156,3 +156,7 @@ One thing to figure out for the CLI - different hosts can compile in different s
 A question we need to figure out is who's the target for a specific query. Right now, when we send a request to a service, we include the host and service id inside the payload. We are wasting 32 bytes of payload for that information. I've already created a destination field inside the header packet. It could be a 4 bytes field, containing the host id firsdt and optionally, the service id. By doing that, it will be easier to setup the P2P schema. If a host receives a packet, it is not expected that the request is for itself, it needs to check the destination host, first. If the packet is for another host, it needs to forward it.
 
 For now, we only use the destination field for the service ops. We need to figure out the new host registration flow before using the destination field for all ops
+
+The part 1 has been done, we have a single host working end-to-end. We have two service types as example and we need to define the P2P architecture we will be implementing.
+
+The first step we need to figure out is how to start the first host. We can simply add a flag, something like --first-host to mishell. When this flag is passed, the host adds itself to a host array, and that's it.

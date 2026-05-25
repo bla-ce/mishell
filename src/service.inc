@@ -8,7 +8,7 @@ service_t:
   .pad    resb 0x3
 service_t_end:
 
-section .data
+section .rodata
 
 SERVICE_MAX_COUNT_PER_HOST equ 0x5
 

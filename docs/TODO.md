@@ -1,8 +1,9 @@
 ## Priority 1
+- Add a flag --first-host
 
 ## Priority 2
 - check padding and alignment for structs
-- any command for service / host status?
+- STATUS op for service / host?
 - make the packet creation generic (zero it out and populate)
 - last updated for services?
 - populate port for host
@@ -20,6 +21,7 @@
 - tests for packet.inc
 
 ## Polishing
+- move constants to section .rodata
 - event_t should not be global but statically allocated
 - Check for clean architecture and SOLID principles
 

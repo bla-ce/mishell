@@ -13,7 +13,7 @@ packet_t:
   .payload      resb PAYLOAD_MAX_LEN
 packet_t_end:
 
-section .data
+section .rodata
 
 ; PACKET OFFSETS
 PACKET_T_LEN equ packet_t_end - packet_t

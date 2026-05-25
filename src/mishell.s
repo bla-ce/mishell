@@ -8,7 +8,7 @@
 
 global _start
 
-section .data
+section .rodata
 
 tcp_port  equ 7474
 
@@ -31,8 +31,21 @@ _start:
   sub   rsp, PACKET_T_LEN
 
   ; STACK USAGE
-  ; [rsp]   -> pointer to the packet struct
+  ; [rsp] -> pointer to the packet struct
 
+  ; check if the host is the first one (--first-host passed)
+  cmp   qword [rsp+PACKET_T_LEN+0x10], 0
+  je    .not_first_host
+
+  mov   rdi, FIRST_HOST_FLAG
+  mov   rsi, [rsp+PACKET_T_LEN+0x10]  ; second CLI argument
+  mov   rcx, FIRST_HOST_FLAG_LEN
+  rep   cmpsb
+  jne   .not_first_host
+
+  ; init first host
+
+.not_first_host:
   ; create tcp socket
   mov   rax, SYS_SOCKET
   mov   rdi, AF_INET

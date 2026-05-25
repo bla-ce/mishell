@@ -1,4 +1,4 @@
-section .data
+section .rodata
 
 ID_LEN    equ 0x10
 ID_QWORDS equ ID_LEN / 0x8

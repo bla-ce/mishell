@@ -1,6 +1,6 @@
 %include "auth.inc"
 
-section .data
+section .rodata
 
 req_ops:
   .HELLO      equ 0x0

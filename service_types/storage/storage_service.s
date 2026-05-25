@@ -1,4 +1,4 @@
-section .data
+section .rodata
 
 storage_service_t:
   .commands     dq storage_command_test

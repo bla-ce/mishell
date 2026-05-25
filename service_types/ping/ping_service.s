@@ -1,4 +1,4 @@
-section .data
+section .rodata
 
 ping_service_t:
   .commands     dq ping_command_ping
