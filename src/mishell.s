@@ -44,6 +44,14 @@ _start:
   jne   .not_first_host
 
   ; init first host
+  mov   rdi, hosts
+  xor   rsi, rsi
+  call  host_init
+  cmp   rax, 0
+  jl    .error
+
+  ; increase host count
+  inc   byte [curr_host_idx]
 
 .not_first_host:
   ; create tcp socket

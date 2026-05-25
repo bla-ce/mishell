@@ -88,6 +88,9 @@ host_get_by_id:
   ret
 
 ; populates the host struct with ip and generates its id
+; an empty connection fd is not an error, the host is considered
+; local
+; TODO: will be a problem when we need the port
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: connection fd
 ; @return rax: return code
@@ -118,6 +121,10 @@ host_init:
   mov   qword [rsi+HOST_T_OFF_ID], rdx
   mov   qword [rsi+HOST_T_OFF_ID+0x8], rax
 
+  ; check if the host is local
+  cmp   qword [rsp+0x8], 0
+  je    .done
+
   mov   rdi, [rsp+0x8]
   call  net_get_ipv4_from_fd
   cmp   eax, 0
@@ -126,6 +133,7 @@ host_init:
   mov   rsi, [rsp]
   mov   dword [rsi+HOST_T_OFF_IP], eax
 
+.done:
   mov   rax, SUCCESS_CODE
   jmp    .return
 

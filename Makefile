@@ -31,7 +31,7 @@ run:
 	nasm -o $(BUILD_DIR)/$(MAIN_PATH).o $(SRC_DIR)/$(MAIN_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
-	./$(BIN_DIR)/$(MAIN_PATH)
+	./$(BIN_DIR)/$(MAIN_PATH) --first-host
 
 test-e2e:
 	python3 tests/e2e/client.py

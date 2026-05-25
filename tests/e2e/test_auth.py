@@ -16,7 +16,7 @@ def run():
         assert_server_response(resp, op=OP_ERROR, payload=b'host not found')
 
     with test("TEST (tcp): sending AUTH should return a message after adding too many hosts"):
-        for _ in range(HOST_MAX_COUNT - 1):  # one already added
+        for _ in range(HOST_MAX_COUNT - 2):  # two already added
             resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
             assert resp.op == OP_OK, f"expected OK: {resp}"
             host_id = int.from_bytes(resp.payload, byteorder='little')

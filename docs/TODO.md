@@ -1,5 +1,5 @@
 ## Priority 1
-- Add a flag --first-host
+- if --first-host not set, query a known host
 
 ## Priority 2
 - check padding and alignment for structs
@@ -21,7 +21,6 @@
 - tests for packet.inc
 
 ## Polishing
-- move constants to section .rodata
 - event_t should not be global but statically allocated
 - Check for clean architecture and SOLID principles
 
