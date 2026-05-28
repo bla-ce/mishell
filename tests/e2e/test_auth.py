@@ -1,11 +1,11 @@
 from helpers import *
 
 def run():
-    with test("TEST (unix): sending AUTH should work and return a OK op with 16 bytes payload"):
+    with test("TEST (unix): sending AUTH should work and return a OK op with host id in dest_host"):
         resp = unix_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
         assert_server_response(resp, op=OP_OK)
-        assert len(resp.payload) == 16, f"payload should be 16 bytes long: {resp}"
-    host_id = int.from_bytes(resp.payload, byteorder='little')
+        assert resp.dest_host != 0, f"dest_host should contain the host id: {resp}"
+    host_id = resp.dest_host
 
     with test("TEST (tcp): sending AUTH with id should return empty payload"):
         resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER, id=host_id))
@@ -19,7 +19,7 @@ def run():
         for _ in range(HOST_MAX_COUNT - 2):  # two already added
             resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
             assert resp.op == OP_OK, f"expected OK: {resp}"
-            host_id = int.from_bytes(resp.payload, byteorder='little')
+            host_id = resp.dest_host
 
         resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_CLIENT_TO_SERVER | FL_USER))
         assert_server_response(resp, op=OP_ERROR, payload=b'host limit has been reached')

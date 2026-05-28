@@ -136,10 +136,11 @@ op_auth:
   add   rdi, PACKET_T_OFF_DEST_HOST
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
-  lea   rsi, [hosts+eax]
-  add   rdi, PACKET_T_OFF_PAYLOAD
+  lea   rsi, [hosts+eax+HOST_T_OFF_ID]
   mov   rcx, ID_LEN
   rep   movsb
+
+  inc   byte [curr_host_idx]
 
   ; add host array to payload
   mov   rdi, [rsp+0x8]
@@ -149,8 +150,6 @@ op_auth:
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
   rep   movsb
-
-  inc   byte [curr_host_idx]
 
   mov   rax, SUCCESS_CODE
 

@@ -171,3 +171,5 @@ Maybe we can have commands like:
 
 mishell init (for first hosts)
 mishell connect <ip> <port>
+
+we can now connect to a remote host. Most of the values are hardcoded but that's a good start, we've validated the authentication flow

@@ -88,7 +88,10 @@ class Packet:
             struct.unpack_from(_HEADER_FMT, data)
         payload = data[_HEADER_SIZE : _HEADER_SIZE + payload_len]
         return cls(magic=magic, op=op, flags=flags,
-                   id=(id_hi << 64) | id_lo, payload=payload)
+                   id=(id_hi << 64) | id_lo,
+                   dest_host=(dest_host_hi << 64) | dest_host_lo,
+                   dest_service=(dest_service_hi << 64) | dest_service_lo,
+                   payload=payload)
 
     # Helpers
     def __eq__(self, other: object) -> bool:

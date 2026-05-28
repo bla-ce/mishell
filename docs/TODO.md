@@ -6,6 +6,7 @@
 - add FL_PEER_TO_PEER
 - add inet_pton to convert string IP to bytes
 - itoa back for port
+- we might need to know our own id?
 
 ## Priority 2
 - check padding and alignment for structs
