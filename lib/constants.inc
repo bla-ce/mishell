@@ -23,6 +23,7 @@ SYS_EPOLL_CREATE1 equ 291
 
 ; fileno
 STDOUT_FILENO equ 1
+STDERR_FILENO equ 2
 
 ; sockets
 AF_LOCAL  equ 1
@@ -49,6 +50,7 @@ RDRAND_RETRY_LIMIT  equ 10
 
 ; ASCII
 NULL_CHAR equ 0
+LINE_FEED equ 0xA
 HYPHEN    equ 0x2D
 DOT       equ 0x2E
 ZERO_CHAR equ 0x30

@@ -25,6 +25,10 @@ log:
   .recv_packet      db "[mishell] received packet from client", 10
   .recv_packet_len  equ $ - log.recv_packet
 
+usage_str     db "usage: mishell init", LINE_FEED
+              db "       mishell connect <ip> <port>", LINE_FEED
+usage_str_len equ $ - usage_str
+
 section .text
 
 _start:
@@ -374,6 +378,12 @@ _start:
   jmp   .exit
 
 .usage:
+  mov   rax, SYS_WRITE
+  mov   rdi, STDERR_FILENO
+  mov   rsi, usage_str
+  mov   rdx, usage_str_len
+  syscall
+  mov   rdi, FAILURE_CODE
   jmp   .exit
 
 .error:
