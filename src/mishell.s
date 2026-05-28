@@ -41,11 +41,18 @@ _start:
   cmp   qword [rsp+PACKET_T_LEN+0x10], 0
   je    .connect_to_host
 
-  mov   rdi, FIRST_HOST_FLAG
+  mov   rdi, CONNECT_HOST_CMD
   mov   rsi, [rsp+PACKET_T_LEN+0x10]  ; second CLI argument
-  mov   rcx, FIRST_HOST_FLAG_LEN
+  mov   rcx, CONNECT_HOST_CMD_LEN
   rep   cmpsb
-  jne   .connect_to_host
+  je    .connect_to_host
+
+  ; make sure it's init
+  mov   rdi, FIRST_HOST_CMD
+  mov   rsi, [rsp+PACKET_T_LEN+0x10]  ; second CLI argument
+  mov   rcx, FIRST_HOST_CMD_LEN
+  rep   cmpsb
+  jne   .usage
 
   ; init first host
   mov   rdi, hosts
@@ -364,6 +371,9 @@ _start:
   syscall
 
   mov   rdi, 0
+  jmp   .exit
+
+.usage:
   jmp   .exit
 
 .error:

@@ -1,7 +1,10 @@
 section .rodata
 
-FIRST_HOST_FLAG     db "--first-host"
-FIRST_HOST_FLAG_LEN equ $ - FIRST_HOST_FLAG -1
+FIRST_HOST_CMD     db "init"
+FIRST_HOST_CMD_LEN equ $ - FIRST_HOST_CMD -1
+
+CONNECT_HOST_CMD     db "connect"
+CONNECT_HOST_CMD_LEN equ $ - CONNECT_HOST_CMD -1
 
 HOST_MAX_COUNT equ 0x5
 

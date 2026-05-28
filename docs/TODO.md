@@ -1,6 +1,4 @@
 ## Priority 1
-- change --first-host to init
-- implement both commands for connect and init
 - populate port for host
 - do we really need to close the connection?
 - add FL_PEER_TO_PEER

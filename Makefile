@@ -26,12 +26,19 @@ strip:
 		$(INCLUDE_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o --strip-all
 
-run:
+run-init:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)
 	nasm -o $(BUILD_DIR)/$(MAIN_PATH).o $(SRC_DIR)/$(MAIN_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
-	./$(BIN_DIR)/$(MAIN_PATH) --first-host
+	./$(BIN_DIR)/$(MAIN_PATH) init
+
+run-connect:
+	mkdir -p $(BUILD_DIR) $(BIN_DIR)
+	nasm -o $(BUILD_DIR)/$(MAIN_PATH).o $(SRC_DIR)/$(MAIN_PATH).s \
+		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
+	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
+	./$(BIN_DIR)/$(MAIN_PATH) connect 127.0.0.1 7474
 
 test-e2e:
 	python3 tests/e2e/client.py
