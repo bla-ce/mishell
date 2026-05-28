@@ -34,7 +34,7 @@ jobs:
 
       - name: Run mishell
         run: |
-          make run &
+          make run-init &
           echo $! > server.pid
           sleep 1
 
