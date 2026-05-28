@@ -1,12 +1,12 @@
 ## Priority 1
-- populate port for host
-- do we really need to close the connection?
 - add FL_PEER_TO_PEER
 - add inet_pton to convert string IP to bytes
-- itoa back for port
-- we might need to know our own id?
+- we need stoi for port
+- we might need to store our own id?
+- think about closing the connection
 
 ## Priority 2
+- port is hardcoded
 - check padding and alignment for structs
 - STATUS op for service / host?
 - make the packet creation generic (zero it out and populate)

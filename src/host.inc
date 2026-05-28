@@ -247,18 +247,16 @@ host_get_by_id:
   ret
 
 ; populates the host struct with ip and generates its id
-; an empty connection fd is not an error, the host is considered
-; local
-; TODO: will be a problem when we need the port
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: connection fd
 ; @return rax: return code
 host_init:
-  sub   rsp, 0x10
+  sub   rsp, 0x18
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the host struct
   ; [rsp+0x8]   -> connection fd
+  ; [rsp+0x10]  -> sockaddr len for getpeername
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
@@ -282,15 +280,34 @@ host_init:
 
   ; check if the host is local
   cmp   qword [rsp+0x8], 0
-  je    .done
+  je    .local
 
+  ; get ip and port from fd
+  mov   rax, SYS_GETPEERNAME
   mov   rdi, [rsp+0x8]
-  call  net_get_ipv4_from_fd
-  cmp   eax, 0
+  mov   rsi, sockaddr_in_t
+  lea   rdx, [rsp+0x10]
+  syscall
+  cmp   rax, 0
   jl    .error
 
-  mov   rsi, [rsp]
-  mov   dword [rsi+HOST_T_OFF_IP], eax
+  ; get ip
+  mov   rsi, sockaddr_in_t
+
+  mov   rdi, [rsp]
+  mov   eax, [sockaddr_in_t.sin_addr]
+  mov   dword [rdi+HOST_T_OFF_IP], eax
+
+  ; get port
+  mov   ax, [sockaddr_in_t.sin_port]
+  mov   word [rdi+HOST_T_OFF_PORT], ax
+  jmp   .done
+
+.local:
+  mov   rdi, [rsp]
+  mov   dword [rdi+HOST_T_OFF_IP], 0
+  mov   word [rdi+HOST_T_OFF_PORT], tcp_port
+  jmp   .done
 
 .done:
   mov   rax, SUCCESS_CODE
@@ -300,5 +317,5 @@ host_init:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x10
+  add   rsp, 0x18
   ret

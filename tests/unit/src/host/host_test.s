@@ -8,6 +8,10 @@ global _start
 %include "service.inc"
 %include "service_type.inc"
 
+section .rodata
+
+tcp_port equ 7474
+
 section .bss
 
 section .text

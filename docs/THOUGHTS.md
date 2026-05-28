@@ -172,4 +172,5 @@ Maybe we can have commands like:
 mishell init (for first hosts)
 mishell connect <ip> <port>
 
-we can now connect to a remote host. Most of the values are hardcoded but that's a good start, we've validated the authentication flow
+We can now connect to a remote host. Most of the values are hardcoded but that's a good start, we've validated the authentication flow
+Now, we need to populate the port to the host struct. This will be done inside the host init function. if the fd is 0, the host we are initialising is the host running on the current mishell instance, so we can assume local ip and port from the `tcp_port` value.
