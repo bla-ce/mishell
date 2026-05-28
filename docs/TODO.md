@@ -1,12 +1,17 @@
 ## Priority 1
-- if --first-host not set, query a known host
+- change --first-host to init
+- implement both commands for connect and init
+- populate port for host
+- do we really need to close the connection?
+- add FL_PEER_TO_PEER
+- add inet_pton to convert string IP to bytes
+- itoa back for port
 
 ## Priority 2
 - check padding and alignment for structs
 - STATUS op for service / host?
 - make the packet creation generic (zero it out and populate)
 - last updated for services?
-- populate port for host
 - Make sure we can't have two host on the same ip
 - Find a way to validate service types (description and commands length)
 - Define host expiration or host removal process

@@ -131,14 +131,23 @@ op_auth:
   ; build response packet
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ID_LEN
 
-  ; add id to payload
+  ; id is in the host destination field
+  add   rdi, PACKET_T_OFF_DEST_HOST
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rsi, [hosts+eax]
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rcx, ID_LEN
+  rep   movsb
+
+  ; add host array to payload
+  mov   rdi, [rsp+0x8]
+  movzx cx, byte [curr_host_idx]
+  imul  cx, HOST_T_LEN
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], cx
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, hosts
   rep   movsb
 
   inc   byte [curr_host_idx]

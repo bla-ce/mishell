@@ -160,3 +160,14 @@ For now, we only use the destination field for the service ops. We need to figur
 The part 1 has been done, we have a single host working end-to-end. We have two service types as example and we need to define the P2P architecture we will be implementing.
 
 The first step we need to figure out is how to start the first host. We can simply add a flag, something like --first-host to mishell. When this flag is passed, the host adds itself to a host array, and that's it.
+
+We've added a simple flag to be able to know when we need to initialise the first host. The flow is simple, the host adds itself to the array. We will need to find a solution later with the ip of the host, by default, it will be considered local which I think is fine. But, we will need to find a way to know the port the host is running from. EDIT: We can simply use the variable PORT.
+
+Before doing the second flow when the host needs to be registered by another host, we need to know the port of the host and add it to the struct. This should be simple for INET socket but could be slightly more tricky for UNIX, let's see.
+
+Once that's done, we need to define how to pass the ip and the port of the host we are sending the registration request to. This will be the same flow, HELLO, and AUTH. The receiver populates the host array and returns it inside the payload so that the sender can populate its own array. We know there is race conditions issue here but we'll deal with that later. We can pass the ip and the port as CLI arguments.
+
+Maybe we can have commands like:
+
+mishell init (for first hosts)
+mishell connect <ip> <port>

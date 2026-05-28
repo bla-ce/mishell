@@ -28,13 +28,169 @@ host_t:
   .pad            resb 0x5
 host_t_end:
 
-hosts resb HOSTS_LEN
-
 section .data
 
+hosts times HOSTS_LEN db 0
 curr_host_idx db 0
 
 section .text
+
+; connects to a remote host by sending HELLO and AUTH commands
+; assuming local networks for now
+; @param  rdi: pointer to the ip of the remote host
+; @param  rsi: pointer to the port of the remote host
+; @return rax: return code
+host_connect_to_remote:
+  sub   rsp, 0x18 + PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the ip of the remote host
+  ; [rsp+0x8]   -> pointer to the port of the remote host
+  ; [rsp+0x10]  -> host fd
+  ; [rsp+0x18]  -> packet
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  ; create socket
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_INET
+  mov   rsi, SOCK_STREAM
+  xor   rdx, rdx
+  syscall
+
+  mov   [rsp+0x10], rax
+
+  ; populate sockaddr: TODO: we might want to use the stack here
+  mov   word [sockaddr_in_t.sin_family], AF_INET
+
+  ; port to network order
+  ; mov   rdi, [rsp+0x8]
+  mov   rdi, 7474
+  mov   rax, rdi
+  xchg  al, ah ; bswap 16-bit registers
+
+  mov   word [sockaddr_in_t.sin_port], ax
+  mov   dword [sockaddr_in_t.sin_addr], 0
+  mov   qword [sockaddr_in_t.sin_zero], 0
+
+  ; connect to socket
+  mov   rax, SYS_CONNECT
+  mov   rdi, [rsp+0x10]
+  mov   rsi, sockaddr_in_t
+  mov   rdx, [sockaddr_in_t_len]
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; send hello command
+  lea   rdi, [rsp+0x18]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_CLIENT_TO_SERVER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.HELLO
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+
+  mov   rax, SYS_WRITE
+  mov   rdi, [rsp+0x10]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, PACKET_T_HEADER_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; receive response
+  mov   rax, SYS_READ
+  mov   rdi, [rsp+0x10]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; confirm response is ok
+  lea   rdi, [rsp+0x18]
+  cmp   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
+  jne   .error
+
+  ; host closes connection, need to close and reconnect
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x10]
+  syscall
+
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_INET
+  mov   rsi, SOCK_STREAM
+  xor   rdx, rdx
+  syscall
+
+  mov   [rsp+0x10], rax
+
+  mov   rax, SYS_CONNECT
+  mov   rdi, [rsp+0x10]
+  mov   rsi, sockaddr_in_t
+  mov   rdx, [sockaddr_in_t_len]
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; send auth command
+  lea   rdi, [rsp+0x18]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_CLIENT_TO_SERVER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.AUTH
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+
+  mov   rax, SYS_WRITE
+  mov   rdi, [rsp+0x10]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, PACKET_T_HEADER_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; receive response
+  mov   rax, SYS_READ
+  mov   rdi, [rsp+0x10]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; confirm response is ok
+  lea   rsi, [rsp+0x18]
+  cmp   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
+  jne   .error
+
+  ; get host array from payload
+  movzx rcx, word [rsi+PACKET_T_OFF_PAYLOAD_LEN]
+  add   rsi, PACKET_T_OFF_PAYLOAD
+  mov   rdi, hosts
+  rep   movsb
+
+  mov   rax, SUCCESS_CODE
+
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18 + PACKET_T_LEN
+  ret
+
 
 ; returns the host struct from the host id or -1 if the host is
 ; not registered

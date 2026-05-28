@@ -31,17 +31,21 @@ _start:
   sub   rsp, PACKET_T_LEN
 
   ; STACK USAGE
-  ; [rsp] -> pointer to the packet struct
+  ; [rsp]                   -> pointer to the packet struct
+  ; [rsp+PACKET_T_LEN+0x8]  -> pointer to program name
+  ; [rsp+PACKET_T_LEN+0x10] -> pointer to command
+  ; [rsp+PACKET_T_LEN+0x18] -> pointer to ip of the remote host
+  ; [rsp+PACKET_T_LEN+0x20] -> pointer to port of the remote host
 
   ; check if the host is the first one (--first-host passed)
   cmp   qword [rsp+PACKET_T_LEN+0x10], 0
-  je    .not_first_host
+  je    .connect_to_host
 
   mov   rdi, FIRST_HOST_FLAG
   mov   rsi, [rsp+PACKET_T_LEN+0x10]  ; second CLI argument
   mov   rcx, FIRST_HOST_FLAG_LEN
   rep   cmpsb
-  jne   .not_first_host
+  jne   .connect_to_host
 
   ; init first host
   mov   rdi, hosts
@@ -53,7 +57,18 @@ _start:
   ; increase host count
   inc   byte [curr_host_idx]
 
-.not_first_host:
+  jmp   .init_sockets
+
+.connect_to_host:
+  mov   rdi, [rsp+PACKET_T_LEN+0x18]
+  mov   rsi, [rsp+PACKET_T_LEN+0x20]
+  call  host_connect_to_remote
+  cmp   rax, 0
+  jl    .error
+
+  jmp   .init_sockets
+
+.init_sockets:
   ; create tcp socket
   mov   rax, SYS_SOCKET
   mov   rdi, AF_INET

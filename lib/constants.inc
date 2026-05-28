@@ -8,6 +8,7 @@ SYS_READ          equ 0
 SYS_WRITE         equ 1
 SYS_CLOSE         equ 3
 SYS_SOCKET        equ 41
+SYS_CONNECT       equ 42
 SYS_ACCEPT        equ 43
 SYS_BIND          equ 49
 SYS_LISTEN        equ 50
