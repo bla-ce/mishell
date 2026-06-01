@@ -82,7 +82,14 @@ host_connect_to_remote:
   xchg  al, ah ; bswap 16-bit registers
 
   mov   word [sockaddr_in_t.sin_port], ax
-  mov   dword [sockaddr_in_t.sin_addr], 0
+
+  ; get ip from cli
+  mov   rdi, [rsp]
+  mov   rsi, sockaddr_in_t.sin_addr
+  call  inet_pton
+  cmp   rax, 0
+  jl    .error
+
   mov   qword [sockaddr_in_t.sin_zero], 0
 
   ; connect to socket
