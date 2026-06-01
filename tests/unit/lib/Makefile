@@ -2,3 +2,4 @@
 
 test-unit:
 	$(MAKE) -C string
+	$(MAKE) -C net
