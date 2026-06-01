@@ -31,6 +31,8 @@ host_t:
   .pad            resb 0x5
 host_t_end:
 
+host_id resb ID_LEN
+
 section .data
 
 hosts times HOSTS_LEN db 0
@@ -191,6 +193,13 @@ host_connect_to_remote:
   add   rsi, PACKET_T_OFF_PAYLOAD
   mov   rdi, hosts
   rep   movsb
+
+  ; get own id from destination field
+  lea   rsi, [rsp+0x18]
+  add   rsi, PACKET_T_OFF_DEST_HOST
+  mov   rdi, host_id
+  mov   rcx, ID_LEN
+  movsb
 
   mov   rax, SUCCESS_CODE
 

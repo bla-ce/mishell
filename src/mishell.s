@@ -68,6 +68,13 @@ _start:
   ; increase host count
   inc   byte [curr_host_idx]
 
+  ; populate host id (first in the array)
+  mov   rsi, hosts
+  add   rsi, HOST_T_OFF_ID
+  mov   rdi, host_id
+  mov   rcx, ID_LEN
+  movsb
+
   jmp   .init_sockets
 
 .connect_to_host:
