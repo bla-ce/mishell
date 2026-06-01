@@ -29,16 +29,14 @@ PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_DEST_SERVICE + ID_LEN
 PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
 ; DIRECTION FLAGS
-FL_CLIENT_TO_SERVER   equ 0000b
-FL_SERVER_TO_CLIENT   equ 0001b
+FL_PEER_TO_PEER       equ 0001b
 FL_CLIENT_TO_SERVICE  equ 0010b
 FL_SERVICE_TO_CLIENT  equ 0100b
 
 ; MODE FLAGS
 FL_USER     equ 00010000b
 FL_HOST     equ 00100000b
-FL_SERVER   equ 01000000b
-FL_SERVICE  equ 10000000b
+FL_SERVICE  equ 01000000b
 
 MAGIC_VALUE     equ 0xCAFE
 PAYLOAD_MAX_LEN equ 0xFFFF
@@ -198,12 +196,6 @@ packet_verify:
   ; make sure the direction is client to server
   mov   ax, word [rdi+PACKET_T_OFF_FLAGS]
 
-  mov   qword [rsp+0x8], error_codes.INVALID_DIRECTION
-  mov   r9w, ax
-  and   r9w, FL_SERVER_TO_CLIENT
-  test  r9w, r9w
-  jnz   .error
-
   ; at least one of FL_HOST or FL_USER must be set
   mov   qword [rsp+0x8], error_codes.INVALID_MODE
   mov   r9w, ax
@@ -282,8 +274,7 @@ packet_build_error:
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.ERROR
 
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
   cmp   rsi, 0
   jl    .internal_error

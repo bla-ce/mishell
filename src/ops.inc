@@ -40,8 +40,8 @@ op_hello:
 
   mov   word [rsi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
-  mov   word [rsi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    word [rsi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   word [rsi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rsi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rsi+PACKET_T_OFF_ID], 0
   mov   qword [rsi+PACKET_T_OFF_ID+0x8], 0
   mov   word [rsi+PACKET_T_OFF_PAYLOAD_LEN], 0
@@ -85,8 +85,8 @@ op_auth:
   ; build base packet
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
 
@@ -232,8 +232,8 @@ op_register:
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
@@ -312,8 +312,8 @@ op_start:
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
@@ -393,8 +393,8 @@ op_stop:
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
@@ -485,8 +485,8 @@ op_unregister:
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER_TO_CLIENT
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK

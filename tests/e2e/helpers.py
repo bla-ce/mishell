@@ -35,7 +35,7 @@ def unix_connection(packet):
 def assert_server_response(resp, *, op, payload=None, id=0):
     assert resp.magic == MAGIC,                          f"wrong magic: {resp}"
     assert resp.op == op,                                f"expected {op}: {resp}"
-    assert resp.flags == (FL_SERVER_TO_CLIENT | FL_SERVER) or (FL_SERVICE | FL_SERVICE_TO_CLIENT), f"wrong flags: {resp}"
+    assert resp.flags == (FL_PEER_TO_PEER | FL_HOST) or (FL_SERVICE | FL_SERVICE_TO_CLIENT), f"wrong flags: {resp}"
     assert resp.id == id,                                f"wrong id: {resp}"
     if payload is not None:
         assert resp.payload == payload,                  f"wrong payload: {resp}"

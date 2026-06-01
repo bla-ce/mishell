@@ -20,14 +20,12 @@ OP_OK    = 0x0
 OP_ERROR = 0x1
 
 # Flags
-FL_CLIENT_TO_SERVER  = 0b0000_0000
-FL_SERVER_TO_CLIENT  = 0b0000_0001
+FL_PEER_TO_PEER      = 0b0000_0001
 FL_CLIENT_TO_SERVICE = 0b0000_0010
 FL_SERVICE_TO_CLIENT = 0b0000_0100
 FL_USER              = 0b0001_0000
 FL_HOST              = 0b0010_0000
-FL_SERVER            = 0b0100_0000
-FL_SERVICE           = 0b1000_0000
+FL_SERVICE           = 0b0100_0000
 
 PAYLOAD_MAX_LEN = 0xFFFF
 
@@ -107,13 +105,11 @@ class Packet:
 
     def __repr__(self) -> str:
         flag_names = []
-        if self.flags & FL_SERVER_TO_CLIENT: flag_names.append('server->client')
+        if self.flags & FL_PEER_TO_PEER: flag_names.append('peer->peer')
         elif self.flags & FL_SERVICE_TO_CLIENT: flag_names.append('service->client')
         elif self.flags & FL_CLIENT_TO_SERVICE: flag_names.append('client->service')
-        elif self.flags & FL_CLIENT_TO_SERVER: flag_names.append('client->server')
         if self.flags & FL_USER:   flag_names.append('USER')
         if self.flags & FL_HOST:   flag_names.append('HOST')
-        if self.flags & FL_SERVER: flag_names.append('SERVER')
         if self.flags & FL_SERVICE: flag_names.append('SERVICE')
         op_name = {
             OP_HELLO: 'HELLO',

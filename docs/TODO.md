@@ -1,12 +1,11 @@
 ## Priority 1
-- add FL_PEER_TO_PEER
 - add inet_pton to convert string IP to bytes
 - we need stoi for port
 - we might need to store our own id?
 - think about closing the connection
+- clean up what's been done, split code into functions etc...
 
 ## Priority 2
-- port is hardcoded
 - check padding and alignment for structs
 - STATUS op for service / host?
 - make the packet creation generic (zero it out and populate)
@@ -16,6 +15,7 @@
 - Define host expiration or host removal process
 - add fd to logs
 - clean up is never reached, graceful shutdown
+- port and path are hardcoded (loadenv function)
 
 ## Ongoing
 - Update README

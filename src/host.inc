@@ -95,7 +95,7 @@ host_connect_to_remote:
   ; send hello command
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_CLIENT_TO_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
   or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
@@ -148,7 +148,7 @@ host_connect_to_remote:
   ; send auth command
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_CLIENT_TO_SERVER
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
   or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0

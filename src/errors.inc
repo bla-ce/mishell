@@ -7,34 +7,32 @@ error_codes:
   ; packet validation
   .INVALID_MAGIC                  equ 2
   .INVALID_OP                     equ 3
-  .INVALID_DIRECTION              equ 4
-  .INVALID_MODE                   equ 5
-  .INVALID_TOKEN                  equ 6
-  .UNAUTHORIZED                   equ 7
+  .INVALID_MODE                   equ 4
+  .INVALID_TOKEN                  equ 5
+  .UNAUTHORIZED                   equ 6
 
   ; host errors
-  .HOST_LIMIT_REACHED             equ 8
-  .HOST_NOT_FOUND                 equ 9
+  .HOST_LIMIT_REACHED             equ 7
+  .HOST_NOT_FOUND                 equ 8
 
   ; service errors
-  .SERVICE_PER_HOST_LIMIT_REACHED equ 10
-  .SERVICE_NOT_FOUND              equ 11
-  .SERVICE_INVALID_NAME           equ 12
-  .SERVICE_INVALID_TYPE           equ 13
-  .SERVICE_STOP_BEFORE_UNREGISTER equ 14
-  .SERVICE_NOT_STARTED            equ 15
+  .SERVICE_PER_HOST_LIMIT_REACHED equ 9
+  .SERVICE_NOT_FOUND              equ 10
+  .SERVICE_INVALID_NAME           equ 11
+  .SERVICE_INVALID_TYPE           equ 12
+  .SERVICE_STOP_BEFORE_UNREGISTER equ 13
+  .SERVICE_NOT_STARTED            equ 14
 
   ; command errors
-  .COMMAND_NOT_FOUND              equ 16
+  .COMMAND_NOT_FOUND              equ 15
 
-  .COUNT                          equ 17
+  .COUNT                          equ 16
 
 err_code_to_msg_table:
   .NULL                           dq 0
   .INTERNAL                       dq error_msg.internal
   .INVALID_MAGIC                  dq error_msg.invalid_magic
   .INVALID_OP                     dq error_msg.invalid_op
-  .INVALID_DIRECTION              dq error_msg.invalid_direction
   .INVALID_MODE                   dq error_msg.invalid_mode
   .INVALID_TOKEN                  dq error_msg.invalid_token
   .UNAUTHORIZED                   dq error_msg.unauthorized
@@ -53,7 +51,6 @@ err_code_to_len_table:
   .INTERNAL                       dw error_msg.internal_len
   .INVALID_MAGIC                  dw error_msg.invalid_magic_len
   .INVALID_OP                     dw error_msg.invalid_op_len
-  .INVALID_DIRECTION              dw error_msg.invalid_direction_len
   .INVALID_MODE                   dw error_msg.invalid_mode_len
   .INVALID_TOKEN                  dw error_msg.invalid_token_len
   .UNAUTHORIZED                   dw error_msg.unauthorized_len
@@ -74,8 +71,6 @@ error_msg:
   .invalid_magic_len equ $ - error_msg.invalid_magic
   .invalid_op db "invalid op value in packet"
   .invalid_op_len equ $ - error_msg.invalid_op
-  .invalid_direction db "invalid direction flag in packet"
-  .invalid_direction_len equ $ - error_msg.invalid_direction
   .invalid_mode db "invalid mode flag in packet"
   .invalid_mode_len equ $ - error_msg.invalid_mode
   .invalid_token db "invalid host token"
