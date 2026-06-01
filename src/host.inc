@@ -74,9 +74,11 @@ host_connect_to_remote:
   mov   word [sockaddr_in_t.sin_family], AF_INET
 
   ; port to network order
-  ; mov   rdi, [rsp+0x8]
-  mov   rdi, 7474
-  mov   rax, rdi
+  mov   rdi, [rsp+0x8]
+  call  atoi
+  cmp   rax, 0
+  jl    .error
+
   xchg  al, ah ; bswap 16-bit registers
 
   mov   word [sockaddr_in_t.sin_port], ax
