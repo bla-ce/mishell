@@ -1,6 +1,6 @@
 ## Priority 1
+- we need atoi for port
 - add inet_pton to convert string IP to bytes
-- we need stoi for port
 - we might need to store our own id?
 - think about closing the connection
 - clean up what's been done, split code into functions etc...
