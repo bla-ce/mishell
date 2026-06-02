@@ -48,9 +48,8 @@ jobs:
       matrix:
         suite:
           - unit/src/auth
-          - unit/src/host
-          - unit/src/service
           - unit/lib/string
+          - unit/lib/net
     steps:
       - uses: actions/checkout@v4
       - name: Install nasm
