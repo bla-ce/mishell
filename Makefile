@@ -38,7 +38,7 @@ run-connect:
 	nasm -o $(BUILD_DIR)/$(MAIN_PATH).o $(SRC_DIR)/$(MAIN_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
-	./$(BIN_DIR)/$(MAIN_PATH) connect 127.0.0.1 7474
+	./$(BIN_DIR)/$(MAIN_PATH) connect $(IP) $(PORT)
 
 test-e2e:
 	python3 tests/e2e/client.py
