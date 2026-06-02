@@ -168,7 +168,8 @@ host_connect_to_remote:
 
   ; add host to payload
   mov   rdi, host_t
-  xor   rsi, rsi
+  movsx rsi, dword [sockaddr_in_t.sin_addr]
+  movzx rdx, word [sockaddr_in_t.sin_port]
   call  host_init
   cmp   rax, 0
   jl    .error
@@ -279,20 +280,25 @@ host_get_by_id:
 
 ; populates the host struct with ip, port and generates its id
 ; @param  rdi: pointer to the host struct
-; @param  rsi: connection fd
+; @param  rsi: ip of the host
+; @param  rdx: port of the host (host order)
 ; @return rax: return code
 host_init:
   sub   rsp, 0x18
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the host struct
-  ; [rsp+0x8]   -> connection fd
-  ; [rsp+0x10]  -> sockaddr len for getpeername
+  ; [rsp+0x8]   -> ip of the host
+  ; [rsp+0x10]  -> port of the host (host order)
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
 
   test  rdi, rdi
+  jz    .error
+
+  test  rdx, rdx
   jz    .error
 
   ; memset host to 0
@@ -309,38 +315,12 @@ host_init:
   mov   qword [rsi+HOST_T_OFF_ID], rdx
   mov   qword [rsi+HOST_T_OFF_ID+0x8], rax
 
-  ; check if the host is local
-  cmp   qword [rsp+0x8], 0
-  je    .local
+  mov   eax, dword [rsp+0x8]
+  mov   dword [rsi+HOST_T_OFF_IP], eax
 
-  ; get ip and port from fd
-  mov   rax, SYS_GETPEERNAME
-  mov   rdi, [rsp+0x8]
-  mov   rsi, sockaddr_in_t
-  lea   rdx, [rsp+0x10]
-  syscall
-  cmp   rax, 0
-  jl    .error
+  mov   ax, word [rsp+0x10]
+  mov   word [rsi+HOST_T_OFF_PORT], ax
 
-  ; get ip
-  mov   rsi, sockaddr_in_t
-
-  mov   rdi, [rsp]
-  mov   eax, [sockaddr_in_t.sin_addr]
-  mov   dword [rdi+HOST_T_OFF_IP], eax
-
-  ; get port
-  mov   ax, [sockaddr_in_t.sin_port]
-  mov   word [rdi+HOST_T_OFF_PORT], ax
-  jmp   .done
-
-.local:
-  mov   rdi, [rsp]
-  mov   dword [rdi+HOST_T_OFF_IP], host_ip
-  mov   word [rdi+HOST_T_OFF_PORT], tcp_port
-  jmp   .done
-
-.done:
   mov   rax, SUCCESS_CODE
   jmp    .return
 

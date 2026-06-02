@@ -118,12 +118,18 @@ op_auth:
   cmp   byte [curr_host_idx], HOST_MAX_COUNT
   jge   .error
 
+  ; get ip and port from request packet
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  movsx rsi, dword [rdi+HOST_T_OFF_IP]
+  movzx rdx, word [rdi+HOST_T_OFF_PORT]
+  xchg  dl, dh ; bswap 16-bit registers
+
   ; populate host struct
   mov   qword [rsp+0x18], error_codes.INTERNAL
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rdi, [hosts+eax]
-  mov   rsi, [rsp+0x10]
   call  host_init
   cmp   rax, 0
   jl    .error

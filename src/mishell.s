@@ -61,7 +61,8 @@ _start:
 
   ; init first host
   mov   rdi, hosts
-  xor   rsi, rsi
+  mov   rsi, host_ip
+  mov   rdx, tcp_port
   call  host_init
   cmp   rax, 0
   jl    .error
