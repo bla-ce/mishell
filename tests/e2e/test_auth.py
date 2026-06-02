@@ -4,7 +4,7 @@ import socket
 
 # HOST_T layout: 16-byte id | 4-byte ipv4 | 2-byte port
 def _host_payload(ip='127.0.0.1', port=SOCKET_PORT):
-    return b'\x00' * 16 + socket.inet_aton(ip) + struct.pack('>H', port)
+    return b'\x00' * 16 + socket.inet_aton(ip) + struct.pack('H', port)
 
 def run():
     with test("TEST (unix): sending AUTH should work and return a OK op with host id in dest_host"):
