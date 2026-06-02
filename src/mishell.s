@@ -11,6 +11,7 @@ global _start
 section .rodata
 
 tcp_port  equ 7474
+host_ip   equ 0
 
 log:
   .listen_tcp     db "[mishell] listening on TCP port 7474", 10
@@ -41,7 +42,7 @@ _start:
   ; [rsp+PACKET_T_LEN+0x18] -> pointer to ip of the remote host
   ; [rsp+PACKET_T_LEN+0x20] -> pointer to port of the remote host
 
-  ; check if the host is the first one (--first-host passed)
+  ; check if the host is the first one (init passed)
   cmp   qword [rsp+PACKET_T_LEN+0x10], 0
   je    .connect_to_host
 

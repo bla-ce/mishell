@@ -164,12 +164,25 @@ host_connect_to_remote:
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.AUTH
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOST_T_LEN
+
+  ; add host to payload
+  mov   rdi, host_t
+  xor   rsi, rsi
+  call  host_init
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x18]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, host_t
+  mov   rcx, HOST_T_LEN
+  rep   movsb
 
   mov   rax, SYS_WRITE
   mov   rdi, [rsp+0x10]
   lea   rsi, [rsp+0x18]
-  mov   rdx, PACKET_T_HEADER_LEN
+  mov   rdx, PACKET_T_HEADER_LEN+HOST_T_LEN
   syscall
   cmp   rax, 0
   jl    .error
@@ -264,7 +277,7 @@ host_get_by_id:
   add   rsp, 0x10
   ret
 
-; populates the host struct with ip and generates its id
+; populates the host struct with ip, port and generates its id
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: connection fd
 ; @return rax: return code
@@ -323,7 +336,7 @@ host_init:
 
 .local:
   mov   rdi, [rsp]
-  mov   dword [rdi+HOST_T_OFF_IP], 0
+  mov   dword [rdi+HOST_T_OFF_IP], host_ip
   mov   word [rdi+HOST_T_OFF_PORT], tcp_port
   jmp   .done
 

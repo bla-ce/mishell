@@ -4,3 +4,5 @@ build/
 *.sock
 __pycache__/
 _test_template.s
+THOUGHTS.md
+TODO.md
