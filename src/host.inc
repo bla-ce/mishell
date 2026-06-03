@@ -40,6 +40,87 @@ curr_host_idx db 0
 
 section .text
 
+; @param  rdi: pointer to the command
+; @param  rsi: ip of the remote host (optional)
+; @param  rdx: port of the remote host (optional)
+; @return rax: return code
+init_or_join_network:
+  sub   rsp, 0x18
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the command
+  ; [rsp+0x8]   -> ip of the remote host
+  ; [rsp+0x10]  -> port of the remote host
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
+
+  test  rdi, rdi
+  jz    .error
+
+  ; check if the host is the first one (init passed)
+  cmp   qword [rsp], 0
+  je    .connect_to_host
+
+  mov   rdi, CONNECT_HOST_CMD
+  mov   rsi, [rsp]  ; second CLI argument
+  mov   rcx, CONNECT_HOST_CMD_LEN
+  rep   cmpsb
+  je    .connect_to_host
+
+  ; make sure it's init
+  mov   rdi, FIRST_HOST_CMD
+  mov   rsi, [rsp]  ; second CLI argument
+  mov   rcx, FIRST_HOST_CMD_LEN
+  rep   cmpsb
+  jne   .usage
+
+  ; init first host
+  mov   rdi, hosts
+  mov   rsi, host_ip
+  mov   rdx, tcp_port
+  call  host_init
+  cmp   rax, 0
+  jl    .error
+
+  ; increase host count
+  inc   byte [curr_host_idx]
+
+  ; populate host id (first in the array)
+  mov   rsi, hosts
+  add   rsi, HOST_T_OFF_ID
+  mov   rdi, host_id
+  mov   rcx, ID_LEN
+  movsb
+
+  jmp   .done
+
+.connect_to_host:
+  mov   rdi, [rsp+0x8]
+  mov   rsi, [rsp+0x10]
+  call  host_connect_to_remote
+  cmp   rax, 0
+  jl    .error
+
+.done:
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.usage:
+  mov   rax, SYS_WRITE
+  mov   rdi, STDERR_FILENO
+  mov   rsi, usage_str
+  mov   rdx, usage_str_len
+  syscall
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18
+  ret
+
 ; connects to a remote host by sending HELLO and AUTH commands
 ; assuming local networks for now
 ; @param  rdi: pointer to the ip of the remote host

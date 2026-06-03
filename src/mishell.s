@@ -42,53 +42,13 @@ _start:
   ; [rsp+PACKET_T_LEN+0x18] -> pointer to ip of the remote host
   ; [rsp+PACKET_T_LEN+0x20] -> pointer to port of the remote host
 
-  ; check if the host is the first one (init passed)
-  cmp   qword [rsp+PACKET_T_LEN+0x10], 0
-  je    .connect_to_host
-
-  mov   rdi, CONNECT_HOST_CMD
-  mov   rsi, [rsp+PACKET_T_LEN+0x10]  ; second CLI argument
-  mov   rcx, CONNECT_HOST_CMD_LEN
-  rep   cmpsb
-  je    .connect_to_host
-
-  ; make sure it's init
-  mov   rdi, FIRST_HOST_CMD
-  mov   rsi, [rsp+PACKET_T_LEN+0x10]  ; second CLI argument
-  mov   rcx, FIRST_HOST_CMD_LEN
-  rep   cmpsb
-  jne   .usage
-
-  ; init first host
-  mov   rdi, hosts
-  mov   rsi, host_ip
-  mov   rdx, tcp_port
-  call  host_init
+  mov   rdi, [rsp+PACKET_T_LEN+0x10]
+  mov   rsi, [rsp+PACKET_T_LEN+0x18]
+  mov   rdx, [rsp+PACKET_T_LEN+0x20]
+  call  init_or_join_network
   cmp   rax, 0
   jl    .error
 
-  ; increase host count
-  inc   byte [curr_host_idx]
-
-  ; populate host id (first in the array)
-  mov   rsi, hosts
-  add   rsi, HOST_T_OFF_ID
-  mov   rdi, host_id
-  mov   rcx, ID_LEN
-  movsb
-
-  jmp   .init_sockets
-
-.connect_to_host:
-  mov   rdi, [rsp+PACKET_T_LEN+0x18]
-  mov   rsi, [rsp+PACKET_T_LEN+0x20]
-  call  host_connect_to_remote
-  cmp   rax, 0
-  jl    .error
-
-  jmp   .init_sockets
-
-.init_sockets:
   ; create tcp socket
   mov   rax, SYS_SOCKET
   mov   rdi, AF_INET

@@ -3,6 +3,8 @@
 ## Overview
 
 Mishell is a service management system that allows you to spin up, manage and query services across a P2P network of mishell instances.
+Built-in services will be available soon and, also, you are able to create your own service types as long as they respect the service contract.
+The service contract will be defined in the [docs](/docs) (TODO)
 
 ## Prerequisites
 
