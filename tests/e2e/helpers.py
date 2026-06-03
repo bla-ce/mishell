@@ -25,13 +25,6 @@ def tcp_connection(packet):
         sock.shutdown(socket.SHUT_WR)
         return recv_packet(sock)
 
-def unix_connection(packet):
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-        sock.connect(SOCKET_PATH)
-        sock.sendall(packet.pack())
-        sock.shutdown(socket.SHUT_WR)
-        return recv_packet(sock)
-
 def assert_server_response(resp, *, op, payload=None, id=0):
     assert resp.magic == MAGIC,                          f"wrong magic: {resp}"
     assert resp.op == op,                                f"expected {op}: {resp}"

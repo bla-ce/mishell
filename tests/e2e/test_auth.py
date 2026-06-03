@@ -7,8 +7,8 @@ def _host_payload(ip='127.0.0.1', port=SOCKET_PORT):
     return b'\x00' * 16 + socket.inet_aton(ip) + struct.pack('H', port)
 
 def run():
-    with test("TEST (unix): sending AUTH should work and return a OK op with host id in dest_host"):
-        resp = unix_connection(Packet(op=OP_AUTH, flags=FL_PEER_TO_PEER | FL_HOST, payload=_host_payload()))
+    with test("TEST (tcp): sending AUTH should work and return a OK op with host id in dest_host"):
+        resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_PEER_TO_PEER | FL_HOST, payload=_host_payload()))
         assert_server_response(resp, op=OP_OK)
         assert resp.dest_host != 0, f"dest_host should contain the host id: {resp}"
     host_id = resp.dest_host

@@ -17,9 +17,6 @@ log:
   .listen_tcp     db "[mishell] listening on TCP port 7474", 10
   .listen_tcp_len equ $ - log.listen_tcp
 
-  .listen_unix      db "[mishell] listening on UNIX socket mishell.sock", 10
-  .listen_unix_len  equ $ - log.listen_unix
-
   .accept_new_conn      db "[mishell] accepted new connection", 10
   .accept_new_conn_len  equ $ - log.accept_new_conn
 
@@ -104,47 +101,6 @@ _start:
   cmp   rax, 0
   jl    .error
 
-  ; create unix socket
-  mov   rax, SYS_SOCKET
-  mov   rdi, AF_LOCAL
-  mov   rsi, SOCK_STREAM
-  mov   rdx, 0
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  mov   [unix_fd], rax
-
-  ; unlink unix socket
-  mov   rax, SYS_UNLINK
-  mov   rdi, sockaddr_un_t.sun_path
-  syscall ; fine to error here
-
-  ; bind unix socket
-  mov   rax, SYS_BIND
-  mov   rdi, [unix_fd]
-  mov   rsi, sockaddr_un_t
-  mov   rdx, sockaddr_un_t_len
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; listen to unix
-  mov   rax, SYS_LISTEN
-  mov   rdi, [unix_fd]
-  mov   rsi, LISTEN_BACKLOG
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  mov   rax, SYS_WRITE
-  mov   rdi, STDOUT_FILENO
-  mov   rsi, log.listen_unix
-  mov   rdx, log.listen_unix_len
-  syscall
-  cmp   rax, 0
-  jl    .error
-
   ; initialise epoll instance
   mov   rax, SYS_EPOLL_CREATE1
   xor   rdi, rdi
@@ -163,20 +119,6 @@ _start:
   mov   rdi, [epoll_fd]
   mov   rsi, EPOLL_CTL_ADD
   mov   rdx, [tcp_fd]
-  mov   r10, epoll_event_t
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; add unix socket to the epoll interest list
-  mov   dword [epoll_event_t.events], EPOLLIN
-  mov   rax, [unix_fd]
-  mov   qword [epoll_event_t.data], rax
-
-  mov   rax, SYS_EPOLL_CTL
-  mov   rdi, [epoll_fd]
-  mov   rsi, EPOLL_CTL_ADD
-  mov   rdx, [unix_fd]
   mov   r10, epoll_event_t
   syscall
   cmp   rax, 0
@@ -212,12 +154,7 @@ _start:
 
   ; check if conn fd is a new connection
   cmp   rax, [tcp_fd]
-  je    .new_connection
-
-  cmp   rax, [unix_fd]
-  je    .new_connection
-
-  jmp   .existing_connection
+  jne   .existing_connection
 
 .new_connection:
   ; accept connection
@@ -333,11 +270,6 @@ _start:
   mov   rdi, [tcp_fd]
   syscall
 
-  ; close unix socket
-  mov   rax, SYS_CLOSE
-  mov   rdi, [unix_fd]
-  syscall
-
   ; close epoll socket
   mov   rax, SYS_CLOSE
   mov   rdi, [epoll_fd]
@@ -346,24 +278,10 @@ _start:
   mov   rdi, 0
   jmp   .exit
 
-.usage:
-  mov   rax, SYS_WRITE
-  mov   rdi, STDERR_FILENO
-  mov   rsi, usage_str
-  mov   rdx, usage_str_len
-  syscall
-  mov   rdi, FAILURE_CODE
-  jmp   .exit
-
 .error:
   ; close tcp socket
   mov   rax, SYS_CLOSE
   mov   rdi, [tcp_fd]
-  syscall
-
-  ; close unix socket
-  mov   rax, SYS_CLOSE
-  mov   rdi, [unix_fd]
   syscall
 
   ; close epoll socket

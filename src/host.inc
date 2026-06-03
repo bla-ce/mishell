@@ -40,6 +40,8 @@ curr_host_idx db 0
 
 section .text
 
+; initialises a P2P network if init is passed, otherwise joins
+; an existing network with ip and port
 ; @param  rdi: pointer to the command
 ; @param  rsi: ip of the remote host (optional)
 ; @param  rdx: port of the remote host (optional)
