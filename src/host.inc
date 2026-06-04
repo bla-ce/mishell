@@ -274,27 +274,6 @@ host_connect_to_remote:
   cmp   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   jne   .error
 
-  ; host closes connection, need to close and reconnect
-  mov   rax, SYS_CLOSE
-  mov   rdi, [rsp+0x10]
-  syscall
-
-  mov   rax, SYS_SOCKET
-  mov   rdi, AF_INET
-  mov   rsi, SOCK_STREAM
-  xor   rdx, rdx
-  syscall
-
-  mov   [rsp+0x10], rax
-
-  mov   rax, SYS_CONNECT
-  mov   rdi, [rsp+0x10]
-  mov   rsi, sockaddr_in_t
-  mov   rdx, [sockaddr_in_t_len]
-  syscall
-  cmp   rax, 0
-  jl    .error
-
   ; send auth command
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE

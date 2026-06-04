@@ -244,6 +244,8 @@ _start:
   cmp   rax, 0
   jl    .clear_connection
 
+  jmp   .new_connection
+
 .clear_connection:
   ; remove conn fd from epoll instance
   mov   rax, SYS_EPOLL_CTL
