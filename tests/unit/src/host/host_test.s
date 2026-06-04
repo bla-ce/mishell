@@ -29,7 +29,7 @@ _start:
   jne   .error
 
   ; test without duplicate host
-  ; add three dummy host
+  ; add dummy hosts
   mov   r12, 0
   mov   r13, 7474
 

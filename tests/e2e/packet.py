@@ -29,7 +29,6 @@ FL_SERVICE           = 0b0100_0000
 
 PAYLOAD_MAX_LEN = 0xFFFF
 
-SOCKET_PATH = 'mishell.sock'
 SOCKET_PORT = 7474
 
 # Wire format: little-endian
