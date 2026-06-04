@@ -48,6 +48,7 @@ jobs:
       matrix:
         suite:
           - unit/src/auth
+          - unit/src/host
           - unit/lib/string
           - unit/lib/net
     steps:

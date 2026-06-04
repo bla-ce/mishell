@@ -68,11 +68,11 @@ host_addr_exists:
   imul  rax, r9, HOST_T_LEN
   lea   rdi, [hosts+rax]
 
-  mov   eax, [rsp+0x8]
+  mov   eax, [rsp]
   cmp   dword [rdi+HOST_T_OFF_IP], eax
   jne   .next
 
-  mov   ax, [rsp+0x10]
+  mov   ax, [rsp+0x8]
   cmp   word [rdi+HOST_T_OFF_PORT], ax
   je    .exists
 
