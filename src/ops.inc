@@ -131,8 +131,9 @@ op_auth:
   imul  eax, HOST_T_LEN
   lea   rdi, [hosts+eax]
   call  host_init
-  cmp   rax, 0
-  jl    .error
+  mov   [rsp+0x18], rax
+  test  rax, rax
+  jnz   .error
 
   ; build response packet
   mov   rdi, [rsp+0x8]

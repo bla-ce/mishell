@@ -139,8 +139,8 @@ init_or_join_network:
   mov   rsi, host_ip
   mov   rdx, tcp_port
   call  host_init
-  cmp   rax, 0
-  jl    .error
+  test  rax, rax
+  jnz   .error
 
   ; increase host count
   inc   byte [curr_host_idx]
@@ -310,8 +310,8 @@ host_connect_to_remote:
   movsx rsi, dword [sockaddr_in_t.sin_addr]
   movzx rdx, word [sockaddr_in_t.sin_port]
   call  host_init
-  cmp   rax, 0
-  jl    .error
+  test  rax, rax
+  jnz   .error
 
   lea   rdi, [rsp+0x18]
   add   rdi, PACKET_T_OFF_PAYLOAD
@@ -421,18 +421,20 @@ host_get_by_id:
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: ip of the host
 ; @param  rdx: port of the host (host order)
-; @return rax: return code
+; @return rax: return code or error code
 host_init:
-  sub   rsp, 0x18
+  sub   rsp, 0x20
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the host struct
   ; [rsp+0x8]   -> ip of the host
   ; [rsp+0x10]  -> port of the host (host order)
+  ; [rsp+0x18]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
   mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -440,6 +442,7 @@ host_init:
   test  rdx, rdx
   jz    .error
 
+  mov   qword [rsp+0x18], error_codes.HOST_ALREADY_EXISTS
   mov   rdi, [rsp+0x8]
   mov   rsi, [rsp+0x10]
   call  host_addr_exists
@@ -453,6 +456,7 @@ host_init:
   mov   rcx, HOST_T_LEN
   rep   stosb
 
+  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
   call  generate_id
   cmp   rax, FAILURE_CODE
   je    .error
@@ -471,8 +475,8 @@ host_init:
   jmp    .return
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rax, [rsp+0x18]
 
 .return:
-  add   rsp, 0x18
+  add   rsp, 0x20
   ret

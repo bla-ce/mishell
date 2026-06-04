@@ -19,7 +19,7 @@ def run():
     with test("TEST (tcp): sending AUTH with duplicated id should return error"):
         resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_PEER_TO_PEER | FL_HOST, payload=_host_payload(port=7000)))
         BASE_PORT += 1
-        assert_server_response(resp, op=OP_ERROR)
+        assert_server_response(resp, op=OP_ERROR, payload=b'a host with this ip and port already exists')
 
     with test("TEST (tcp): sending AUTH with id should return empty payload"):
         resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_PEER_TO_PEER | FL_HOST, id=host_id))
