@@ -40,6 +40,62 @@ curr_host_idx db 0
 
 section .text
 
+; checks if a host with a given ip/port pair already exists
+; @param  rdi: ip of the host
+; @param  rsi: port of the host
+; @return rax: same host exists (boolean)
+host_addr_exists:
+  sub   rsp, 0x10
+
+  ; STACK USAGE
+  ; [rsp]     -> ip of the host
+  ; [rsp+0x8] -> port of the host
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  ; ip can be null
+
+  test  rsi, rsi
+  jz    .error
+
+  xor   r9, r9  ; counter
+
+.loop:
+  cmp   r9b, byte [curr_host_idx]
+  jge   .loop_end
+
+  imul  rax, r9, HOST_T_LEN
+  lea   rdi, [hosts+rax]
+
+  mov   eax, [rsp+0x8]
+  cmp   dword [rdi+HOST_T_OFF_IP], eax
+  jne   .next
+
+  mov   ax, [rsp+0x10]
+  cmp   word [rdi+HOST_T_OFF_PORT], ax
+  je    .exists
+
+.next:
+  inc   r9b
+  jmp   .loop
+
+.loop_end:
+  ; does not exist
+  mov   rax, FALSE
+  jmp   .return
+
+.exists:
+  mov   rax, TRUE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x10
+  ret
+
 ; initialises a P2P network if init is passed, otherwise joins
 ; an existing network with ip and port
 ; @param  rdi: pointer to the command
@@ -384,8 +440,15 @@ host_init:
   test  rdx, rdx
   jz    .error
 
+  mov   rdi, [rsp+0x8]
+  mov   rsi, [rsp+0x10]
+  call  host_addr_exists
+  ; rax should be 0 (FALSE)
+  test  rax, rax
+  jnz   .error
+
   ; memset host to 0
-  mov   rsi, [rsp]
+  mov   rdi, [rsp]
   xor   rax, rax
   mov   rcx, HOST_T_LEN
   rep   stosb

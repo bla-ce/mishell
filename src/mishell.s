@@ -10,6 +10,7 @@ global _start
 
 section .rodata
 
+; TODO: rename for consistency
 tcp_port  equ 7474
 host_ip   equ 0
 
