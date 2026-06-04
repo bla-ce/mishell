@@ -389,6 +389,9 @@ host_get_by_id:
   imul  r10, rax, HOST_T_LEN
 
 .loop:
+  cmp   r9, r10
+  jge   .error
+
   lea   rdi, [hosts+r9]
 
   mov   [rsp+0x8], rdi
@@ -400,9 +403,6 @@ host_get_by_id:
   je    .loop_end
 
   add   r9, HOST_T_LEN
-
-  cmp   r9, r10
-  jge   .error
 
   jmp   .loop
 
