@@ -113,7 +113,6 @@ packet_dispatch:
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
   mov   rdi, [rsp]
   lea   rsi, [rsp+0x18]
-  mov   rdx, [rsp+0x8]
   call  rax
   cmp   rax, 0
   jl    .error
@@ -130,7 +129,6 @@ packet_dispatch:
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
   mov   rdi, [rsp]
   lea   rsi, [rsp+0x18]
-  mov   rdx, [rsp+0x8]
   call  qword [req_op_fn_table+rax]
   mov   [rsp+0x10], rax ; save error code if it failed
   test  rax, rax

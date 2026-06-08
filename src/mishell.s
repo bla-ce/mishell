@@ -14,7 +14,7 @@ host_port equ 7474
 host_ip   equ 0
 
 log:
-  .listen_tcp     db "[mishell] listening on TCP port 7474", 10
+  .listen_tcp     db "[mishell] listening on tcp socket", 10
   .listen_tcp_len equ $ - log.listen_tcp
 
   .accept_new_conn      db "[mishell] accepted new connection", 10

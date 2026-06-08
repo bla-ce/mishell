@@ -32,7 +32,7 @@ section .text
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
-; @return rax: packet size
+; @return rax: return code
 op_hello:
   test  rdi, rdi
   jz    .error
@@ -53,7 +53,7 @@ op_hello:
   jmp   .return
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rax, error_codes.INTERNAL
 
 .return:
   ret
@@ -63,7 +63,7 @@ op_hello:
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
-; @return rax: packet size
+; @return rax: return code
 op_auth:
   sub   rsp, 0x20
 
@@ -175,7 +175,7 @@ op_auth:
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
-; @return rax: packet size
+; @return rax: return code
 op_register:
   sub   rsp, 0x28
 
@@ -263,7 +263,7 @@ op_register:
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
-; @return rax: packet size
+; @return rax: return code
 op_start:
   sub   rsp, 0x28
 
@@ -344,7 +344,7 @@ op_start:
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
-; @return rax: packet size
+; @return rax: return code
 op_stop:
   sub   rsp, 0x28
 
@@ -424,7 +424,7 @@ op_stop:
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
-; @return rax: packet size
+; @return rax: return code
 op_unregister:
   sub   rsp, 0x28
 
@@ -516,7 +516,7 @@ op_unregister:
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @param  rdx: connection fd
-; @return rax: packet size
+; @return rax: return code
 op_list:
   sub   rsp, 0x28
 
