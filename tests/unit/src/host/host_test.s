@@ -10,8 +10,7 @@ global _start
 
 section .rodata
 
-; TODO: rename for consistency
-tcp_port  equ 7474
+host_port  equ 7474
 host_ip   equ 0
 
 usage_str     db "usage: mishell init", LINE_FEED

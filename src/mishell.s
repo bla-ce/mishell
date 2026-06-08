@@ -10,8 +10,7 @@ global _start
 
 section .rodata
 
-; TODO: rename for consistency
-tcp_port  equ 7474
+host_port equ 7474
 host_ip   equ 0
 
 log:
@@ -70,7 +69,7 @@ _start:
   jl    .error
 
   ; bind tcp socket
-  mov   ax, tcp_port
+  mov   ax, host_port
   xchg  al, ah ; bswap 16-bit registers
 
   mov   word [sockaddr_in_t.sin_family], AF_INET

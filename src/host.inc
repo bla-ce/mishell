@@ -137,7 +137,7 @@ init_or_join_network:
   ; init first host
   mov   rdi, hosts
   mov   rsi, host_ip
-  mov   rdx, tcp_port
+  mov   rdx, host_port
   call  host_init
   test  rax, rax
   jnz   .error
