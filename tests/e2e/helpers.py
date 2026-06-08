@@ -4,6 +4,7 @@ from packet import *
 from service import *
 
 HOST_MAX_COUNT = 5
+HOST_T_LEN = 0xD0
 
 GREEN = "\033[32m"
 RED   = "\033[31m"
