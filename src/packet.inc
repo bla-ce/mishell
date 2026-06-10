@@ -73,12 +73,34 @@ packet_dispatch:
 
   ; verify packet
   mov   rdi, [rsp]
-  lea   rsi, [rsp+0x18]
   call  packet_verify
   mov   [rsp+0x10], rax ; save error code if it failed
   test  rax, rax
   jnz   .error
 
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+  ; check if we should handle the request or proxy it
+  mov   rax, [rsp]
+  movups  xmm1, [rax+PACKET_T_OFF_DEST_HOST]
+  ptest   xmm1, xmm1
+  jz    .handle_request
+
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_DEST_HOST
+  mov   rsi, host_id
+  mov   rcx, ID_QWORDS
+  rep   cmpsq
+  je    .handle_request
+
+  mov   rdi, [rsp]
+  lea   rsi, [rsp+0x18]
+  call  host_proxy_request
+  cmp   rax, 0
+  jl    .error
+
+  jmp   .send_packet
+
+.handle_request:
   ; check if the request is for the host or a service
   mov   rdi, [rsp]
   mov   ax, word [rdi+PACKET_T_OFF_FLAGS]

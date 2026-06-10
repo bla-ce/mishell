@@ -20,6 +20,9 @@ HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
+host_port equ 7373
+host_ip   equ 0
+
 section .bss
 
 host_t:
@@ -39,6 +42,99 @@ hosts times HOSTS_LEN db 0
 curr_host_idx db 0
 
 section .text
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @return rax: return code
+host_proxy_request:
+  sub   rsp, 0x20
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> pointer to the host
+  ; [rsp+0x18]  -> host fd
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  ; get the host from the destination id of the packet
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_DEST_HOST
+  call  host_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x10], rax
+
+  ; init packet for host
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_INET
+  mov   rsi, SOCK_STREAM
+  xor   rdx, rdx
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x18], rax
+
+  ; populate sockaddr
+  mov   word [sockaddr_in_t.sin_family], AF_INET
+
+  ; get port and ip from host struct
+  mov   rsi, [rsp+0x10]
+  mov   ax, [rsi+HOST_T_OFF_PORT]
+  mov   word [sockaddr_in_t.sin_port], ax
+  mov   eax, [rsi+HOST_T_OFF_IP]
+  mov   dword [sockaddr_in_t.sin_addr], eax
+  mov   qword [sockaddr_in_t.sin_zero], 0
+
+  ; connect to host
+  mov   rax, SYS_CONNECT
+  mov   rdi, [rsp+0x18]
+  mov   rsi, sockaddr_in_t
+  mov   rdx, qword [sockaddr_in_t_len]
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; send the packet to the host
+  mov   rax, SYS_WRITE
+  mov   rdi, [rsp+0x18]
+  mov   rsi, [rsp]
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; get response
+  mov   rax, SYS_READ
+  mov   rdi, [rsp+0x18]
+  mov   rsi, [rsp+0x8]
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; close connection
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x18]
+  syscall
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x20
+  ret
 
 ; checks if a host with a given ip/port pair already exists
 ; @param  rdi: ip of the host
@@ -149,8 +245,8 @@ init_or_join_network:
   mov   rsi, hosts
   add   rsi, HOST_T_OFF_ID
   mov   rdi, host_id
-  mov   rcx, ID_LEN
-  movsb
+  mov   rcx, ID_QWORDS
+  rep   movsq
 
   jmp   .done
 
@@ -249,6 +345,8 @@ host_connect_to_remote:
   or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   qword [rdi+PACKET_T_OFF_DEST_HOST], 0
+  mov   qword [rdi+PACKET_T_OFF_DEST_HOST+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.HELLO
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
 
@@ -281,13 +379,15 @@ host_connect_to_remote:
   or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   qword [rdi+PACKET_T_OFF_DEST_HOST], 0
+  mov   qword [rdi+PACKET_T_OFF_DEST_HOST+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.AUTH
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOST_T_LEN
 
   ; add host to payload
   mov   rdi, host_t
-  movsx rsi, dword [sockaddr_in_t.sin_addr]
-  movzx rdx, word [sockaddr_in_t.sin_port]
+  mov   rsi, host_ip
+  mov   rdx, host_port
   call  host_init
   test  rax, rax
   jnz   .error
@@ -330,8 +430,23 @@ host_connect_to_remote:
   lea   rsi, [rsp+0x18]
   add   rsi, PACKET_T_OFF_DEST_HOST
   mov   rdi, host_id
-  mov   rcx, ID_LEN
-  movsb
+  mov   rcx, ID_QWORDS
+  rep   movsq
+
+  ; get number of hosts from payload len
+  ; TODO: without div? probably aligning the struct to do shr
+  lea   rsi, [rsp+0x18]
+  movzx rax, word [rsi+PACKET_T_OFF_PAYLOAD_LEN]
+
+  xor   rdx, rdx
+  mov   rcx, HOST_T_LEN
+  idiv  rcx
+  mov   byte [curr_host_idx], al
+
+  ; close connection
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x10]
+  syscall
 
   mov   rax, SUCCESS_CODE
 

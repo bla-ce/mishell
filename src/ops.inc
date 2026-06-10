@@ -142,8 +142,8 @@ op_auth:
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rsi, [hosts+eax+HOST_T_OFF_ID]
-  mov   rcx, ID_LEN
-  rep   movsb
+  mov   rcx, ID_QWORDS
+  rep   movsq
 
   inc   byte [curr_host_idx]
 
@@ -531,6 +531,7 @@ op_list:
   cmp   rax, 0
   jl    .error
 
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   ; return list of hosts
   mov   rdi, [rsp+0x8]
   add   rdi, PACKET_T_OFF_PAYLOAD

@@ -10,9 +10,6 @@ global _start
 
 section .rodata
 
-host_port  equ 7474
-host_ip   equ 0
-
 usage_str     db "usage: mishell init", LINE_FEED
               db "       mishell connect <ip> <port>", LINE_FEED
 usage_str_len equ $ - usage_str

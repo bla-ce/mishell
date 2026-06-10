@@ -10,9 +10,6 @@ global _start
 
 section .rodata
 
-host_port equ 7474
-host_ip   equ 0
-
 log:
   .listen_tcp     db "[mishell] listening on tcp socket", 10
   .listen_tcp_len equ $ - log.listen_tcp
@@ -243,7 +240,7 @@ _start:
   cmp   rax, 0
   jl    .clear_connection
 
-  jmp   .new_connection
+  jmp   .next_connection
 
 .clear_connection:
   ; remove conn fd from epoll instance
