@@ -31,7 +31,6 @@ section .text
 ; sends back a WELCOME op with an empty payload for now
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
-; @param  rdx: connection fd
 ; @return rax: return code
 op_hello:
   test  rdi, rdi
@@ -62,21 +61,18 @@ op_hello:
 ; creates a session id and adds it to the host array
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
-; @param  rdx: connection fd
 ; @return rax: return code
 op_auth:
-  sub   rsp, 0x20
+  sub   rsp, 0x18
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
-  ; [rsp+0x10]  -> connection fd
   ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -98,7 +94,7 @@ op_auth:
   ptest   xmm1, xmm1
   jz    .new_host
 
-  mov   qword [rsp+0x18], error_codes.HOST_NOT_FOUND
+  mov   qword [rsp+0x10], error_codes.HOST_NOT_FOUND
   lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
   cmp   rax, 0
@@ -116,7 +112,7 @@ op_auth:
 
 .new_host:
   ; make sure we haven't reached the host limit
-  mov   qword [rsp+0x18], error_codes.HOST_LIMIT_REACHED
+  mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
   cmp   byte [curr_host_idx], HOST_MAX_COUNT
   jge   .error
 
@@ -128,12 +124,12 @@ op_auth:
   xchg  dl, dh ; bswap 16-bit registers
 
   ; populate host struct
-  mov   qword [rsp+0x18], error_codes.INTERNAL
+  mov   qword [rsp+0x10], error_codes.INTERNAL
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rdi, [hosts+eax]
   call  host_init
-  mov   [rsp+0x18], rax
+  mov   [rsp+0x10], rax
   test  rax, rax
   jnz   .error
 
@@ -165,31 +161,28 @@ op_auth:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x18]
+  mov   rax, [rsp+0x10]
 
 .return:
-  add   rsp, 0x20
+  add   rsp, 0x18
   ret
 
 ; registers a new service for the host
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
-; @param  rdx: connection fd
 ; @return rax: return code
 op_register:
-  sub   rsp, 0x28
+  sub   rsp, 0x20
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
-  ; [rsp+0x10]  -> connection fd
-  ; [rsp+0x18]  -> pointer to the host
-  ; [rsp+0x20]  -> error code
+  ; [rsp+0x10]  -> pointer to the host
+  ; [rsp+0x18]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -197,7 +190,7 @@ op_register:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  mov   qword [rsp+0x18], error_codes.UNAUTHORIZED
   ; make sure the entity flag is FL_HOST
   mov   rax, [rsp]
   mov   bx, word [rax+PACKET_T_OFF_FLAGS]
@@ -211,25 +204,25 @@ op_register:
   ptest   xmm1, xmm1
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.INTERNAL
+  mov   qword [rsp+0x18], error_codes.INTERNAL
   lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
   cmp   rax, 0
   jl    .error
 
-  mov   [rsp+0x18], rax
+  mov   [rsp+0x10], rax
 
   ; make sure we can add a new service
-  mov   qword [rsp+0x20], error_codes.SERVICE_PER_HOST_LIMIT_REACHED
+  mov   qword [rsp+0x18], error_codes.SERVICE_PER_HOST_LIMIT_REACHED
   cmp   byte [rax+HOST_T_OFF_SERVICES_COUNT], SERVICE_MAX_COUNT_PER_HOST
   jge   .error
 
   ; initialises a new service
-  mov   qword [rsp+0x20], error_codes.INTERNAL
+  mov   qword [rsp+0x18], error_codes.INTERNAL
   mov   rdi, [rsp]
-  mov   rsi, [rsp+0x18]
+  mov   rsi, [rsp+0x10]
   call  service_init
-  mov   [rsp+0x20], rdx ; save error code if it failed
+  mov   [rsp+0x18], rdx ; save error code if it failed
   test  rdx, rdx
   jnz   .error
 
@@ -252,32 +245,28 @@ op_register:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x20]
+  mov   rax, [rsp+0x18]
 
 .return:
-  add   rsp, 0x28
+  add   rsp, 0x20
   ret
 
 ; starts a service from START command with host and service id
 ; returns OK
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
-; @param  rdx: connection fd
 ; @return rax: return code
 op_start:
-  sub   rsp, 0x28
+  sub   rsp, 0x18
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
-  ; [rsp+0x10]  -> connection fd
-  ; [rsp+0x18]  -> pointer to the host
-  ; [rsp+0x20]  -> error code
+  ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -285,7 +274,7 @@ op_start:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
   ; make sure the entity flag is FL_HOST
   mov   rax, [rsp]
   mov   bx, word [rax+PACKET_T_OFF_FLAGS]
@@ -304,11 +293,9 @@ op_start:
   cmp   rax, 0
   jl    .error
 
-  mov   [rsp+0x18], rax
-
   ; find service inside host struct
   ; payload is host id followed by service id
-  mov   qword [rsp+0x20], error_codes.SERVICE_NOT_FOUND
+  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
   lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
   lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
@@ -333,32 +320,28 @@ op_start:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x20]
+  mov   rax, [rsp+0x10]
 
 .return:
-  add   rsp, 0x28
+  add   rsp, 0x18
   ret
 
 ; stops a service from STOP command with host and service id
 ; returns OK
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
-; @param  rdx: connection fd
 ; @return rax: return code
 op_stop:
-  sub   rsp, 0x28
+  sub   rsp, 0x18
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
-  ; [rsp+0x10]  -> connection fd
-  ; [rsp+0x18]  -> pointer to the host
-  ; [rsp+0x20]  -> error code
+  ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -366,7 +349,7 @@ op_stop:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
   ; make sure the entity flag is FL_HOST
   mov   rax, [rsp]
   mov   bx, word [rax+PACKET_T_OFF_FLAGS]
@@ -385,11 +368,9 @@ op_stop:
   cmp   rax, 0
   jl    .error
 
-  mov   [rsp+0x18], rax
-
   ; find service inside host struct
   ; payload is host id followed by service id
-  mov   qword [rsp+0x20], error_codes.SERVICE_NOT_FOUND
+  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
   lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
   lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
@@ -414,31 +395,28 @@ op_stop:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x20]
+  mov   rax, [rsp+0x10]
 
 .return:
-  add   rsp, 0x28
+  add   rsp, 0x18
   ret
 
 ; unregisters a service, removing it from the host array of services
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
-; @param  rdx: connection fd
 ; @return rax: return code
 op_unregister:
-  sub   rsp, 0x28
+  sub   rsp, 0x20
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
-  ; [rsp+0x10]  -> connection fd
-  ; [rsp+0x18]  -> pointer to the host
-  ; [rsp+0x20]  -> error code
+  ; [rsp+0x10]  -> pointer to the host
+  ; [rsp+0x18]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -446,7 +424,7 @@ op_unregister:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  mov   qword [rsp+0x18], error_codes.UNAUTHORIZED
   ; make sure the entity flag is FL_HOST
   mov   rax, [rsp]
   mov   bx, word [rax+PACKET_T_OFF_FLAGS]
@@ -465,11 +443,11 @@ op_unregister:
   cmp   rax, 0
   jl    .error
 
-  mov   [rsp+0x18], rax
+  mov   [rsp+0x10], rax
 
   ; find service inside host struct
   ; payload is host id followed by service id
-  mov   qword [rsp+0x20], error_codes.SERVICE_NOT_FOUND
+  mov   qword [rsp+0x18], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
   lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
   lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
@@ -478,7 +456,7 @@ op_unregister:
   jl    .error
 
   ; make sure the status is not UP
-  mov   qword [rsp+0x20], error_codes.SERVICE_STOP_BEFORE_UNREGISTER
+  mov   qword [rsp+0x18], error_codes.SERVICE_STOP_BEFORE_UNREGISTER
   cmp   byte [rax+SERVICE_T_OFF_STATUS], service_status.UP
   je    .error
 
@@ -489,7 +467,7 @@ op_unregister:
   rep   stosb
 
   ; decrease service count for the host
-  mov   rdi, [rsp+0x18]
+  mov   rdi, [rsp+0x10]
   dec   byte [rdi+HOST_T_OFF_SERVICES_COUNT]
 
   mov   rdi, [rsp+0x8]
@@ -506,31 +484,27 @@ op_unregister:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x20]
+  mov   rax, [rsp+0x18]
 
 .return:
-  add   rsp, 0x28
+  add   rsp, 0x20
   ret
 
 ; returns a list of host in the network of the current host
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
-; @param  rdx: connection fd
 ; @return rax: return code
 op_list:
-  sub   rsp, 0x28
+  sub   rsp, 0x18
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
-  ; [rsp+0x10]  -> connection fd
-  ; [rsp+0x18]  -> pointer to the host
-  ; [rsp+0x20]  -> error code
+  ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -538,7 +512,7 @@ op_list:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.UNAUTHORIZED
+  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
   ; make sure the entity flag is FL_HOST
   mov   rax, [rsp]
   mov   bx, word [rax+PACKET_T_OFF_FLAGS]
@@ -579,8 +553,8 @@ op_list:
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x20]
+  mov   rax, [rsp+0x10]
 
 .return:
-  add   rsp, 0x28
+  add   rsp, 0x18
   ret
