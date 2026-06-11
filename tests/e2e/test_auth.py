@@ -20,6 +20,7 @@ def run():
         resp = tcp_connection(Packet(op=OP_LIST, flags=FL_PEER_TO_PEER | FL_HOST, id=host_id))
         assert_server_response(resp, op=OP_OK)
         assert(len(resp.payload) == (HOST_T_LEN * 2)) # we registered one host
+    server_host_id = int.from_bytes(resp.payload[0:16], 'little')
 
     with test("TEST (tcp): sending AUTH with duplicated id should return error"):
         resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_PEER_TO_PEER | FL_HOST, payload=_host_payload(port=7000)))
@@ -39,9 +40,8 @@ def run():
             resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_PEER_TO_PEER | FL_HOST, payload=_host_payload(port=BASE_PORT)))
             BASE_PORT += 1
             assert resp.op == OP_OK, f"expected OK: {resp}"
-            host_id = resp.dest_host
 
         resp = tcp_connection(Packet(op=OP_AUTH, flags=FL_PEER_TO_PEER | FL_HOST, payload=_host_payload()))
         assert_server_response(resp, op=OP_ERROR, payload=b'host limit has been reached')
 
-    return host_id
+    return host_id, server_host_id
