@@ -20,7 +20,7 @@ HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
-host_port equ 7373
+host_port equ 7474
 host_ip   equ 0
 
 section .bss
