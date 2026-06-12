@@ -574,3 +574,127 @@ host_init:
 .return:
   add   rsp, 0x20
   ret
+
+; updates each host in the network with new array except the one
+; passed in rdi.
+; TODO: arguments should be an array of host to not update with
+; count
+host_update_network:
+  push  r12
+  push  r13
+  sub   rsp, 0x20+PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the host id to skip (can be null)
+  ; [rsp+0x8]   -> array length
+  ; [rsp+0x10]  -> sock fd
+  ; [rsp+0x18]  -> temp host
+  ; [rsp+0x20]  -> packet
+
+  mov   [rsp], rdi
+
+  ; get array length
+  movzx r12, byte [curr_host_idx]
+  test  r12, r12
+  jz    .done
+  imul  rax, r12, HOST_T_LEN
+  mov   [rsp+0x8], rax
+
+  ; build packet
+  lea   rdi, [rsp+0x20]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.UPDATE
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+
+  mov   rax, qword [host_id]
+  mov   rdx, qword [host_id+0x8]
+  mov   qword [rdi+PACKET_T_OFF_ID], rax
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], rdx
+
+  mov   ax, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, hosts
+  movsx rcx, ax
+  rep   movsb
+
+  xor   r13, r13
+
+.loop:
+  cmp   r13, r12
+  jge   .done
+
+  ; get host
+  imul  rax, r13, HOST_T_LEN
+  lea   rdi, [hosts+rax]
+  mov   [rsp+0x18], rdi
+
+  ; check if we need to skip the host
+  add   rdi, HOST_T_OFF_ID
+  mov   rsi, host_id
+  mov   rcx, ID_QWORDS
+  rep   cmpsq
+  je    .skip_host
+
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_INET
+  mov   rsi, SOCK_STREAM
+  xor   rdx, rdx
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x10], rax
+
+  ; populate sockaddr
+  mov   word [sockaddr_in_t.sin_family], AF_INET
+
+  ; get port and ip from host struct
+  mov   rdi, [rsp+0x18]
+  mov   ax, [rdi+HOST_T_OFF_PORT]
+  mov   word [sockaddr_in_t.sin_port], ax
+  mov   eax, [rdi+HOST_T_OFF_IP]
+  mov   dword [sockaddr_in_t.sin_addr], eax
+  mov   qword [sockaddr_in_t.sin_zero], 0
+
+  ; connect to host
+  mov   rax, SYS_CONNECT
+  mov   rdi, [rsp+0x10]
+  mov   rsi, sockaddr_in_t
+  mov   rdx, qword [sockaddr_in_t_len]
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; send the packet to the host
+  mov   rax, SYS_WRITE
+  mov   rdi, [rsp+0x10]
+  lea   rsi, [rsp+0x20]
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; close connection
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x10]
+  syscall
+
+.skip_host:
+  inc   r13
+  jmp   .loop
+
+.done:
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x20+PACKET_T_LEN
+  pop   r13
+  pop   r12
+  ret

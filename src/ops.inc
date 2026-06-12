@@ -157,6 +157,12 @@ op_auth:
   mov   rsi, hosts
   rep   movsb
 
+  mov   rdi, [rsp+0x8]
+  add   rdi, PACKET_T_OFF_DEST_HOST ; update each host except current
+  call  host_update_network
+  cmp   rax, 0
+  jl    .error
+
   mov   rax, SUCCESS_CODE
 
   jmp   .return
