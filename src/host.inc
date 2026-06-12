@@ -20,7 +20,7 @@ HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
-host_port equ 7474
+host_port equ 7373
 host_ip   equ 0
 
 section .bss
@@ -138,7 +138,7 @@ host_proxy_request:
 
 ; checks if a host with a given ip/port pair already exists
 ; @param  rdi: ip of the host
-; @param  rsi: port of the host
+; @param  rsi: port of the host (byte order)
 ; @return rax: same host exists (boolean)
 host_addr_exists:
   sub   rsp, 0x10
@@ -151,7 +151,6 @@ host_addr_exists:
   mov   [rsp+0x8], rsi
 
   ; ip can be null
-
   test  rsi, rsi
   jz    .error
 
@@ -196,7 +195,7 @@ host_addr_exists:
 ; an existing network with ip and port
 ; @param  rdi: pointer to the command
 ; @param  rsi: ip of the remote host (optional)
-; @param  rdx: port of the remote host (optional)
+; @param  rdx: port of the remote host (optional, byte order)
 ; @return rax: return code
 init_or_join_network:
   sub   rsp, 0x18
@@ -234,6 +233,7 @@ init_or_join_network:
   mov   rdi, hosts
   mov   rsi, host_ip
   mov   rdx, host_port
+  xchg  dh, dl
   call  host_init
   test  rax, rax
   jnz   .error
@@ -278,7 +278,7 @@ init_or_join_network:
 ; connects to a remote host by sending HELLO and AUTH commands
 ; assuming local networks for now
 ; @param  rdi: pointer to the ip of the remote host
-; @param  rsi: pointer to the port of the remote host
+; @param  rsi: pointer to the port of the remote host (byte order)
 ; @return rax: return code
 host_connect_to_remote:
   sub   rsp, 0x18 + PACKET_T_LEN
@@ -317,7 +317,6 @@ host_connect_to_remote:
   jl    .error
 
   xchg  al, ah ; bswap 16-bit registers
-
   mov   word [sockaddr_in_t.sin_port], ax
 
   ; get ip from cli
@@ -388,6 +387,7 @@ host_connect_to_remote:
   mov   rdi, host_t
   mov   rsi, host_ip
   mov   rdx, host_port
+  xchg  dl, dh  ; host init receives network order
   call  host_init
   test  rax, rax
   jnz   .error
@@ -514,7 +514,7 @@ host_get_by_id:
 ; populates the host struct with ip, port and generates its id
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: ip of the host
-; @param  rdx: port of the host (host order)
+; @param  rdx: port of the host (network order)
 ; @return rax: return code or error code
 host_init:
   sub   rsp, 0x20

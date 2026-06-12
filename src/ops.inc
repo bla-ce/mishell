@@ -120,8 +120,7 @@ op_auth:
   mov   rdi, [rsp]
   add   rdi, PACKET_T_OFF_PAYLOAD
   movsx rsi, dword [rdi+HOST_T_OFF_IP]
-  movzx rdx, word [rdi+HOST_T_OFF_PORT]
-  xchg  dl, dh ; bswap 16-bit registers
+  movzx rdx, word [rdi+HOST_T_OFF_PORT] ; should be network order
 
   ; populate host struct
   mov   qword [rsp+0x10], error_codes.INTERNAL
