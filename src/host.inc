@@ -638,6 +638,13 @@ host_update_network:
   rep   cmpsq
   je    .skip_host
 
+  mov   rdi, [rsp+0x18]
+  add   rdi, HOST_T_OFF_ID
+  mov   rsi, [rsp]
+  mov   rcx, ID_QWORDS
+  rep   cmpsq
+  je    .skip_host
+
   mov   rax, SYS_SOCKET
   mov   rdi, AF_INET
   mov   rsi, SOCK_STREAM

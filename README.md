@@ -41,8 +41,6 @@ To join a P2P network, gather the `ip` and the `port` of a running host and run:
 make run-connect IP=<ip> PORT=<port>
 ```
 
-> **Note:** Data is held in memory only. All registered hosts and services are lost when the server exits.
-
 For more detailed information on how to use mishell, check out the [docs](/docs) (TODO)
 
 ## License
