@@ -14,7 +14,8 @@ OP_START        = 0x03
 OP_STOP         = 0x04
 OP_UNREGISTER   = 0x05
 OP_LIST         = 0x06
-OP_COUNT        = 0x07
+OP_UPDATE       = 0x07
+OP_COUNT        = 0x08
 
 # Return OP codes
 OP_OK    = 0x0
@@ -119,6 +120,7 @@ class Packet:
             OP_STOP: 'STOP',
             OP_UNREGISTER: 'UNREGISTER',
             OP_LIST: 'LIST',
+            OP_UPDATE: 'UPDATE',
             OP_OK: 'OK',
             OP_ERROR: 'ERROR'
         }.get(self.op, f'0x{self.op:02X}')

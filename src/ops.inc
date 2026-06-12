@@ -10,7 +10,8 @@ req_ops:
   .STOP       equ 0x4
   .UNREGISTER equ 0x5
   .LIST       equ 0x6
-  .COUNT      equ 0x7
+  .UPDATE     equ 0x7
+  .COUNT      equ 0x8
 
 res_ops:
   .OK     equ 0x0
@@ -25,6 +26,7 @@ req_op_fn_table:
   .STOP       dq op_stop
   .UNREGISTER dq op_unregister
   .LIST       dq op_list
+  .UPDATE     dq op_update
 
 section .text
 
@@ -548,6 +550,77 @@ op_list:
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, [rsp+0x10]
+
+.return:
+  add   rsp, 0x18
+  ret
+
+; updates the list of hosts because a modification has been made
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @return rax: return code
+op_update:
+  sub   rsp, 0x18
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> error code
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
+  ; make sure the entity flag is FL_HOST
+  mov   rax, [rsp]
+  mov   bx, word [rax+PACKET_T_OFF_FLAGS]
+  mov   r9w, bx
+  and   r9w, FL_HOST
+  test  r9w, r9w
+  jz    .error
+
+  ; verify host
+  movups  xmm1, [rax+PACKET_T_OFF_ID]
+  ptest   xmm1, xmm1
+  jz    .error
+
+  lea   rdi, [rax+PACKET_T_OFF_ID]
+  call  host_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  ; get payload and update host array
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+  mov   rdi, [rsp]
+  lea   rsi, [rdi+PACKET_T_OFF_PAYLOAD]
+  movzx rcx, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
+  test  rcx, rcx
+  jz    .error
+
+  mov   rdi, hosts
+  rep   movsb
+
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
+  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
 
   mov   rax, SUCCESS_CODE
   jmp   .return
