@@ -619,6 +619,14 @@ op_update:
   mov   rdi, hosts
   rep   movsb
 
+  ; update host idx
+  mov   rdi, [rsp]
+  movzx rax, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
+  xor   rdx, rdx
+  mov   rcx, HOST_T_LEN
+  idiv  rcx
+  mov   byte [curr_host_idx], al
+
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER

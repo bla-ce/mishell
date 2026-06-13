@@ -615,7 +615,7 @@ host_update_network:
 
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
-  movsx rcx, ax
+  movzx rcx, ax
   rep   movsb
 
   xor   r13, r13
