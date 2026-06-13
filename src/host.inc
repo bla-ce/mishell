@@ -1,10 +1,8 @@
 section .rodata
 
-FIRST_HOST_CMD     db "init"
-FIRST_HOST_CMD_LEN equ $ - FIRST_HOST_CMD -1
-
-CONNECT_HOST_CMD     db "connect"
-CONNECT_HOST_CMD_LEN equ $ - CONNECT_HOST_CMD -1
+FIRST_HOST_CMD    db "init", NULL_CHAR
+CONNECT_HOST_CMD  db "connect", NULL_CHAR
+PORT_FLAG         db "--port", NULL_CHAR
 
 HOST_MAX_COUNT equ 0x5
 
@@ -19,9 +17,6 @@ HOST_T_OFF_IP             equ HOST_T_OFF_ID + ID_LEN
 HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
-
-host_port equ 7474
-host_ip   equ 0
 
 section .bss
 
@@ -40,6 +35,9 @@ section .data
 
 hosts times HOSTS_LEN db 0
 curr_host_idx db 0
+
+host_port dw 7474
+host_ip   dd 0
 
 section .text
 ; @param  rdi: pointer to the request packet
@@ -218,21 +216,21 @@ init_or_join_network:
 
   mov   rdi, CONNECT_HOST_CMD
   mov   rsi, [rsp]  ; second CLI argument
-  mov   rcx, CONNECT_HOST_CMD_LEN
-  rep   cmpsb
+  call  strcmp
+  cmp   rax, TRUE
   je    .connect_to_host
 
   ; make sure it's init
   mov   rdi, FIRST_HOST_CMD
   mov   rsi, [rsp]  ; second CLI argument
-  mov   rcx, FIRST_HOST_CMD_LEN
-  rep   cmpsb
+  call  strcmp
+  cmp   rax, TRUE
   jne   .usage
 
   ; init first host
   mov   rdi, hosts
-  mov   rsi, host_ip
-  mov   rdx, host_port
+  movsx rsi, dword [host_ip]
+  movzx rdx, word [host_port]
   xchg  dh, dl
   call  host_init
   test  rax, rax
@@ -385,8 +383,8 @@ host_connect_to_remote:
 
   ; add host to payload
   mov   rdi, host_t
-  mov   rsi, host_ip
-  mov   rdx, host_port
+  movsx rsi, dword [host_ip]
+  movzx rdx, word [host_port]
   xchg  dl, dh  ; host init receives network order
   call  host_init
   test  rax, rax

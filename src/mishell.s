@@ -33,9 +33,34 @@ _start:
   ; [rsp]                   -> pointer to the packet struct
   ; [rsp+PACKET_T_LEN+0x8]  -> pointer to program name
   ; [rsp+PACKET_T_LEN+0x10] -> pointer to command
-  ; [rsp+PACKET_T_LEN+0x18] -> pointer to ip of the remote host
-  ; [rsp+PACKET_T_LEN+0x20] -> pointer to port of the remote host
+  ; [rsp+PACKET_T_LEN+0x18] -> pointer to ip of the remote host or port flag
+  ; [rsp+PACKET_T_LEN+0x20] -> pointer to port of the remote host or listening port
+  ; [rsp+PACKET_T_LEN+0x28] -> pointer to port flag
+  ; [rsp+PACKET_T_LEN+0x30] -> pointer to listening port
 
+  ; check if port flag has been set
+  mov   rdi, [rsp+PACKET_T_LEN+0x18]
+  mov   rsi, PORT_FLAG
+  call  strcmp
+  mov   rdi, [rsp+PACKET_T_LEN+0x20]
+  cmp   rax, TRUE
+  je    .set_port
+
+  mov   rdi, [rsp+PACKET_T_LEN+0x28]
+  mov   rsi, PORT_FLAG
+  call  strcmp
+  mov   rdi, [rsp+PACKET_T_LEN+0x30]
+  cmp   rax, TRUE
+  jne   .init_or_join_network  ; default port
+
+.set_port:
+  call  atoi
+  cmp   rax, 0
+  jl    .init_or_join_network
+
+  mov   word [host_port], ax
+
+.init_or_join_network:
   mov   rdi, [rsp+PACKET_T_LEN+0x10]
   mov   rsi, [rsp+PACKET_T_LEN+0x18]
   mov   rdx, [rsp+PACKET_T_LEN+0x20]
@@ -66,7 +91,7 @@ _start:
   jl    .error
 
   ; bind tcp socket
-  mov   ax, host_port
+  mov   ax, word [host_port]
   xchg  al, ah ; bswap 16-bit registers
 
   mov   word [sockaddr_in_t.sin_family], AF_INET
