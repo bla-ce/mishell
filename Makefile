@@ -31,14 +31,14 @@ run-init:
 	nasm -o $(BUILD_DIR)/$(MAIN_PATH).o $(SRC_DIR)/$(MAIN_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
-	./$(BIN_DIR)/$(MAIN_PATH) init
+	./$(BIN_DIR)/$(MAIN_PATH) init --port $(PORT)
 
 run-connect:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)
 	nasm -o $(BUILD_DIR)/$(MAIN_PATH).o $(SRC_DIR)/$(MAIN_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MAIN_PATH) $(BUILD_DIR)/$(MAIN_PATH).o
-	./$(BIN_DIR)/$(MAIN_PATH) connect $(IP) $(PORT)
+	./$(BIN_DIR)/$(MAIN_PATH) connect $(REMOTE_IP) $(REMOTE_PORT) --port $(PORT)
 
 test-unit:
 	$(MAKE) -C tests/unit

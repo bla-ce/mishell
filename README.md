@@ -32,14 +32,16 @@ The binary is placed at `bin/mishell`.
 To initialise a new P2P network, run:
 
 ```bash
-make run-init
+make run-init PORT=<port>
 ```
 
 To join a P2P network, gather the `ip` and the `port` of a running host and run:
 
 ```bash
-make run-connect IP=<ip> PORT=<port>
+make run-connect REMOTE_IP=<remote_ip> REMOTE_PORT=<remote_port> PORT=<port>
 ```
+
+If PORT is not set, it uses 7474 by default
 
 For more detailed information on how to use mishell, check out the [docs](/docs) (TODO)
 
