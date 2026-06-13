@@ -1,6 +1,50 @@
 section .data
 
 section .text
+; compares two strings
+; @param  rdi: pointer to the first string
+; @param  rsi: pointer to the second string
+; @return rax: string are equal (boolean)
+strcmp:
+  sub   rsp, 0x10
+
+  ; STACK USAGE
+  ; [rsp]     -> pointer to the first string
+  ; [rsp+0x8] -> pointer to the second string
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  test  rdi, rdi
+  jz    .not_equal
+
+  test  rsi, rsi
+  jz    .not_equal
+
+.loop:
+  mov   al, byte [rsi]
+  cmp   byte [rdi], al
+  jne   .not_equal
+
+  test  al, al
+  jz    .equal
+
+  inc   rdi
+  inc   rsi
+
+  jmp   .loop
+
+.equal:
+  mov   rax, TRUE
+  jmp   .return
+
+.not_equal:
+  mov   rax, FALSE
+
+.return:
+  add   rsp, 0x10
+  ret
+
 ; returns the length of the given string
 ; @param  rdi: string
 ; @return rax: length of the string

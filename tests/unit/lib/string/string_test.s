@@ -289,6 +289,34 @@ _start:
   cmp   rax, FAILURE_CODE
   jne   .error
 
+  ; --- strcmp ---
+  ; equal strings return TRUE
+  mov   rdi, string
+  mov   rsi, string
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  ; null pointers return false
+  xor   rdi, rdi
+  mov   rsi, string
+  call  strcmp
+  cmp   rax, FALSE
+  jne   .error
+
+  mov   rdi, string
+  xor   rsi, rsi
+  call  strcmp
+  cmp   rax, FALSE
+  jne   .error
+
+  ; non equal strings return false
+  mov   rdi, string
+  mov   rsi, string2
+  call  strcmp
+  cmp   rax, FALSE
+  jne   .error
+
   mov   rdi, SUCCESS_CODE
   jmp   .exit
 
