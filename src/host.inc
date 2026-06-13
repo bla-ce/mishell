@@ -18,6 +18,11 @@ HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
+usage_str     db "usage: mishell init --port <port>", LINE_FEED
+              db "       mishell connect <remote_ip> <remote_port> --port <port>", LINE_FEED
+usage_str_len equ $ - usage_str
+
+
 section .bss
 
 host_t:

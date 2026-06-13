@@ -21,6 +21,17 @@ jobs:
       - name: mishell builds
         run: make
 
+  mishli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nasm
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: mishli builds
+        run: make mishli
+
   test-unit:
     runs-on: ubuntu-latest
     strategy:
