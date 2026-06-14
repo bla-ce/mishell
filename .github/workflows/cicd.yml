@@ -32,6 +32,17 @@ jobs:
       - name: mishli builds
         run: make mishli
 
+  test-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nasm
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
+      - name: mishli builds
+        run: make test-e2e
+
   test-unit:
     runs-on: ubuntu-latest
     strategy:

@@ -20,10 +20,6 @@ log:
   .recv_packet      db "[mishell] received packet from client", 10
   .recv_packet_len  equ $ - log.recv_packet
 
-usage_str     db "usage: mishell init --port <port>", LINE_FEED
-              db "       mishell connect <remote_ip> <remote_port> --port <port>", LINE_FEED
-usage_str_len equ $ - usage_str
-
 section .text
 
 _start:
@@ -262,8 +258,6 @@ _start:
   lea   rdi, [rsp]
   mov   rsi, [conn_fd]
   call  packet_dispatch
-  cmp   rax, 0
-  jl    .clear_connection
 
   jmp   .next_connection
 

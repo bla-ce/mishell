@@ -51,6 +51,9 @@ run-connect:
 test-unit:
 	$(MAKE) -C tests/unit
 
+test-e2e:
+	$(MAKE) -C tests/e2e
+
 strace:
 	strace ./$(BIN_DIR)/$(MISHELL_PATH)
 
