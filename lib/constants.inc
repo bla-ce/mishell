@@ -58,4 +58,5 @@ LINE_FEED equ 0xA
 HYPHEN    equ 0x2D
 DOT       equ 0x2E
 ZERO_CHAR equ 0x30
+COLON     equ 0x3A
 NINE_CHAR equ 0x39

@@ -36,7 +36,8 @@ test_packet_t:
   .payload      times PAYLOAD_MAX_LEN db 0
 test_packet_t_end:
 
-peer_fd times PEERS_LEN dq 0
+peer_fd   times PEERS_LEN dq 0
+host_ids  times ID_LEN * PEERS_LEN db 0
 
 section .text
 _start:
