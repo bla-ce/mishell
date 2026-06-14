@@ -23,6 +23,7 @@ mishli_usage_str  db "usage:  mishli --host <host_addr> cmd hello   -> check if 
 mishli_usage_str_len equ $ - mishli_usage_str
 
 host_flag db "--host", NULL_CHAR
+cmd_flag  db "cmd", NULL_CHAR
 
 section .data
 
@@ -36,6 +37,8 @@ _start:
   ; [rsp+0x8]   -> pointer to the program name
   ; [rsp+0x10]  -> pointer to the host flag key
   ; [rsp+0x18]  -> pointer to the host flag value
+  ; [rsp+0x20]  -> pointer to 'cmd' or service op
+  ; [rsp+0x20]  -> pointer to host op or host id
 
   cmp   qword [rsp], MISHLI_MIN_ARG
   jl    .usage
@@ -52,6 +55,25 @@ _start:
   cmp   rax, 0
   jl    .usage
 
+  ; check if the request is for a host or a service
+  mov   rdi, [rsp+0x20]
+  mov   rsi, cmd_flag
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .service_op
+
+.host_op:
+  ; check if op is valid
+  mov   rdi, [rsp+0x28]
+  call  op_get_from_str
+  cmp   rax, 0
+  jl    .error
+
+  jmp   .close_socket
+
+.service_op:
+
+.close_socket:
   ; close socket
   mov   rax, SYS_CLOSE
   mov   rdi, qword [host_fd]
