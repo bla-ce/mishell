@@ -55,6 +55,10 @@ _start:
   cmp   rax, 0
   jl    .usage
 
+  ; populate base packet
+  mov   word [packet_t.magic], MAGIC_VALUE
+  mov   word [packet_t.flags], FL_USER
+
   ; check if the request is for a host or a service
   mov   rdi, [rsp+0x20]
   mov   rsi, cmd_flag
@@ -66,6 +70,26 @@ _start:
   ; check if op is valid
   mov   rdi, [rsp+0x28]
   call  op_get_from_str
+  cmp   rax, 0
+  jl    .error
+
+  mov   byte [packet_t.op], al
+
+  ; send packet
+  mov   rax, SYS_WRITE
+  mov   rdi, [host_fd]
+  mov   rsi, packet_t
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; receive response
+  mov   rax, SYS_READ
+  mov   rdi, [host_fd]
+  mov   rsi, packet_t
+  mov   rdx, PACKET_T_LEN
+  syscall
   cmp   rax, 0
   jl    .error
 

@@ -213,7 +213,6 @@ packet_verify:
   cmp   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   jne   .error
 
-  ; make sure the direction is client to server
   mov   ax, word [rdi+PACKET_T_OFF_FLAGS]
 
   ; at least one of FL_HOST or FL_USER must be set
