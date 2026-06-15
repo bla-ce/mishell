@@ -1,11 +1,9 @@
 BUILD_DIR = build
 BIN_DIR = bin
 SRC_DIR = src
-CLI_DIR = cli
 LIB_DIR = lib
 
 MISHELL_PATH = mishell
-MISHLI_PATH = mishli
 
 SRC_DIRS = $(shell find $(SRC_DIR) -type d -printf '-I$(SRC_DIR)/%P ')
 LIB_DIRS = $(shell find $(LIB_DIR) -type d -printf '-I$(LIB_DIR)/%P ')
@@ -22,10 +20,7 @@ mishell:
 	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
 
 mishli:
-	mkdir -p $(BUILD_DIR) $(BIN_DIR)
-	nasm -o $(BUILD_DIR)/$(MISHLI_PATH).o $(CLI_DIR)/$(MISHLI_PATH).s \
-		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
-	ld -o $(BIN_DIR)/$(MISHLI_PATH) $(BUILD_DIR)/$(MISHLI_PATH).o
+	$(MAKE) -C cli
 
 run-init:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)

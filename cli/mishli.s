@@ -3,6 +3,7 @@
 %include "ops.inc"
 %include "packet.inc"
 %include "service.inc"
+%include "cli_op.inc"
 
 global _start
 
@@ -56,27 +57,14 @@ _start:
 
   ; check if op is valid
   mov   rdi, [rsp+0x20]
-  call  op_get_from_str
+  call  mishli_cli_op_fn_from_str
   cmp   rax, 0
   jl    .error
 
-  mov   byte [packet_t.op], al
-
-  ; send packet
-  mov   rax, SYS_WRITE
-  mov   rdi, [host_fd]
-  mov   rsi, packet_t
-  mov   rdx, PACKET_T_LEN
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; receive response
-  mov   rax, SYS_READ
-  mov   rdi, [host_fd]
-  mov   rsi, packet_t
-  mov   rdx, PACKET_T_LEN
-  syscall
+  ; call cli function with
+  mov   rdi, [rsp+0x28]
+  mov   rsi, [rsp+0x30]
+  call  rax
   cmp   rax, 0
   jl    .error
 
