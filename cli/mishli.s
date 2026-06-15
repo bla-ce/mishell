@@ -8,20 +8,18 @@ global _start
 
 section .rodata
 
-MISHLI_MIN_ARG equ 5
+MISHLI_MIN_ARG equ 4
 
-mishli_usage_str  db "usage:  mishli --host <host_addr> cmd hello   -> check if host is up", LINE_FEED
-                  db "        mishli --host <host_addr> cmd auth    -> generate or validate token", LINE_FEED
-                  db "        mishli --host <host_addr> cmd register <host_id> <type>          -> register new service", LINE_FEED
-                  db "        mishli --host <host_addr> cmd start <host_id> <service_id>       -> start service", LINE_FEED
-                  db "        mishli --host <host_addr> cmd stop <host_id> <service_id>        -> stop service", LINE_FEED
-                  db "        mishli --host <host_addr> cmd unregister <host_id> <service_id>  -> unregister service", LINE_FEED
-                  db "        mishli --host <host_addr> cmd list                               -> list available hosts", LINE_FEED
-                  db "        mishli --host <host_addr> <op> <host_id> <service_id> <payload>  -> op for service ", LINE_FEED, NULL_CHAR
+mishli_usage_str  db "usage:  mishli --host <host_addr> hello   -> check if host is up", LINE_FEED
+                  db "        mishli --host <host_addr> auth    -> generate or validate token", LINE_FEED
+                  db "        mishli --host <host_addr> register <host_id> <type>          -> register new service", LINE_FEED
+                  db "        mishli --host <host_addr> start <host_id> <service_id>       -> start service", LINE_FEED
+                  db "        mishli --host <host_addr> stop <host_id> <service_id>        -> stop service", LINE_FEED
+                  db "        mishli --host <host_addr> unregister <host_id> <service_id>  -> unregister service", LINE_FEED
+                  db "        mishli --host <host_addr> list                               -> list available hosts", LINE_FEED
 mishli_usage_str_len equ $ - mishli_usage_str
 
 host_flag db "--host", NULL_CHAR
-cmd_flag  db "cmd", NULL_CHAR
 
 section .data
 
@@ -35,8 +33,7 @@ _start:
   ; [rsp+0x8]   -> pointer to the program name
   ; [rsp+0x10]  -> pointer to the host flag key
   ; [rsp+0x18]  -> pointer to the host flag value
-  ; [rsp+0x20]  -> pointer to 'cmd' or service op
-  ; [rsp+0x20]  -> pointer to host op or host id
+  ; [rsp+0x20]  -> pointer to op
 
   cmp   qword [rsp], MISHLI_MIN_ARG
   jl    .usage
@@ -57,16 +54,8 @@ _start:
   mov   word [packet_t.magic], MAGIC_VALUE
   mov   word [packet_t.flags], FL_USER
 
-  ; check if the request is for a host or a service
-  mov   rdi, [rsp+0x20]
-  mov   rsi, cmd_flag
-  call  strcmp
-  cmp   rax, TRUE
-  jne   .service_op
-
-.host_op:
   ; check if op is valid
-  mov   rdi, [rsp+0x28]
+  mov   rdi, [rsp+0x20]
   call  op_get_from_str
   cmp   rax, 0
   jl    .error
@@ -91,11 +80,6 @@ _start:
   cmp   rax, 0
   jl    .error
 
-  jmp   .close_socket
-
-.service_op:
-
-.close_socket:
   ; close socket
   mov   rax, SYS_CLOSE
   mov   rdi, qword [host_fd]
