@@ -13,7 +13,7 @@ test_validation:
 
   ; sending invalid magic value should fail
   mov   word [test_packet_t.magic], 0x1234
-  mov   word [test_packet_t.flags], FL_HOST
+  mov   byte [test_packet_t.flags], FL_HOST
 
   mov   rax, SYS_WRITE
   mov   rdi, [rsp]
