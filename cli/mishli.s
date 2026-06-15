@@ -53,7 +53,7 @@ _start:
 
   ; populate base packet
   mov   word [packet_t.magic], MAGIC_VALUE
-  mov   word [packet_t.flags], FL_USER
+  mov   byte [packet_t.flags], FL_USER
 
   ; check if op is valid
   mov   rdi, [rsp+0x20]

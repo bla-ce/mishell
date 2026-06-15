@@ -26,7 +26,7 @@ test_sockaddr_in_t_len dq test_sockaddr_in_t_end - test_sockaddr_in_t
 test_packet_t:
   .magic        dw 0
   .op           db 0
-  .flags        dw 0
+  .flags        db 0
   .id           times ID_LEN db 0
   .dest_host    times ID_LEN db 0
   .dest_service times ID_LEN db 0

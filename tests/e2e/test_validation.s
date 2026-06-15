@@ -43,7 +43,7 @@ test_validation:
   rep   cmpsb
   jne   .error
 
-  ; sending invalid magic value should fail
+  ; sending invalid op should fail
   mov   word [test_packet_t.magic], 0xCAFE
   mov   byte [test_packet_t.op], req_ops.COUNT
   mov   byte [test_packet_t.flags], FL_HOST
