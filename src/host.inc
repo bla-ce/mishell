@@ -343,8 +343,7 @@ host_connect_to_remote:
   ; send hello op
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   qword [rdi+PACKET_T_OFF_DEST_HOST], 0
@@ -377,8 +376,7 @@ host_connect_to_remote:
   ; send auth op
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   qword [rdi+PACKET_T_OFF_ID], 0
   mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   qword [rdi+PACKET_T_OFF_DEST_HOST], 0
@@ -607,8 +605,7 @@ host_update_network:
   lea   rdi, [rsp+0x20]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.UPDATE
-  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
   mov   rax, qword [host_id]
   mov   rdx, qword [host_id+0x8]

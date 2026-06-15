@@ -14,7 +14,6 @@ test_validation:
   ; sending invalid magic value should fail
   mov   word [test_packet_t.magic], 0x1234
   mov   word [test_packet_t.flags], FL_HOST
-  or    word [test_packet_t.flags], FL_PEER_TO_PEER
 
   mov   rax, SYS_WRITE
   mov   rdi, [rsp]
@@ -47,8 +46,7 @@ test_validation:
   ; sending invalid magic value should fail
   mov   word [test_packet_t.magic], 0xCAFE
   mov   byte [test_packet_t.op], req_ops.COUNT
-  mov   word [test_packet_t.flags], FL_HOST
-  or    word [test_packet_t.flags], FL_PEER_TO_PEER
+  mov   byte [test_packet_t.flags], FL_HOST
 
   mov   rax, SYS_WRITE
   mov   rdi, [rsp]
@@ -81,7 +79,7 @@ test_validation:
   ; sending invalid mode should fail
   mov   word [test_packet_t.magic], 0xCAFE
   mov   byte [test_packet_t.op], req_ops.HELLO
-  mov   word [test_packet_t.flags], FL_PEER_TO_PEER
+  mov   byte [test_packet_t.flags], 0
 
   mov   rax, SYS_WRITE
   mov   rdi, [rsp]
@@ -114,8 +112,7 @@ test_validation:
   ; sending HELLO should return OK
   mov   word [test_packet_t.magic], 0xCAFE
   mov   byte [test_packet_t.op], req_ops.HELLO
-  mov   word [test_packet_t.flags], FL_HOST
-  or    word [test_packet_t.flags], FL_PEER_TO_PEER
+  mov   byte [test_packet_t.flags], FL_HOST
 
   mov   rax, SYS_WRITE
   mov   rdi, [rsp]

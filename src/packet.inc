@@ -5,7 +5,7 @@ section .bss
 packet_t:
   .magic        resw 1
   .op           resb 1
-  .flags        resw 1
+  .flags        resb 1
   .id           resb ID_LEN
   .dest_host    resb ID_LEN
   .dest_service resb ID_LEN
@@ -22,21 +22,15 @@ PACKET_T_HEADER_LEN equ packet_t.payload - packet_t
 PACKET_T_OFF_MAGIC        equ 0x0
 PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
 PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
-PACKET_T_OFF_ID           equ PACKET_T_OFF_FLAGS + 0x2
+PACKET_T_OFF_ID           equ PACKET_T_OFF_FLAGS + 0x1
 PACKET_T_OFF_DEST_HOST    equ PACKET_T_OFF_ID + ID_LEN
 PACKET_T_OFF_DEST_SERVICE equ PACKET_T_OFF_DEST_HOST + ID_LEN
 PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_DEST_SERVICE + ID_LEN
 PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
-; DIRECTION FLAGS
-FL_PEER_TO_PEER       equ 0001b
-FL_CLIENT_TO_SERVICE  equ 0010b
-FL_SERVICE_TO_CLIENT  equ 0100b
-
 ; MODE FLAGS
-FL_USER     equ 00010000b
-FL_HOST     equ 00100000b
-FL_SERVICE  equ 01000000b
+FL_USER     equ 0001b
+FL_HOST     equ 0010b
 
 MAGIC_VALUE     equ 0xCAFE
 PAYLOAD_MAX_LEN equ 0xFFFF
@@ -172,18 +166,18 @@ packet_verify:
   cmp   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   jne   .error
 
-  mov   ax, word [rdi+PACKET_T_OFF_FLAGS]
+  mov   al, byte [rdi+PACKET_T_OFF_FLAGS]
 
   ; at least one of FL_HOST or FL_USER must be set
   mov   qword [rsp+0x8], error_codes.INVALID_MODE
-  mov   r9w, ax
-  and   r9w, FL_HOST
-  test  r9w, r9w
+  mov   r9b, al
+  and   r9b, FL_HOST
+  test  r9b, r9b
   jnz   .check_op
 
-  mov   r9w, ax
-  and   r9w, FL_USER
-  test  r9w, r9w
+  mov   r9b, al
+  and   r9b, FL_USER
+  test  r9b, r9b
   jz    .error
 
 .check_op:
@@ -251,8 +245,7 @@ packet_build_error:
   mov   rdi, [rsp]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.ERROR
-
-  or    word [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
   cmp   rsi, 0
   jl    .internal_error
