@@ -101,47 +101,6 @@ packet_dispatch:
   jmp   .send_packet
 
 .handle_request:
-  ; check if the request is for the host or a service
-  mov   rdi, [rsp]
-  mov   ax, word [rdi+PACKET_T_OFF_FLAGS]
-  and   ax, FL_CLIENT_TO_SERVICE
-  test  ax, ax
-  jz    .run_host_op
-
-.run_service_op:
-  ; find service inside host struct
-  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
-  mov   rax, [rsp]
-  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
-  lea   rsi, [rax+PACKET_T_OFF_DEST_SERVICE]
-  call  service_get_by_id
-  cmp   rax, 0
-  jl    .error
-
-  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_STARTED
-  cmp   byte [rax+SERVICE_T_OFF_STATUS], service_status.UP
-  jne   .error
-
-  mov   qword [rsp+0x10], error_codes.COMMAND_NOT_FOUND
-  ; find command inside the service
-  mov   rdi, [rsp]
-  movzx rsi, byte [rdi+PACKET_T_OFF_OP]
-  mov   rdi, rax
-  call  command_get_by_op
-  cmp   rax, 0
-  jl    .error
-
-  ; call op
-  mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
-  mov   rdi, [rsp]
-  lea   rsi, [rsp+0x18]
-  call  rax
-  cmp   rax, 0
-  jl    .error
-
-  jmp   .send_packet
-
-.run_host_op:
   ; get op
   mov   rdi, [rsp]
   movzx rax, byte [rdi+PACKET_T_OFF_OP]

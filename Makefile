@@ -2,17 +2,15 @@ BUILD_DIR = build
 BIN_DIR = bin
 SRC_DIR = src
 CLI_DIR = cli
-SERVICE_TYPES_DIR = service_types
 LIB_DIR = lib
 
 MISHELL_PATH = mishell
 MISHLI_PATH = mishli
 
 SRC_DIRS = $(shell find $(SRC_DIR) -type d -printf '-I$(SRC_DIR)/%P ')
-SERVICE_TYPES_DIRS = $(shell find $(SERVICE_TYPES_DIR) -type d -printf '-I$(SERVICE_TYPES_DIR)/%P ')
 LIB_DIRS = $(shell find $(LIB_DIR) -type d -printf '-I$(LIB_DIR)/%P ')
 
-INCLUDE_FLAGS = $(SRC_DIRS) $(LIB_DIRS) $(SERVICE_TYPES_DIRS)
+INCLUDE_FLAGS = $(SRC_DIRS) $(LIB_DIRS)
 
 DEBUG_FLAGS = -g
 BASE_FLAGS = -felf64 -w+all

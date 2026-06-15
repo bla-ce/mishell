@@ -196,7 +196,7 @@ host_addr_exists:
 
 ; initialises a P2P network if init is passed, otherwise joins
 ; an existing network with ip and port
-; @param  rdi: pointer to the command
+; @param  rdi: pointer to the op
 ; @param  rsi: ip of the remote host (optional)
 ; @param  rdx: port of the remote host (optional, byte order)
 ; @return rax: return code
@@ -204,7 +204,7 @@ init_or_join_network:
   sub   rsp, 0x18
 
   ; STACK USAGE
-  ; [rsp]       -> pointer to the command
+  ; [rsp]       -> pointer to the op
   ; [rsp+0x8]   -> ip of the remote host
   ; [rsp+0x10]  -> port of the remote host
 
@@ -278,7 +278,7 @@ init_or_join_network:
   add   rsp, 0x18
   ret
 
-; connects to a remote host by sending HELLO and AUTH commands
+; connects to a remote host by sending HELLO and AUTH ops
 ; assuming local networks for now
 ; @param  rdi: pointer to the ip of the remote host
 ; @param  rsi: pointer to the port of the remote host (byte order)
@@ -340,7 +340,7 @@ host_connect_to_remote:
   cmp   rax, 0
   jl    .error
 
-  ; send hello command
+  ; send hello op
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER
@@ -374,7 +374,7 @@ host_connect_to_remote:
   cmp   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   jne   .error
 
-  ; send auth command
+  ; send auth op
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   word [rdi+PACKET_T_OFF_FLAGS], FL_PEER_TO_PEER

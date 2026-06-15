@@ -318,7 +318,7 @@ op_register:
   add   rsp, 0x20
   ret
 
-; starts a service from START command with host and service id
+; starts a service from START op with host and service id
 ; returns OK
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
@@ -393,7 +393,7 @@ op_start:
   add   rsp, 0x18
   ret
 
-; stops a service from STOP command with host and service id
+; stops a service from STOP op with host and service id
 ; returns OK
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
