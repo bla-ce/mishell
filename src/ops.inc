@@ -11,7 +11,8 @@ req_ops:
   .UNREGISTER equ 0x5
   .LIST       equ 0x6
   .UPDATE     equ 0x7
-  .COUNT      equ 0x8
+  .QUERY      equ 0x8
+  .COUNT      equ 0x9
 
 res_ops:
   .OK     equ 0x0
@@ -27,6 +28,7 @@ req_op_fn_table:
   .UNREGISTER dq op_unregister
   .LIST       dq op_list
   .UPDATE     dq op_update
+  .QUERY      dq op_query
 
 section .text
 
@@ -620,6 +622,78 @@ op_update:
   idiv  rcx
   mov   byte [curr_host_idx], al
 
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, [rsp+0x10]
+
+.return:
+  add   rsp, 0x18
+  ret
+
+; query a service registered within this host
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @return rax: return code
+op_query:
+  sub   rsp, 0x18
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> error code
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  ; TODO: auth for querying services
+
+  mov   rax, [rsp]
+
+  ; get the service
+  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
+  mov   rdi, host_id
+  lea   rsi, [rax+PACKET_T_OFF_DEST_SERVICE]
+  call  service_get_by_id
+  cmp   rax, 0
+  jl    .error
+
+  mov   qword [rsp+0x10], error_codes.SERVICE_NOT_STARTED
+  cmp   byte [rax+SERVICE_T_OFF_STATUS], service_status.UP
+  jne   .error
+
+ mov   qword [rsp+0x10], error_codes.COMMAND_NOT_FOUND
+  ; find command inside the service
+  mov   rdi, [rsp]
+  movzx rsi, byte [rdi+PACKET_T_OFF_OP]
+  mov   rdi, rax
+  call  command_get_by_op
+  cmp   rax, 0
+  jl    .error
+
+  ; call op
+  mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
+  call  rax
+  cmp   rax, 0
+  jl    .error
+
+  ; TODO: what do we return
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
