@@ -689,18 +689,11 @@ op_query:
 
   ; call op
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
   call  rax
   cmp   rax, 0
   jl    .error
-
-  ; TODO: what do we return
-  mov   rdi, [rsp+0x8]
-  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
-  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
 
   mov   rax, SUCCESS_CODE
   jmp   .return
