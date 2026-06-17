@@ -1,0 +1,26 @@
+section .rodata
+
+SERVICE_TYPE_T_OFF_COMMANDS equ 0x0
+SERVICE_TYPE_T_OFF_TYPE     equ SERVICE_TYPE_T_OFF_COMMANDS + COMMANDS_MAX_COUNT_PER_SERVICE_TYPE * 0x8
+SERVICE_TYPE_T_OFF_DESC     equ SERVICE_TYPE_T_OFF_TYPE + 0x1
+
+SERVICE_TYPE_DESC_MAX_LEN equ 0x100
+
+COMMANDS_MAX_COUNT_PER_SERVICE_TYPE equ 0x4
+
+service_types:
+  .COUNT    equ 0x0
+
+service_types_table:
+
+SERVICE_TYPE_T_LEN equ service_type_t_end - service_type_t
+
+section .bss
+
+service_type_t:
+  .commands     resq COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
+  .type         resb 1
+  .description  resb SERVICE_TYPE_DESC_MAX_LEN
+service_type_t_end:
+
+section .text

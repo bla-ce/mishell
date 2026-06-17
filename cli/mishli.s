@@ -3,6 +3,7 @@
 %include "ops.inc"
 %include "packet.inc"
 %include "service.inc"
+%include "service_type.inc"
 %include "cli_op.inc"
 
 global _start
@@ -12,7 +13,6 @@ section .rodata
 MISHLI_MIN_ARG equ 4
 
 mishli_usage_str  db "usage:  mishli --host <host_addr> hello   -> check if host is up", LINE_FEED
-                  db "        mishli --host <host_addr> auth    -> generate or validate token", LINE_FEED
                   db "        mishli --host <host_addr> register <host_id> <type>          -> register new service", LINE_FEED
                   db "        mishli --host <host_addr> start <host_id> <service_id>       -> start service", LINE_FEED
                   db "        mishli --host <host_addr> stop <host_id> <service_id>        -> stop service", LINE_FEED
@@ -51,15 +51,15 @@ _start:
   cmp   rax, 0
   jl    .usage
 
-  ; populate base packet
-  mov   word [packet_t.magic], MAGIC_VALUE
-  mov   byte [packet_t.flags], FL_USER
-
   ; check if op is valid
   mov   rdi, [rsp+0x20]
   call  mishli_cli_op_fn_from_str
   cmp   rax, 0
   jl    .error
+
+  ; populate base packet
+  mov   word [packet_t.magic], MAGIC_VALUE
+  mov   byte [packet_t.flags], FL_USER
 
   ; call cli function with
   mov   rdi, [rsp+0x28]

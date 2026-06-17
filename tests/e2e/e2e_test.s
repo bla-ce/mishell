@@ -5,6 +5,7 @@ global _start
 %include "ops.inc"
 %include "packet.inc"
 %include "service.inc"
+%include "service_type.inc"
 
 %include "test_validation.s"
 

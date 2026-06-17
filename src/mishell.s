@@ -3,6 +3,7 @@
 %include "ops.inc"
 %include "packet.inc"
 %include "service.inc"
+%include "service_type.inc"
 
 global _start
 

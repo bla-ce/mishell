@@ -206,6 +206,12 @@ service_validate:
   cmp   rax, SERVICE_NAME_MAX_LEN
   jge   .error
 
+  ; validate type
+  mov   qword [rsp+0x8], error_codes.SERVICE_INVALID_TYPE
+  mov   rdi, [rsp]
+  cmp   byte [rdi+SERVICE_T_OFF_TYPE], service_types.COUNT
+  jge   .error
+
   mov   rax, SUCCESS_CODE
   jmp   .return
 
