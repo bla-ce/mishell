@@ -13,16 +13,14 @@ pong_msg db "pong"
 section .text
 
 ping_command_ping:
-  sub   rsp, 0x18
+  sub   rsp, 0x10
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the request packet
   ; [rsp+0x8]   -> pointer to the response packet
-  ; [rsp+0x10]  -> connection fd
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
 
   test  rdi, rdi
   jz    .error
@@ -50,5 +48,5 @@ ping_command_ping:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x18
+  add   rsp, 0x10
   ret

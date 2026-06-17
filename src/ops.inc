@@ -688,12 +688,12 @@ op_query:
   mov   rdi, rax
   call  command_get_by_op
   cmp   rax, 0
-  jl    .error
+  jle   .error
 
   ; call op
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
-  mov   [rsp], rdi
-  mov   [rsp+0x8], rsi
+  mov   rdi, [rsp]
+  mov   rsi, [rsp+0x8]
   call  rax
   cmp   rax, 0
   jl    .error
