@@ -12,7 +12,8 @@ req_ops:
   .LIST       equ 0x6
   .UPDATE     equ 0x7
   .QUERY      equ 0x8
-  .COUNT      equ 0x9
+  .CATALOG    equ 0x9
+  .COUNT      equ 0x10
 
 res_ops:
   .OK     equ 0x0
@@ -29,6 +30,7 @@ req_op_fn_table:
   .LIST       dq op_list
   .UPDATE     dq op_update
   .QUERY      dq op_query
+  .CATALOG    dq op_catalog
 
 section .text
 
@@ -695,6 +697,74 @@ op_query:
   call  rax
   cmp   rax, 0
   jl    .error
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, [rsp+0x10]
+
+.return:
+  add   rsp, 0x18
+  ret
+
+; returns a list of available service types for that particular host
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @return rax: return code
+op_catalog:
+  sub   rsp, 0x18
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the request packet
+  ; [rsp+0x8]   -> pointer to the response packet
+  ; [rsp+0x10]  -> error code
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  ; TODO: auth for catalog
+
+  mov   rdi, [rsp+0x8]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVICE
+  mov   qword [rdi+PACKET_T_OFF_ID], 0
+  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
+
+  ; get payload len (SERVICE_TYPE_T_LEN * len(service_types.COUNT)
+  mov   rdx, SERVICE_TYPE_T_LEN
+  imul  rax, rdx, service_types.COUNT
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+
+  xor   r9, r9
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+
+.loop:
+  cmp   r9, service_types.COUNT
+  jge   .loop_end
+
+  ; get service type definition
+  mov   r10, r9
+  shl   r10, 3    ; r10 *= 8
+  mov   rsi, qword [service_types_table+r10]
+
+  ; copy it
+  mov   rcx, SERVICE_TYPE_T_LEN
+  rep   movsb
+
+  inc   r9
+  jmp   .loop
+
+.loop_end:
 
   mov   rax, SUCCESS_CODE
   jmp   .return

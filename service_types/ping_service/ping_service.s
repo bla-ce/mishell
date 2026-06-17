@@ -2,9 +2,10 @@ section .rodata
 
 ping_service_t:
   .commands     dq ping_command_ping
-  .pad2         times COMMANDS_MAX_COUNT_PER_SERVICE_TYPE - 1 dq 0
+  .pad          times COMMANDS_MAX_COUNT_PER_SERVICE_TYPE - 1 dq 0
   .type         db service_types.PING
   .description  db "A simple service returning pong when receiving ping"
+  .pad2         times SERVICE_TYPE_T_LEN - ($ - ping_service_t) db 0
 ping_service_t_end:
 
 pong_msg db "pong"
