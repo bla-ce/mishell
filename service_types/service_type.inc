@@ -8,6 +8,12 @@ SERVICE_TYPE_DESC_MAX_LEN equ 0x100
 
 COMMANDS_MAX_COUNT_PER_SERVICE_TYPE equ 0x20
 
+service_types_str:
+  .PING db "PING", NULL_CHAR
+
+service_types_str_table:
+  .PING dq service_types_str.PING
+
 service_types:
   .PING     equ 0x0
   .COUNT    equ 0x1
