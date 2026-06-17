@@ -9,9 +9,11 @@ SERVICE_TYPE_DESC_MAX_LEN equ 0x100
 COMMANDS_MAX_COUNT_PER_SERVICE_TYPE equ 0x4
 
 service_types:
-  .COUNT    equ 0x0
+  .PING     equ 0x0
+  .COUNT    equ 0x1
 
 service_types_table:
+  .ping     dq  ping_service_t
 
 SERVICE_TYPE_T_LEN equ service_type_t_end - service_type_t
 
@@ -24,3 +26,5 @@ service_type_t:
 service_type_t_end:
 
 section .text
+
+%include "ping_service.s"
