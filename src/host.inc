@@ -20,10 +20,9 @@ HOST_T_OFF_NAME           equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES       equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
-usage_str     db "usage: mishell init --port <port>", LINE_FEED
-              db "       mishell connect <remote_ip> <remote_port> --port <port>", LINE_FEED
+usage_str     db "usage: mishell init --port <port> --name <name>", LINE_FEED
+              db "       mishell connect <remote_ip> <remote_port> --port <port> --name <name>", LINE_FEED
 usage_str_len equ $ - usage_str
-
 
 section .bss
 
@@ -273,27 +272,33 @@ init_or_join_network:
   add   rsp, 0x18
   ret
 
-; connects to a remote host by sending HELLO and AUTH ops
+; connects to a remote host by sending JOIN op
 ; assuming local networks for now
 ; @param  rdi: pointer to the ip of the remote host
 ; @param  rsi: pointer to the port of the remote host (byte order)
+; @param  rdx: pointer to the name of the remote host
 ; @return rax: return code
 host_connect_to_remote:
-  sub   rsp, 0x18 + PACKET_T_LEN
+  sub   rsp, 0x20 + PACKET_T_LEN
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the ip of the remote host
   ; [rsp+0x8]   -> pointer to the port of the remote host
-  ; [rsp+0x10]  -> host fd
-  ; [rsp+0x18]  -> packet
+  ; [rsp+0x10]  -> pointer to the name of the remote host
+  ; [rsp+0x18]  -> host fd
+  ; [rsp+0x20]  -> packet
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rsi
 
   test  rdi, rdi
   jz    .error
 
   test  rsi, rsi
+  jz    .error
+
+  test  rdx, rdx
   jz    .error
 
   ; create socket
@@ -303,7 +308,7 @@ host_connect_to_remote:
   xor   rdx, rdx
   syscall
 
-  mov   [rsp+0x10], rax
+  mov   [rsp+0x18], rax
 
   ; populate sockaddr: TODO: we might want to use the stack here
   mov   word [sockaddr_in_t.sin_family], AF_INET
@@ -328,55 +333,20 @@ host_connect_to_remote:
 
   ; connect to socket
   mov   rax, SYS_CONNECT
-  mov   rdi, [rsp+0x10]
+  mov   rdi, [rsp+0x18]
   mov   rsi, sockaddr_in_t
   mov   rdx, [sockaddr_in_t_len]
   syscall
   cmp   rax, 0
   jl    .error
 
-  ; send hello op
-  lea   rdi, [rsp+0x18]
+  ; send join op
+  lea   rdi, [rsp+0x20]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   qword [rdi+PACKET_T_OFF_DEST_HOST], 0
   mov   qword [rdi+PACKET_T_OFF_DEST_HOST+0x8], 0
-  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.HELLO
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
-
-  mov   rax, SYS_WRITE
-  mov   rdi, [rsp+0x10]
-  lea   rsi, [rsp+0x18]
-  mov   rdx, PACKET_T_HEADER_LEN
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; receive response
-  mov   rax, SYS_READ
-  mov   rdi, [rsp+0x10]
-  lea   rsi, [rsp+0x18]
-  mov   rdx, PACKET_T_LEN
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; confirm response is ok
-  lea   rdi, [rsp+0x18]
-  cmp   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-  jne   .error
-
-  ; send auth op
-  lea   rdi, [rsp+0x18]
-  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
-  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
-  mov   qword [rdi+PACKET_T_OFF_DEST_HOST], 0
-  mov   qword [rdi+PACKET_T_OFF_DEST_HOST+0x8], 0
-  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.AUTH
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.JOIN
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOST_T_LEN
 
   ; add host to payload
@@ -388,15 +358,15 @@ host_connect_to_remote:
   test  rax, rax
   jnz   .error
 
-  lea   rdi, [rsp+0x18]
+  lea   rdi, [rsp+0x20]
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, host_t
   mov   rcx, HOST_T_LEN
   rep   movsb
 
   mov   rax, SYS_WRITE
-  mov   rdi, [rsp+0x10]
-  lea   rsi, [rsp+0x18]
+  mov   rdi, [rsp+0x18]
+  lea   rsi, [rsp+0x20]
   mov   rdx, PACKET_T_HEADER_LEN+HOST_T_LEN
   syscall
   cmp   rax, 0
@@ -404,15 +374,15 @@ host_connect_to_remote:
 
   ; receive response
   mov   rax, SYS_READ
-  mov   rdi, [rsp+0x10]
-  lea   rsi, [rsp+0x18]
+  mov   rdi, [rsp+0x18]
+  lea   rsi, [rsp+0x20]
   mov   rdx, PACKET_T_LEN
   syscall
   cmp   rax, 0
   jl    .error
 
   ; confirm response is ok
-  lea   rsi, [rsp+0x18]
+  lea   rsi, [rsp+0x20]
   cmp   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
   jne   .error
 
@@ -445,7 +415,7 @@ host_connect_to_remote:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x18 + PACKET_T_LEN
+  add   rsp, 0x20 + PACKET_T_LEN
   ret
 
 ; returns the host struct from the host name or -1 if the host is

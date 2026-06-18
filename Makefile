@@ -15,6 +15,9 @@ INCLUDE_FLAGS = $(SRC_DIRS) $(LIB_DIRS) $(SERVICE_TYPES_DIRS)
 DEBUG_FLAGS = -g
 BASE_FLAGS = -felf64 -w+all
 
+PORT ?= 7474
+NAME ?= default
+
 mishell:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)
 	nasm -o $(BUILD_DIR)/$(MISHELL_PATH).o $(SRC_DIR)/$(MISHELL_PATH).s \
@@ -29,14 +32,14 @@ run-init:
 	nasm -o $(BUILD_DIR)/$(MISHELL_PATH).o $(SRC_DIR)/$(MISHELL_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
-	./$(BIN_DIR)/$(MISHELL_PATH) init --port $(PORT)
+	./$(BIN_DIR)/$(MISHELL_PATH) init --port $(PORT) --name $(NAME)
 
 run-connect:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)
 	nasm -o $(BUILD_DIR)/$(MISHELL_PATH).o $(SRC_DIR)/$(MISHELL_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
-	./$(BIN_DIR)/$(MISHELL_PATH) connect $(REMOTE_IP) $(REMOTE_PORT) --port $(PORT)
+	./$(BIN_DIR)/$(MISHELL_PATH) connect $(REMOTE_IP) $(REMOTE_PORT) --port $(PORT) --name $(NAME)
 
 test-unit:
 	$(MAKE) -C tests/unit
