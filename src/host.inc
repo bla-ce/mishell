@@ -21,7 +21,7 @@ HOST_T_OFF_SERVICES       equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 usage_str     db "usage: mishell init --port <port> --name <name>", LINE_FEED
-              db "       mishell connect <remote_ip> <remote_port> --port <port> --name <name>", LINE_FEED
+              db "       mishell connect <remote_ip>:<remote_port> --port <port> --name <name>", LINE_FEED
 usage_str_len equ $ - usage_str
 
 section .bss
@@ -198,20 +198,17 @@ host_addr_exists:
 ; initialises a P2P network if init is passed, otherwise joins
 ; an existing network with ip and port
 ; @param  rdi: pointer to the op
-; @param  rsi: ip of the remote host (optional)
-; @param  rdx: port of the remote host (optional, byte order)
+; @param  rsi: addr of the remote host (optional)
 ; @return rax: return code
 init_or_join_network:
-  sub   rsp, 0x18
+  sub   rsp, 0x10
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the op
-  ; [rsp+0x8]   -> ip of the remote host
-  ; [rsp+0x10]  -> port of the remote host
+  ; [rsp+0x8]   -> addr of the remote host
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
 
   test  rdi, rdi
   jz    .error
@@ -249,8 +246,31 @@ init_or_join_network:
   jmp   .done
 
 .connect_to_host:
+  ; parse host address
   mov   rdi, [rsp+0x8]
-  mov   rsi, [rsp+0x10]
+
+.loop:
+  ; find colon
+  cmp   byte [rdi], COLON
+  jne   .continue
+
+  mov   rax, NULL_CHAR
+  stosb
+
+  jmp   .loop_end
+
+.continue:
+  cmp   byte [rdi], NULL_CHAR
+  je    .error    ; wrong format
+
+  inc   rdi
+
+  jmp   .loop
+.loop_end:
+
+  ; rdi points to the port
+  mov   rsi, rdi
+  mov   rdi, [rsp+0x8]
   call  host_connect_to_remote
   cmp   rax, 0
   jl    .error
@@ -270,7 +290,7 @@ init_or_join_network:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x18
+  add   rsp, 0x10
   ret
 
 ; connects to a remote host by sending JOIN op

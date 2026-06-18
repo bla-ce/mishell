@@ -17,6 +17,7 @@ BASE_FLAGS = -felf64 -w+all
 
 PORT ?= 7474
 NAME ?= default
+REMOTE_ADDR ?= 127.0.0.1:7474
 
 mishell:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)
@@ -39,7 +40,7 @@ run-connect:
 	nasm -o $(BUILD_DIR)/$(MISHELL_PATH).o $(SRC_DIR)/$(MISHELL_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
-	./$(BIN_DIR)/$(MISHELL_PATH) connect $(REMOTE_IP) $(REMOTE_PORT) --port $(PORT) --name $(NAME)
+	./$(BIN_DIR)/$(MISHELL_PATH) connect $(REMOTE_ADDR) --port $(PORT) --name $(NAME)
 
 test-unit:
 	$(MAKE) -C tests/unit

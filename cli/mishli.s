@@ -129,7 +129,6 @@ mishli_connect_to_host:
 
   jmp   .loop
 .loop_end:
-
   ; rdi points to the port
   call  atoi
   cmp   rax, 0

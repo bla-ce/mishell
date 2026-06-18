@@ -29,11 +29,12 @@ _start:
   ; STACK USAGE
   ; [rsp]                   -> pointer to the packet struct
   ; [rsp+PACKET_T_LEN+0x8]  -> pointer to program name
-  ; [rsp+PACKET_T_LEN+0x10] -> pointer to command
-  ; [rsp+PACKET_T_LEN+0x18] -> pointer to ip of the remote host or port flag
-  ; [rsp+PACKET_T_LEN+0x20] -> pointer to port of the remote host or listening port
-  ; [rsp+PACKET_T_LEN+0x28] -> pointer to port flag
-  ; [rsp+PACKET_T_LEN+0x30] -> pointer to listening port
+  ; [rsp+PACKET_T_LEN+0x10] -> pointer to command (init or connect)
+  ; [rsp+PACKET_T_LEN+0x18] -> pointer to ip:port of the remote host (connect) or port flag (init)
+  ; [rsp+PACKET_T_LEN+0x20] -> pointer to port flag (connect) or listening port (init)
+  ; [rsp+PACKET_T_LEN+0x28] -> pointer to listening port (connect) or name flag (init)
+  ; [rsp+PACKET_T_LEN+0x30] -> pointer to name flag (connect) or name (init)
+  ; [rsp+PACKET_T_LEN+0x38] -> pointer to name (connect)
 
   ; check if port flag has been set
   mov   rdi, [rsp+PACKET_T_LEN+0x18]
@@ -43,10 +44,10 @@ _start:
   cmp   rax, TRUE
   je    .set_port
 
-  mov   rdi, [rsp+PACKET_T_LEN+0x28]
+  mov   rdi, [rsp+PACKET_T_LEN+0x20]
   mov   rsi, PORT_FLAG
   call  strcmp
-  mov   rdi, [rsp+PACKET_T_LEN+0x30]
+  mov   rdi, [rsp+PACKET_T_LEN+0x28]
   cmp   rax, TRUE
   jne   .init_or_join_network  ; default port
 
@@ -60,7 +61,6 @@ _start:
 .init_or_join_network:
   mov   rdi, [rsp+PACKET_T_LEN+0x10]
   mov   rsi, [rsp+PACKET_T_LEN+0x18]
-  mov   rdx, [rsp+PACKET_T_LEN+0x20]
   call  init_or_join_network
   cmp   rax, 0
   jl    .error
