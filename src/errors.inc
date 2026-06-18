@@ -8,26 +8,24 @@ error_codes:
   .INVALID_MAGIC                  equ 2
   .INVALID_OP                     equ 3
   .INVALID_MODE                   equ 4
-  .INVALID_TOKEN                  equ 5
-  .UNAUTHORIZED                   equ 6
 
   ; host errors
-  .HOST_LIMIT_REACHED             equ 7
-  .HOST_NOT_FOUND                 equ 8
-  .HOST_ALREADY_EXISTS            equ 9
+  .HOST_LIMIT_REACHED             equ 5
+  .HOST_NOT_FOUND                 equ 6
+  .HOST_ALREADY_EXISTS            equ 7
 
   ; service errors
-  .SERVICE_PER_HOST_LIMIT_REACHED equ 10
-  .SERVICE_NOT_FOUND              equ 11
-  .SERVICE_INVALID_NAME           equ 12
-  .SERVICE_INVALID_TYPE           equ 13
-  .SERVICE_STOP_BEFORE_UNREGISTER equ 14
-  .SERVICE_NOT_STARTED            equ 15
+  .SERVICE_PER_HOST_LIMIT_REACHED equ 8
+  .SERVICE_NOT_FOUND              equ 9
+  .SERVICE_INVALID_NAME           equ 10
+  .SERVICE_INVALID_TYPE           equ 11
+  .SERVICE_STOP_BEFORE_UNREGISTER equ 12
+  .SERVICE_NOT_STARTED            equ 13
 
   ; command errors
-  .COMMAND_NOT_FOUND              equ 16
+  .COMMAND_NOT_FOUND              equ 14
 
-  .COUNT                          equ 17
+  .COUNT                          equ 15
 
 err_code_to_msg_table:
   .NULL                           dq 0
@@ -35,8 +33,6 @@ err_code_to_msg_table:
   .INVALID_MAGIC                  dq error_msg.invalid_magic
   .INVALID_OP                     dq error_msg.invalid_op
   .INVALID_MODE                   dq error_msg.invalid_mode
-  .INVALID_TOKEN                  dq error_msg.invalid_token
-  .UNAUTHORIZED                   dq error_msg.unauthorized
   .HOST_LIMIT_REACHED             dq error_msg.host_limit_reached
   .HOST_NOT_FOUND                 dq error_msg.host_not_found
   .HOST_ALREADY_EXISTS            dq error_msg.host_already_exists
@@ -54,8 +50,6 @@ err_code_to_len_table:
   .INVALID_MAGIC                  dw error_msg.invalid_magic_len
   .INVALID_OP                     dw error_msg.invalid_op_len
   .INVALID_MODE                   dw error_msg.invalid_mode_len
-  .INVALID_TOKEN                  dw error_msg.invalid_token_len
-  .UNAUTHORIZED                   dw error_msg.unauthorized_len
   .HOST_LIMIT_REACHED             dw error_msg.host_limit_reached_len
   .HOST_NOT_FOUND                 dw error_msg.host_not_found_len
   .HOST_ALREADY_EXISTS            dw error_msg.host_already_exists_len
@@ -76,10 +70,6 @@ error_msg:
   .invalid_op_len equ $ - error_msg.invalid_op
   .invalid_mode db "invalid mode flag in packet"
   .invalid_mode_len equ $ - error_msg.invalid_mode
-  .invalid_token db "invalid host token"
-  .invalid_token_len equ $ - error_msg.invalid_token
-  .unauthorized db "user is unauthorized to perform this request"
-  .unauthorized_len equ $ - error_msg.unauthorized
   .host_limit_reached db "host limit has been reached"
   .host_limit_reached_len equ $ - error_msg.host_limit_reached
   .host_not_found db "host not found"
