@@ -31,8 +31,6 @@ ping_command_ping:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVICE
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 4
 

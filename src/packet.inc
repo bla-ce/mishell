@@ -1,14 +1,11 @@
-%include "errors.inc"
-
 section .bss
 
 packet_t:
   .magic        resw 1
   .op           resb 1
   .flags        resb 1
-  .id           resb ID_LEN
-  .dest_host    resb ID_LEN
-  .dest_service resb ID_LEN
+  .dest_host    resb HOST_NAME_MAX_LEN
+  .dest_service resb SERVICE_NAME_MAX_LEN
   .payload_len  resw 1
   .payload      resb PAYLOAD_MAX_LEN
 packet_t_end:
@@ -22,10 +19,9 @@ PACKET_T_HEADER_LEN equ packet_t.payload - packet_t
 PACKET_T_OFF_MAGIC        equ 0x0
 PACKET_T_OFF_OP           equ PACKET_T_OFF_MAGIC + 0x2
 PACKET_T_OFF_FLAGS        equ PACKET_T_OFF_OP + 0x1
-PACKET_T_OFF_ID           equ PACKET_T_OFF_FLAGS + 0x1
-PACKET_T_OFF_DEST_HOST    equ PACKET_T_OFF_ID + ID_LEN
-PACKET_T_OFF_DEST_SERVICE equ PACKET_T_OFF_DEST_HOST + ID_LEN
-PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_DEST_SERVICE + ID_LEN
+PACKET_T_OFF_DEST_HOST    equ PACKET_T_OFF_FLAGS + 0x1
+PACKET_T_OFF_DEST_SERVICE equ PACKET_T_OFF_DEST_HOST + HOST_NAME_MAX_LEN
+PACKET_T_OFF_PAYLOAD_LEN  equ PACKET_T_OFF_DEST_SERVICE + SERVICE_NAME_MAX_LEN
 PACKET_T_OFF_PAYLOAD      equ PACKET_T_OFF_PAYLOAD_LEN + 0x2
 
 ; MODE FLAGS

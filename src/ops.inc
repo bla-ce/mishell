@@ -1,10 +1,8 @@
-%include "auth.inc"
-
 section .rodata
 
 req_ops:
   .HELLO      equ 0x0
-  .AUTH       equ 0x1
+  .JOIN       equ 0x1
   .REGISTER   equ 0x2
   .START      equ 0x3
   .STOP       equ 0x4
@@ -48,8 +46,6 @@ op_hello:
   mov   word [rsi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
   mov   byte [rsi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rsi+PACKET_T_OFF_ID], 0
-  mov   qword [rsi+PACKET_T_OFF_ID+0x8], 0
   mov   word [rsi+PACKET_T_OFF_PAYLOAD_LEN], 0
 
   mov   rax, SUCCESS_CODE
@@ -140,14 +136,6 @@ op_auth:
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
 
-  ; id is in the host destination field
-  add   rdi, PACKET_T_OFF_DEST_HOST
-  movzx eax, byte [curr_host_idx]
-  imul  eax, HOST_T_LEN
-  lea   rsi, [hosts+eax+HOST_T_OFF_ID]
-  mov   rcx, ID_QWORDS
-  rep   movsq
-
   inc   byte [curr_host_idx]
 
   ; add host array to payload
@@ -199,20 +187,6 @@ op_register:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x18], error_codes.UNAUTHORIZED
-  ; make sure the entity flag is FL_HOST
-  mov   rax, [rsp]
-  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
-  mov   r9b, bl
-  and   r9b, FL_HOST
-  test  r9b, r9b
-  jz    .error
-
-  ; verify host
-  movups  xmm1, [rax+PACKET_T_OFF_ID]
-  ptest   xmm1, xmm1
-  jz    .error
-
   mov   qword [rsp+0x18], error_codes.INTERNAL
   lea   rdi, [rax+PACKET_T_OFF_ID]
   call  host_get_by_id
@@ -244,8 +218,6 @@ op_register:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
 
@@ -317,8 +289,6 @@ op_start:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   word [rdi+PACKET_T_OFF_PAYLOAD], 0
@@ -391,8 +361,6 @@ op_stop:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   word [rdi+PACKET_T_OFF_PAYLOAD], 0
@@ -479,8 +447,6 @@ op_unregister:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   word [rdi+PACKET_T_OFF_PAYLOAD], 0
@@ -549,8 +515,6 @@ op_list:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
 
@@ -627,8 +591,6 @@ op_update:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
 
@@ -735,8 +697,6 @@ op_catalog:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   word [rdi+PACKET_T_OFF_FLAGS], FL_SERVICE
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
 
   ; get payload len (SERVICE_TYPE_T_LEN * len(service_types.COUNT)
