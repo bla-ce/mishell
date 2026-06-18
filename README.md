@@ -34,7 +34,7 @@ To join an existing P2P network, provide the IP address and port of a running ho
 make run-connect REMOTE_ADDR=<remote_ip>:<remote_port> PORT=<port> NAME=<name>
 ```
 
-`PORT` defaults to `7474` if not set.
+`PORT` defaults to `7474` and `NAME` to `default` if not set.
 
 For more details, see the [docs](/docs).
 

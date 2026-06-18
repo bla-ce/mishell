@@ -202,19 +202,38 @@ host_addr_exists:
 ; an existing network with ip and port
 ; @param  rdi: pointer to the op
 ; @param  rsi: addr of the remote host (optional)
+; @param  rdx: pointer to the name of the current host
 ; @return rax: return code
 init_or_join_network:
-  sub   rsp, 0x10
+  sub   rsp, 0x18
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the op
   ; [rsp+0x8]   -> addr of the remote host
+  ; [rsp+0x10]  -> addr of the remote host
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
 
   test  rdi, rdi
   jz    .error
+
+  test  rdx, rdx
+  jz    .error
+
+  ; copy host name
+  mov   rdi, [rsp+0x10]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+  cmp   rax, HOST_NAME_MAX_LEN
+  jge   .error
+
+  mov   rsi, [rsp+0x10]
+  mov   rdi, host_name
+  mov   rcx, rax
+  rep   movsb
 
   ; check if the host is the first one (init passed)
   cmp   qword [rsp], 0
@@ -238,7 +257,7 @@ init_or_join_network:
   movsx rsi, dword [host_ip]
   movzx rdx, word [host_port]
   xchg  dh, dl
-  mov   rcx, host_name
+  mov   rcx, [rsp+0x10]
   call  host_init
   test  rax, rax
   jnz   .error
@@ -274,6 +293,7 @@ init_or_join_network:
   ; rdi points to the port
   mov   rsi, rdi
   mov   rdi, [rsp+0x8]
+  mov   rdx, [rsp+0x10]
   call  host_connect_to_remote
   cmp   rax, 0
   jl    .error
@@ -293,7 +313,7 @@ init_or_join_network:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x10
+  add   rsp, 0x18
   ret
 
 ; connects to a remote host by sending JOIN op
@@ -314,7 +334,8 @@ host_connect_to_remote:
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rsi
+  mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x18], 0
 
   test  rdi, rdi
   jz    .error
@@ -378,6 +399,7 @@ host_connect_to_remote:
   movsx rsi, dword [host_ip]
   movzx rdx, word [host_port]
   xchg  dl, dh  ; host init receives network order
+  mov   rcx, [rsp+0x10]
   call  host_init
   test  rax, rax
   jnz   .error
@@ -428,7 +450,7 @@ host_connect_to_remote:
 
   ; close connection
   mov   rax, SYS_CLOSE
-  mov   rdi, [rsp+0x10]
+  mov   rdi, [rsp+0x18]
   syscall
 
   mov   rax, SUCCESS_CODE
@@ -436,6 +458,10 @@ host_connect_to_remote:
   jmp   .return
 
 .error:
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x18]
+  syscall
+
   mov   rax, FAILURE_CODE
 
 .return:
@@ -548,7 +574,6 @@ host_init:
   call  strlen
   cmp   rax, 0
   jl    .error
-
   cmp   rax, HOST_NAME_MAX_LEN
   jge   .error
 
