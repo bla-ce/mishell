@@ -12,7 +12,6 @@ section .rodata
 SERVICE_MAX_COUNT_PER_HOST equ 0x5
 
 SERVICE_NAME_MAX_LEN equ 0x20
-SERVICE_NAME_QWORDS  equ SERVICE_NAME_MAX_LEN / 0x8
 
 SERVICE_T_LEN equ service_t_end - service_t
 
@@ -73,8 +72,8 @@ service_get_by_name:
 
   add   rdi, SERVICE_T_OFF_NAME
   mov   rsi, [rsp+0x8]
-  mov   rcx, SERVICE_NAME_QWORDS
-  rep   cmpsq
+  call  strcmp
+  cmp   rax, TRUE
   je    .loop_end
 
   add   r9, SERVICE_T_LEN

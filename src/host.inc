@@ -3,6 +3,7 @@ section .rodata
 FIRST_HOST_CMD    db "init", NULL_CHAR
 CONNECT_HOST_CMD  db "connect", NULL_CHAR
 PORT_FLAG         db "--port", NULL_CHAR
+NAME_FLAG         db "--name", NULL_CHAR
 
 HOST_MAX_COUNT equ 0x5
 
@@ -35,6 +36,8 @@ host_t:
   .pad            resb 0x5
 host_t_end:
 
+host_name resb HOST_NAME_MAX_LEN
+
 section .data
 
 hosts times HOSTS_LEN db 0
@@ -43,7 +46,7 @@ curr_host_idx db 0
 host_port dw 0
 host_ip   dd 0
 
-host_name db "default", NULL_CHAR
+default_host_name db "default", NULL_CHAR
 
 section .text
 ; @param  rdi: pointer to the request packet

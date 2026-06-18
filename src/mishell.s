@@ -49,18 +49,38 @@ _start:
   call  strcmp
   mov   rdi, [rsp+PACKET_T_LEN+0x28]
   cmp   rax, TRUE
-  jne   .init_or_join_network  ; default port
+  jne   .check_name_flag  ; default port
 
 .set_port:
   call  atoi
   cmp   rax, 0
-  jl    .init_or_join_network
+  jl    .check_name_flag
 
   mov   word [host_port], ax
+
+.check_name_flag:
+  ; check if name flag has been set
+  mov   rdi, [rsp+PACKET_T_LEN+0x28]
+  mov   rsi, NAME_FLAG
+  call  strcmp
+  mov   rdx, [rsp+PACKET_T_LEN+0x30]
+  cmp   rax, TRUE
+  je    .init_or_join_network
+
+  mov   rdi, [rsp+PACKET_T_LEN+0x30]
+  mov   rsi, NAME_FLAG
+  call  strcmp
+  mov   rdx, [rsp+PACKET_T_LEN+0x38]
+  cmp   rax, TRUE
+  je    .init_or_join_network
+
+  ; default name
+  mov   rdx, default_host_name
 
 .init_or_join_network:
   mov   rdi, [rsp+PACKET_T_LEN+0x10]
   mov   rsi, [rsp+PACKET_T_LEN+0x18]
+  ; rdx is already populated with name
   call  init_or_join_network
   cmp   rax, 0
   jl    .error
