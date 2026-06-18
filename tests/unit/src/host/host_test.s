@@ -12,7 +12,7 @@ global _start
 section .rodata
 
 dummy_host_1 dq "home", NULL_CHAR
-dummy_host_1_len equ $ - dummy_host_1 
+dummy_host_1_len equ $ - dummy_host_1
 
 dummy_host_2 dq "lab", NULL_CHAR
 dummy_host_2_len equ $ - dummy_host_2

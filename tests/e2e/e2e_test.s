@@ -1,6 +1,7 @@
 global _start
 
 %include "host.inc"
+%include "errors.inc"
 %include "command.inc"
 %include "lib.inc"
 %include "ops.inc"
@@ -29,15 +30,13 @@ test_packet_t:
   .magic        dw 0
   .op           db 0
   .flags        db 0
-  .id           times ID_LEN db 0
-  .dest_host    times ID_LEN db 0
-  .dest_service times ID_LEN db 0
+  .dest_host    times HOST_NAME_MAX_LEN db 0
+  .dest_service times SERVICE_NAME_MAX_LEN db 0
   .payload_len  dw 0
   .payload      times PAYLOAD_MAX_LEN db 0
 test_packet_t_end:
 
-peer_fd   times PEERS_LEN dq 0
-host_ids  times ID_LEN * PEERS_LEN db 0
+peer_fd     times PEERS_LEN dq 0
 
 section .text
 _start:
