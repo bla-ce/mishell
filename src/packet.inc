@@ -78,9 +78,9 @@ packet_dispatch:
 
   mov   rdi, [rsp]
   add   rdi, PACKET_T_OFF_DEST_HOST
-  mov   rsi, host_id
-  mov   rcx, ID_QWORDS
-  rep   cmpsq
+  mov   rsi, host_name
+  call  strcmp
+  cmp   rax, TRUE
   je    .handle_request
 
   mov   rdi, [rsp]

@@ -1,4 +1,5 @@
 %include "host.inc"
+%include "errors.inc"
 %include "command.inc"
 %include "lib.inc"
 %include "ops.inc"

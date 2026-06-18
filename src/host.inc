@@ -12,10 +12,12 @@ HOST_T_LEN equ host_t_end - host_t
 
 SERVICES_LEN equ SERVICE_T_LEN * SERVICE_MAX_COUNT_PER_HOST
 
-HOST_T_OFF_ID             equ 0x0
-HOST_T_OFF_IP             equ HOST_T_OFF_ID + ID_LEN
+HOST_NAME_MAX_LEN equ 0x20
+
+HOST_T_OFF_IP             equ 0x0
 HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
-HOST_T_OFF_SERVICES       equ HOST_T_OFF_PORT + 0x2
+HOST_T_OFF_NAME           equ HOST_T_OFF_PORT + 0x2
+HOST_T_OFF_SERVICES       equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 usage_str     db "usage: mishell init --port <port>", LINE_FEED
@@ -26,22 +28,22 @@ usage_str_len equ $ - usage_str
 section .bss
 
 host_t:
-  .id             resb ID_LEN
   .ipv4           resd 0x1
   .port           resw 0x1
+  .name           resb HOST_NAME_MAX_LEN
   .services       resb SERVICES_LEN
   .services_count resb 0x1
   .pad            resb 0x5
 host_t_end:
 
-host_id resb ID_LEN
+host_name resb HOST_NAME_MAX_LEN
 
 section .data
 
 hosts times HOSTS_LEN db 0
 curr_host_idx db 0
 
-host_port dw 7474
+host_port dw 0
 host_ip   dd 0
 
 section .text
@@ -66,10 +68,10 @@ host_proxy_request:
   test  rsi, rsi
   jz    .error
 
-  ; get the host from the destination id of the packet
+  ; get the host from the destination name of the packet
   mov   rdi, [rsp]
   add   rdi, PACKET_T_OFF_DEST_HOST
-  call  host_get_by_id
+  call  host_get_by_name
   cmp   rax, 0
   jl    .error
 
@@ -243,13 +245,6 @@ init_or_join_network:
 
   ; increase host count
   inc   byte [curr_host_idx]
-
-  ; populate host id (first in the array)
-  mov   rsi, hosts
-  add   rsi, HOST_T_OFF_ID
-  mov   rdi, host_id
-  mov   rcx, ID_QWORDS
-  rep   movsq
 
   jmp   .done
 
@@ -427,13 +422,6 @@ host_connect_to_remote:
   mov   rdi, hosts
   rep   movsb
 
-  ; get own id from destination field
-  lea   rsi, [rsp+0x18]
-  add   rsi, PACKET_T_OFF_DEST_HOST
-  mov   rdi, host_id
-  mov   rcx, ID_QWORDS
-  rep   movsq
-
   ; get number of hosts from payload len
   ; TODO: without div? probably aligning the struct to do shr
   lea   rsi, [rsp+0x18]
@@ -460,12 +448,11 @@ host_connect_to_remote:
   add   rsp, 0x18 + PACKET_T_LEN
   ret
 
-
-; returns the host struct from the host id or -1 if the host is
+; returns the host struct from the host name or -1 if the host is
 ; not registered
-; @param  rdi: pointer to the id of the host
+; @param  rdi: pointer to the name of the host
 ; @return rax: pointer to the host struct or -1
-host_get_by_id:
+host_get_by_name:
   sub   rsp, 0x10
 
   ; STACK USAGE
@@ -491,10 +478,10 @@ host_get_by_id:
 
   mov   [rsp+0x8], rdi
 
-  add   rdi, HOST_T_OFF_ID
+  add   rdi, HOST_T_OFF_NAME
   mov   rsi, [rsp]
-  mov   rcx, ID_QWORDS
-  rep   cmpsq
+  call  strcmp
+  cmp   rax, TRUE
   je    .loop_end
 
   add   r9, HOST_T_LEN
@@ -551,15 +538,7 @@ host_init:
   mov   rcx, HOST_T_LEN
   rep   stosb
 
-  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
-  call  generate_id
-  cmp   rax, FAILURE_CODE
-  je    .error
-
   mov   rsi, [rsp]
-  mov   qword [rsi+HOST_T_OFF_ID], rdx
-  mov   qword [rsi+HOST_T_OFF_ID+0x8], rax
-
   mov   eax, dword [rsp+0x8]
   mov   dword [rsi+HOST_T_OFF_IP], eax
 
@@ -580,13 +559,14 @@ host_init:
 ; passed in rdi.
 ; TODO: arguments should be an array of host to not update with
 ; count
+; @param  rdi: pointer to the host name to skip
 host_update_network:
   push  r12
   push  r13
   sub   rsp, 0x20+PACKET_T_LEN
 
   ; STACK USAGE
-  ; [rsp]       -> pointer to the host id to skip (can be null)
+  ; [rsp]       -> pointer to the host name to skip (can be null)
   ; [rsp+0x8]   -> array length
   ; [rsp+0x10]  -> sock fd
   ; [rsp+0x18]  -> temp host
@@ -606,11 +586,6 @@ host_update_network:
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.UPDATE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-
-  mov   rax, qword [host_id]
-  mov   rdx, qword [host_id+0x8]
-  mov   qword [rdi+PACKET_T_OFF_ID], rax
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], rdx
 
   mov   ax, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
@@ -632,17 +607,17 @@ host_update_network:
   mov   [rsp+0x18], rdi
 
   ; check if we need to skip the host
-  add   rdi, HOST_T_OFF_ID
-  mov   rsi, host_id
-  mov   rcx, ID_QWORDS
-  rep   cmpsq
+  add   rdi, HOST_T_OFF_NAME
+  mov   rsi, host_name
+  call  strcmp
+  cmp   rax, TRUE
   je    .skip_host
 
   mov   rdi, [rsp+0x18]
-  add   rdi, HOST_T_OFF_ID
+  add   rdi, HOST_T_OFF_NAME
   mov   rsi, [rsp]
-  mov   rcx, ID_QWORDS
-  rep   cmpsq
+  call  strcmp
+  cmp   rax, TRUE
   je    .skip_host
 
   mov   rax, SYS_SOCKET
