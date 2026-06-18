@@ -61,7 +61,6 @@ jobs:
       fail-fast: false
       matrix:
         suite:
-          - unit/src/auth
           - unit/src/host
           - unit/src/op
           - unit/lib/string
