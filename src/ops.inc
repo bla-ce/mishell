@@ -99,7 +99,7 @@ op_join:
 
   jmp   .done
 
-.new_host:  
+.new_host:
   ; make sure we haven't reached the host limit
   mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
   cmp   byte [curr_host_idx], HOST_MAX_COUNT
@@ -110,6 +110,7 @@ op_join:
   add   rdi, PACKET_T_OFF_PAYLOAD
   movsx rsi, dword [rdi+HOST_T_OFF_IP]
   movzx rdx, word [rdi+HOST_T_OFF_PORT] ; should be network order
+  lea   rcx, [rdi+HOST_T_OFF_NAME]
 
   ; populate host struct
   mov   qword [rsp+0x10], error_codes.INTERNAL
@@ -148,7 +149,7 @@ op_join:
   jmp   .return
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rax, [rsp+0x10]
 
 .return:
   add   rsp, 0x18

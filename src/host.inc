@@ -35,8 +35,6 @@ host_t:
   .pad            resb 0x5
 host_t_end:
 
-host_name resb HOST_NAME_MAX_LEN
-
 section .data
 
 hosts times HOSTS_LEN db 0
@@ -44,6 +42,8 @@ curr_host_idx db 0
 
 host_port dw 0
 host_ip   dd 0
+
+host_name db "default", NULL_CHAR
 
 section .text
 ; @param  rdi: pointer to the request packet
@@ -238,6 +238,7 @@ init_or_join_network:
   movsx rsi, dword [host_ip]
   movzx rdx, word [host_port]
   xchg  dh, dl
+  mov   rcx, host_name
   call  host_init
   test  rax, rax
   jnz   .error
@@ -473,20 +474,23 @@ host_get_by_name:
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: ip of the host
 ; @param  rdx: port of the host (network order)
+; @param  rcx: pointer to the name of the host
 ; @return rax: return code or error code
 host_init:
-  sub   rsp, 0x20
+  sub   rsp, 0x28
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the host struct
   ; [rsp+0x8]   -> ip of the host
   ; [rsp+0x10]  -> port of the host (host order)
-  ; [rsp+0x18]  -> error code
+  ; [rsp+0x18]  -> pointer to the name of the host
+  ; [rsp+0x20]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
   mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
+  mov   [rsp+0x18], rcx
+  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
@@ -494,7 +498,7 @@ host_init:
   test  rdx, rdx
   jz    .error
 
-  mov   qword [rsp+0x18], error_codes.HOST_ALREADY_EXISTS
+  mov   qword [rsp+0x20], error_codes.HOST_ALREADY_EXISTS
   mov   rdi, [rsp+0x8]
   mov   rsi, [rsp+0x10]
   call  host_addr_exists
@@ -515,14 +519,30 @@ host_init:
   mov   ax, word [rsp+0x10]
   mov   word [rsi+HOST_T_OFF_PORT], ax
 
+  ; copy name
+  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
+  mov   rdi, [rsp+0x18]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  cmp   rax, HOST_NAME_MAX_LEN
+  jge   .error
+
+  mov   rdi, [rsp]
+  add   rdi, HOST_T_OFF_NAME
+  mov   rsi, [rsp+0x18]
+  mov   rcx, rax
+  rep   movsb
+
   mov   rax, SUCCESS_CODE
   jmp    .return
 
 .error:
-  mov   rax, [rsp+0x18]
+  mov   rax, [rsp+0x20]
 
 .return:
-  add   rsp, 0x20
+  add   rsp, 0x28
   ret
 
 ; updates each host in the network with new array except the one
