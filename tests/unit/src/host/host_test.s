@@ -1,6 +1,7 @@
 global _start
 
 %include "host.inc"
+%include "errors.inc"
 %include "command.inc"
 %include "lib.inc"
 %include "ops.inc"
@@ -10,60 +11,55 @@ global _start
 
 section .rodata
 
-dummy_id_1 dq 0x1234
-           dq 0x5678
+dummy_host_1 dq "home", NULL_CHAR
+dummy_host_1_len equ $ - dummy_host_1 
 
-dummy_id_2 dq 0x2345
-           dq 0x6789
+dummy_host_2 dq "lab", NULL_CHAR
+dummy_host_2_len equ $ - dummy_host_2
 
-dummy_id_3 dq 0x9876
-           dq 0x5432
+dummy_host_3 dq "default", NULL_CHAR
+dummy_host_3_len equ $ - dummy_host_3
 
 section .data
 
-host_ptr dq 0
-
 section .text
 _start:
-  ; --- host_get_by_id ---
+  ; --- host_get_by_name ---
   ; empty array should return -1
-  mov   rdi, dummy_id_1
-  call  host_get_by_id
+  mov   rdi, dummy_host_1
+  call  host_get_by_name
   cmp   rax, FAILURE_CODE
   jne   .error
 
-  lea   rdi, [hosts]
-  mov   rax, qword [dummy_id_1]
-  mov   rdx, qword [dummy_id_1+0x8]
-  mov   [rdi+HOST_T_OFF_ID], rax
-  mov   [rdi+HOST_T_OFF_ID+0x8], rdx
-  mov   [host_ptr], rdi
+  ; add first two hosts
+  lea   rdi, [hosts+HOST_T_OFF_NAME]
+  mov   rsi, dummy_host_1
+  mov   rcx, dummy_host_1_len
+  rep   movsb
 
-  lea   rdi, [hosts]
-  add   rdi, HOST_T_LEN
-  mov   rax, qword [dummy_id_2]
-  mov   rdx, qword [dummy_id_2+0x8]
-  mov   [rdi+HOST_T_OFF_ID], rax
-  mov   [rdi+HOST_T_OFF_ID+0x8], rdx
+  lea   rdi, [hosts+HOST_T_LEN+HOST_T_OFF_NAME]
+  mov   rsi, dummy_host_2
+  mov   rcx, dummy_host_2_len
+  rep   movsb
 
   mov   byte [curr_host_idx], 2
 
   ; filled array without the right id should return -1
-  mov   rdi, dummy_id_3
-  call  host_get_by_id
+  mov   rdi, dummy_host_3
+  call  host_get_by_name
   cmp   rax, FAILURE_CODE
   jne   .error
 
   ; null pointer argument should return -1
   xor   rdi, rdi
-  call  host_get_by_id
+  call  host_get_by_name
   cmp   rax, FAILURE_CODE
   jne   .error
 
   ; valid id should return the pointer to the host
-  mov   rdi, dummy_id_1
-  call  host_get_by_id
-  cmp   rax, [host_ptr]
+  mov   rdi, dummy_host_1
+  call  host_get_by_name
+  cmp   rax, hosts  ; pointer to the first host
   jne   .error
 
   ; --- host_addr_exists ---
