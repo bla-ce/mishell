@@ -178,8 +178,7 @@ op_register:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x18], error_codes.INTERNAL
-  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  add   rdi, PACKET_T_OFF_DEST_HOST
   call  host_get_by_name
   cmp   rax, 0
   jl    .error
@@ -245,7 +244,7 @@ op_start:
   test  rsi, rsi
   jz    .error
 
-  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  add   rdi, PACKET_T_OFF_DEST_HOST
   call  host_get_by_name
   cmp   rax, 0
   jl    .error
@@ -356,7 +355,7 @@ op_unregister:
   test  rsi, rsi
   jz    .error
 
-  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  add   rdi, PACKET_T_OFF_DEST_HOST
   call  host_get_by_name
   cmp   rax, 0
   jl    .error
@@ -427,7 +426,6 @@ op_list:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   ; return list of hosts
   mov   rdi, [rsp+0x8]
   add   rdi, PACKET_T_OFF_PAYLOAD
@@ -476,7 +474,6 @@ op_update:
   jz    .error
 
   ; get payload and update host array
-  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   mov   rdi, [rsp]
   lea   rsi, [rdi+PACKET_T_OFF_PAYLOAD]
   movzx rcx, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
