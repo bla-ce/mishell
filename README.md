@@ -31,7 +31,7 @@ make run-init PORT=<port> NAME=<name>
 To join an existing P2P network, provide the IP address and port of a running host:
 
 ```bash
-make run-connect REMOTE_IP=<remote_ip> REMOTE_PORT=<remote_port> PORT=<port> NAME=<name>
+make run-connect REMOTE_ADDR=<remote_ip>:<remote_port> PORT=<port> NAME=<name>
 ```
 
 `PORT` defaults to `7474` if not set.
