@@ -1,7 +1,6 @@
 section .bss
 
 service_t:
-  .id     resb ID_LEN
   .name   resb SERVICE_NAME_MAX_LEN
   .type   resb 0x1
   .status resb 0x1
@@ -12,12 +11,12 @@ section .rodata
 
 SERVICE_MAX_COUNT_PER_HOST equ 0x5
 
-SERVICE_NAME_MAX_LEN  equ 0xF
+SERVICE_NAME_MAX_LEN equ 0x20
+SERVICE_NAME_QWORDS  equ SERVICE_NAME_MAX_LEN / 0x8
 
 SERVICE_T_LEN equ service_t_end - service_t
 
-SERVICE_T_OFF_ID      equ 0x0
-SERVICE_T_OFF_NAME    equ SERVICE_T_OFF_ID + ID_LEN
+SERVICE_T_OFF_NAME    equ 0x0
 SERVICE_T_OFF_TYPE    equ SERVICE_T_OFF_NAME + SERVICE_NAME_MAX_LEN
 SERVICE_T_OFF_STATUS  equ SERVICE_T_OFF_TYPE + 0x1
 
@@ -28,17 +27,17 @@ service_status:
   .COUNT      equ 0x3
 
 section .text
-; returns the service struct from the host id and service id or -1
-; if the service is not registered
-; @param  rdi: pointer to the id of the host
-; @param  rsi: pointer to the id of the service
+; returns the service struct from the host name and service name
+; or -1 if the service is not registered
+; @param  rdi: pointer to the name of the host
+; @param  rsi: pointer to the name of the service
 ; @return rax: pointer to the service struct or -1
-service_get_by_id:
+service_get_by_name:
   sub   rsp, 0x20
 
   ; STACK USAGE
-  ; [rsp]       -> pointer to the id of the host
-  ; [rsp+0x8]   -> pointer to the id of the service
+  ; [rsp]       -> pointer to the name of the host
+  ; [rsp+0x8]   -> pointer to the name of the service
   ; [rsp+0x10]  -> pointer to the services array of the host
   ; [rsp+0x18]  -> pointer to the service struct
 
@@ -51,8 +50,8 @@ service_get_by_id:
   test  rsi, rsi
   jz    .error
 
-  ; get host by id
-  call  host_get_by_id
+  ; get host by name
+  call  host_get_by_name
   cmp   rax, 0
   jl    .error
 
@@ -72,9 +71,9 @@ service_get_by_id:
 
   mov   [rsp+0x18], rdi
 
-  add   rdi, SERVICE_T_OFF_ID
+  add   rdi, SERVICE_T_OFF_NAME
   mov   rsi, [rsp+0x8]
-  mov   rcx, ID_QWORDS
+  mov   rcx, SERVICE_NAME_QWORDS
   rep   cmpsq
   je    .loop_end
 
@@ -151,16 +150,6 @@ service_init:
   add   rsi, PACKET_T_OFF_PAYLOAD
   mov   rcx, SERVICE_T_LEN
   rep   movsb
-
-  ; generate id for the service
-  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
-  call  generate_id
-  cmp   rax, FAILURE_CODE
-  je    .error
-
-  mov   rsi, [rsp+0x10]
-  mov   qword [rsi+SERVICE_T_OFF_ID], rdx
-  mov   qword [rsi+SERVICE_T_OFF_ID+0x8], rax
 
   ; add default status to the service
   mov   byte [rsi+SERVICE_T_OFF_STATUS], service_status.REGISTERED
