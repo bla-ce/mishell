@@ -20,7 +20,7 @@ res_ops:
 
 req_op_fn_table:
   .HELLO      dq op_hello
-  .AUTH       dq op_auth
+  .JOIN       dq op_join
   .REGISTER   dq op_register
   .START      dq op_start
   .STOP       dq op_stop
@@ -58,12 +58,8 @@ op_hello:
 .return:
   ret
 
-; checks payload to see if host has been registered, otherwise
-; creates a session id and adds it to the host array
-; @param  rdi: pointer to the request packet
-; @param  rsi: pointer to the response packet
-; @return rax: return code
-op_auth:
+; adds new host to the network
+op_join:
   sub   rsp, 0x18
 
   ; STACK USAGE
@@ -85,32 +81,25 @@ op_auth:
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
-  mov   qword [rdi+PACKET_T_OFF_ID], 0
-  mov   qword [rdi+PACKET_T_OFF_ID+0x8], 0
 
-  ; check if id is set
-  mov   rax, [rsp]
-  movups  xmm1, [rax+PACKET_T_OFF_ID]
-  ptest   xmm1, xmm1
-  jz    .new_host
-
-  mov   qword [rsp+0x10], error_codes.HOST_NOT_FOUND
-  lea   rdi, [rax+PACKET_T_OFF_ID]
-  call  host_get_by_id
+  ; check if host exists
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_PAYLOAD+HOST_T_OFF_NAME
+  call  host_get_by_name
   cmp   rax, 0
-  jl    .error
+  jl    .new_host
 
-  ; valid host id
+  ; TODO: return an error
+
+  ; a host with this name already exist
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
   mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
 
-  mov   rax, SUCCESS_CODE
+  jmp   .done
 
-  jmp   .return
-
-.new_host:
+.new_host:  
   ; make sure we haven't reached the host limit
   mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
   cmp   byte [curr_host_idx], HOST_MAX_COUNT
@@ -153,12 +142,13 @@ op_auth:
   cmp   rax, 0
   jl    .error
 
+.done:
   mov   rax, SUCCESS_CODE
 
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x10]
+  mov   rax, FAILURE_CODE
 
 .return:
   add   rsp, 0x18
@@ -188,8 +178,8 @@ op_register:
   jz    .error
 
   mov   qword [rsp+0x18], error_codes.INTERNAL
-  lea   rdi, [rax+PACKET_T_OFF_ID]
-  call  host_get_by_id
+  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  call  host_get_by_name
   cmp   rax, 0
   jl    .error
 
@@ -254,32 +244,18 @@ op_start:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
-  ; make sure the entity flag is FL_HOST
-  mov   rax, [rsp]
-  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
-  mov   r9b, bl
-  and   r9b, FL_HOST
-  test  r9b, r9b
-  jz    .error
-
-  ; verify host
-  movups  xmm1, [rax+PACKET_T_OFF_ID]
-  ptest   xmm1, xmm1
-  jz    .error
-
-  lea   rdi, [rax+PACKET_T_OFF_ID]
-  call  host_get_by_id
+  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  call  host_get_by_name
   cmp   rax, 0
   jl    .error
 
   ; find service inside host struct
-  ; payload is host id followed by service id
+  ; payload is host name followed by service name
   mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
   lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
-  call  service_get_by_id
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+HOST_NAME_MAX_LEN]
+  call  service_get_by_name
   cmp   rax, 0
   jl    .error
 
@@ -303,7 +279,7 @@ op_start:
   add   rsp, 0x18
   ret
 
-; stops a service from STOP op with host and service id
+; stops a service from STOP op with host and service name
 ; returns OK
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
@@ -326,32 +302,13 @@ op_stop:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
-  ; make sure the entity flag is FL_HOST
-  mov   rax, [rsp]
-  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
-  mov   r9b, bl
-  and   r9b, FL_HOST
-  test  r9b, r9b
-  jz    .error
-
-  ; verify host
-  movups  xmm1, [rax+PACKET_T_OFF_ID]
-  ptest   xmm1, xmm1
-  jz    .error
-
-  lea   rdi, [rax+PACKET_T_OFF_ID]
-  call  host_get_by_id
-  cmp   rax, 0
-  jl    .error
-
   ; find service inside host struct
-  ; payload is host id followed by service id
+  ; payload is host name followed by service name
   mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
   lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
-  call  service_get_by_id
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+HOST_NAME_MAX_LEN]
+  call  service_get_by_name
   cmp   rax, 0
   jl    .error
 
@@ -398,34 +355,20 @@ op_unregister:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x18], error_codes.UNAUTHORIZED
-  ; make sure the entity flag is FL_HOST
-  mov   rax, [rsp]
-  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
-  mov   r9b, bl
-  and   r9b, FL_HOST
-  test  r9b, r9b
-  jz    .error
-
-  ; verify host
-  movups  xmm1, [rax+PACKET_T_OFF_ID]
-  ptest   xmm1, xmm1
-  jz    .error
-
-  lea   rdi, [rax+PACKET_T_OFF_ID]
-  call  host_get_by_id
+  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  call  host_get_by_name
   cmp   rax, 0
   jl    .error
 
   mov   [rsp+0x10], rax
 
   ; find service inside host struct
-  ; payload is host id followed by service id
+  ; payload is host name followed by service name
   mov   qword [rsp+0x18], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
   lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+ID_LEN]
-  call  service_get_by_id
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+HOST_NAME_MAX_LEN]
+  call  service_get_by_name
   cmp   rax, 0
   jl    .error
 
@@ -483,25 +426,6 @@ op_list:
   test  rsi, rsi
   jz    .error
 
-  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
-  ; make sure the entity flag is FL_HOST
-  mov   rax, [rsp]
-  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
-  mov   r9b, bl
-  and   r9b, FL_HOST
-  test  r9b, r9b
-  jz    .error
-
-  ; verify host
-  movups  xmm1, [rax+PACKET_T_OFF_ID]
-  ptest   xmm1, xmm1
-  jz    .error
-
-  lea   rdi, [rax+PACKET_T_OFF_ID]
-  call  host_get_by_id
-  cmp   rax, 0
-  jl    .error
-
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   ; return list of hosts
   mov   rdi, [rsp+0x8]
@@ -549,25 +473,6 @@ op_update:
 
   test  rsi, rsi
   jz    .error
-
-  mov   qword [rsp+0x10], error_codes.UNAUTHORIZED
-  ; make sure the entity flag is FL_HOST
-  mov   rax, [rsp]
-  mov   bl, byte [rax+PACKET_T_OFF_FLAGS]
-  mov   r9b, bl
-  and   r9b, FL_HOST
-  test  r9b, r9b
-  jz    .error
-
-  ; verify host
-  movups  xmm1, [rax+PACKET_T_OFF_ID]
-  ptest   xmm1, xmm1
-  jz    .error
-
-  lea   rdi, [rax+PACKET_T_OFF_ID]
-  call  host_get_by_id
-  cmp   rax, 0
-  jl    .error
 
   ; get payload and update host array
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
@@ -633,9 +538,9 @@ op_query:
 
   ; get the service
   mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
-  mov   rdi, host_id
+  mov   rdi, host_name
   lea   rsi, [rax+PACKET_T_OFF_DEST_SERVICE]
-  call  service_get_by_id
+  call  service_get_by_name
   cmp   rax, 0
   jl    .error
 

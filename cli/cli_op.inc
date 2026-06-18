@@ -2,7 +2,7 @@ section .rodata
 
 req_op_cli_table:
   .HELLO      dq cli_hello
-  .AUTH       dq cli_auth
+  .JOIN       dq cli_join
   .REGISTER   dq cli_register
   .START      dq cli_start
   .STOP       dq cli_stop
@@ -12,7 +12,7 @@ req_op_cli_table:
 
 req_op_str:
   .HELLO      db "HELLO", NULL_CHAR
-  .AUTH       db "AUTH", NULL_CHAR
+  .JOIN       db "JOIN", NULL_CHAR
   .REGISTER   db "REGISTER", NULL_CHAR
   .START      db "START", NULL_CHAR
   .STOP       db "STOP", NULL_CHAR
@@ -28,7 +28,7 @@ res_error_len equ $ - res_error
 
 req_op_str_table:
   .HELLO      dq req_op_str.HELLO
-  .AUTH       dq req_op_str.AUTH
+  .JOIN       dq req_op_str.JOIN
   .REGISTER   dq req_op_str.REGISTER
   .START      dq req_op_str.START
   .STOP       dq req_op_str.STOP
@@ -125,8 +125,7 @@ cli_hello:
 .return:
   ret
 
-; NOT IMPLEMENTED YET: client auth will come later
-cli_auth:
+cli_join:
   ret
 
 cli_register:
