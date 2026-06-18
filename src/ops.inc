@@ -59,6 +59,9 @@ op_hello:
   ret
 
 ; adds new host to the network
+; @param  rdi: pointer to the request packet
+; @param  rsi: pointer to the response packet
+; @return rax: return code
 op_join:
   sub   rsp, 0x18
 
@@ -83,21 +86,14 @@ op_join:
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
   ; check if host exists
+  mov   qword [rsp+0x10], error_codes.HOST_NAME_ALREADY_EXISTS
   mov   rdi, [rsp]
   add   rdi, PACKET_T_OFF_PAYLOAD+HOST_T_OFF_NAME
   call  host_get_by_name
   cmp   rax, 0
   jl    .new_host
 
-  ; TODO: return an error
-
-  ; a host with this name already exist
-  mov   rdi, [rsp+0x8]
-  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
-  mov   qword [rdi+PACKET_T_OFF_PAYLOAD], 0
-
-  jmp   .done
+  jmp   .error
 
 .new_host:
   ; make sure we haven't reached the host limit

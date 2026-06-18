@@ -547,7 +547,7 @@ host_init:
   test  rdx, rdx
   jz    .error
 
-  mov   qword [rsp+0x20], error_codes.HOST_ALREADY_EXISTS
+  mov   qword [rsp+0x20], error_codes.HOST_ADDR_ALREADY_EXISTS
   mov   rdi, [rsp+0x8]
   mov   rsi, [rsp+0x10]
   call  host_addr_exists
