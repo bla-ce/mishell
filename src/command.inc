@@ -32,7 +32,7 @@ command_get_by_op:
   ; get service command
   movzx rdx, byte [rsp+0x8]
   shl   rdx, 3  ; rdx *= 8
-  mov   rax, [rdi+rdx]
+  mov   rax, [rdi+rdx+SERVICE_TYPE_T_OFF_COMMANDS]
 
   jmp   .return
 
