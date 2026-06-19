@@ -14,12 +14,13 @@ section .rodata
 
 MISHLI_MIN_ARG equ 4
 
-mishli_usage_str  db "usage:  mishli --host <host_addr> hello   -> check if host is up", LINE_FEED
-                  db "        mishli --host <host_addr> register <host_id> <type>          -> register new service", LINE_FEED
-                  db "        mishli --host <host_addr> start <host_id> <service_id>       -> start service", LINE_FEED
-                  db "        mishli --host <host_addr> stop <host_id> <service_id>        -> stop service", LINE_FEED
-                  db "        mishli --host <host_addr> unregister <host_id> <service_id>  -> unregister service", LINE_FEED
-                  db "        mishli --host <host_addr> list                               -> list available hosts", LINE_FEED
+mishli_usage_str  db "usage:  mishli --host <host_addr> HELLO                             -> check if host is up", LINE_FEED
+                  db "        mishli --host <host_addr> REGISTER <host_id> <type>         -> register new service", LINE_FEED
+                  db "        mishli --host <host_addr> START <host_id> <service_id>      -> start service", LINE_FEED
+                  db "        mishli --host <host_addr> STOP <host_id> <service_id>       -> stop service", LINE_FEED
+                  db "        mishli --host <host_addr> UNREGISTER <host_id> <service_id> -> unregister service", LINE_FEED
+                  db "        mishli --host <host_addr> CATALOG                           -> list available service types", LINE_FEED
+                  db "        mishli --host <host_addr> LIST                              -> list available hosts", LINE_FEED
 mishli_usage_str_len equ $ - mishli_usage_str
 
 host_flag db "--host", NULL_CHAR
@@ -34,8 +35,8 @@ _start:
   ; STACK USAGE
   ; [rsp]       -> argc
   ; [rsp+0x8]   -> pointer to the program name
-  ; [rsp+0x10]  -> pointer to the host flag key
-  ; [rsp+0x18]  -> pointer to the host flag value
+  ; [rsp+0x10]  -> pointer to the host flag
+  ; [rsp+0x18]  -> pointer to the host addr
   ; [rsp+0x20]  -> pointer to op
 
   cmp   qword [rsp], MISHLI_MIN_ARG
@@ -62,6 +63,7 @@ _start:
   ; populate base packet
   mov   word [packet_t.magic], MAGIC_VALUE
   mov   byte [packet_t.flags], FL_USER
+  mov   byte [packet_t.dest_host], 0
 
   ; call cli function with
   mov   rdi, [rsp+0x28]

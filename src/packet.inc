@@ -72,9 +72,8 @@ packet_dispatch:
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   ; check if we should handle the request or proxy it
   mov   rax, [rsp]
-  movups  xmm1, [rax+PACKET_T_OFF_DEST_HOST]
-  ptest   xmm1, xmm1
-  jz    .handle_request
+  cmp   byte [rax+PACKET_T_OFF_DEST_HOST], NULL_CHAR
+  je    .handle_request
 
   mov   rdi, [rsp]
   add   rdi, PACKET_T_OFF_DEST_HOST

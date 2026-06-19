@@ -2,23 +2,21 @@ section .rodata
 
 req_op_cli_table:
   .HELLO      dq cli_hello
-  .JOIN       dq cli_join
   .REGISTER   dq cli_register
   .START      dq cli_start
   .STOP       dq cli_stop
   .UNREGISTER dq cli_unregister
+  .CATALOG    dq cli_catalog
   .LIST       dq cli_list
-  .UPDATE     dq cli_update
 
 req_op_str:
   .HELLO      db "HELLO", NULL_CHAR
-  .JOIN       db "JOIN", NULL_CHAR
   .REGISTER   db "REGISTER", NULL_CHAR
   .START      db "START", NULL_CHAR
   .STOP       db "STOP", NULL_CHAR
   .UNREGISTER db "UNREGISTER", NULL_CHAR
+  .CATALOG    db "CATALOG", NULL_CHAR
   .LIST       db "LIST", NULL_CHAR
-  .UPDATE     db "UPDATE", NULL_CHAR
 
 res_ok      db "OK"
 res_ok_len  equ $ - res_ok
@@ -28,13 +26,12 @@ res_error_len equ $ - res_error
 
 req_op_str_table:
   .HELLO      dq req_op_str.HELLO
-  .JOIN       dq req_op_str.JOIN
   .REGISTER   dq req_op_str.REGISTER
   .START      dq req_op_str.START
   .STOP       dq req_op_str.STOP
   .UNREGISTER dq req_op_str.UNREGISTER
+  .CATALOG    dq req_op_str.CATALOG
   .LIST       dq req_op_str.LIST
-  .UPDATE     dq req_op_str.UPDATE
 
 section .text
 
@@ -125,9 +122,6 @@ cli_hello:
 .return:
   ret
 
-cli_join:
-  ret
-
 cli_register:
   ret
 
@@ -143,7 +137,7 @@ cli_stop:
 cli_list:
   ret
 
-cli_update:
+cli_catalog:
   ret
 
 ; print ERROR and the error message from payload

@@ -12,13 +12,13 @@ global _start
 section .rodata
 
 log:
-  .listen_tcp     db "[mishell] listening on tcp socket", 10
+  .listen_tcp     db "[MISHELL] listening on tcp socket", 10
   .listen_tcp_len equ $ - log.listen_tcp
 
-  .accept_new_conn      db "[mishell] accepted new connection", 10
+  .accept_new_conn      db "[MISHELL] accepted new connection", 10
   .accept_new_conn_len  equ $ - log.accept_new_conn
 
-  .recv_packet      db "[mishell] received packet from client", 10
+  .recv_packet      db "[MISHELL] received packet from client", 10
   .recv_packet_len  equ $ - log.recv_packet
 
 section .text
