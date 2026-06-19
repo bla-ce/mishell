@@ -167,3 +167,78 @@ atoi:
 .return:
   add   rsp, 0x20
   ret
+
+; prints to the standard output the string in rdi
+; @param  rdi: pointer to the string
+; @return rax: return value
+print:
+  sub   rsp, 0x8
+
+  ; STACK USAGE
+  ; [rsp] -> pointer to the string to print
+
+  mov   [rsp], rdi
+
+  test  rdi, rdi
+  jz    .error
+
+  mov   rdi, [rsp]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdx, rax
+  mov   rax, SYS_WRITE
+  mov   rdi, STDOUT_FILENO
+  mov   rsi, [rsp]
+  syscall
+
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x8
+  ret
+
+; prints to the std output the str followed by a new line char
+; @param  rdi: string
+; @return rax: return code
+println:
+  test  rdi, rdi
+  jz    .error
+
+  call  print
+  cmp   rax, 0
+  jl    .return
+
+  mov   rdi, LINE_FEED
+  call  print_char
+
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  ret
+
+; prints a character to the standard output
+; @param  rdi: character
+print_char:
+  push  rbp
+  mov   rbp, rsp
+
+  push  rdi
+
+  xor   rsi, rsi
+
+  mov   rax, SYS_WRITE
+  mov   rdi, STDOUT_FILENO
+  lea   rsi, [rsp]
+  mov   rdx, 1
+  syscall
+
+  leave
+  ret

@@ -12,14 +12,9 @@ global _start
 section .rodata
 
 log:
-  .listen_tcp     db "[MISHELL] listening on tcp socket", 10
-  .listen_tcp_len equ $ - log.listen_tcp
-
-  .accept_new_conn      db "[MISHELL] accepted new connection", 10
-  .accept_new_conn_len  equ $ - log.accept_new_conn
-
-  .recv_packet      db "[MISHELL] received packet from client", 10
-  .recv_packet_len  equ $ - log.recv_packet
+  .listen_tcp       db "[MISHELL] listening on tcp socket", NULL_CHAR
+  .accept_new_conn  db "[MISHELL] accepted new connection", NULL_CHAR
+  .recv_packet      db "[MISHELL] received packet from client", NULL_CHAR
 
 section .text
 
@@ -132,11 +127,8 @@ _start:
   cmp   rax, 0
   jl    .error
 
-  mov   rax, SYS_WRITE
-  mov   rdi, STDOUT_FILENO
-  mov   rsi, log.listen_tcp
-  mov   rdx, log.listen_tcp_len
-  syscall
+  mov   rdi, log.listen_tcp
+  call  println
   cmp   rax, 0
   jl    .error
 
@@ -207,11 +199,8 @@ _start:
 
   mov   [conn_fd], rax
 
-  mov   rax, SYS_WRITE
-  mov   rdi, STDOUT_FILENO
-  mov   rsi, log.accept_new_conn
-  mov   rdx, log.accept_new_conn_len
-  syscall
+  mov   rdi, log.accept_new_conn
+  call  println
   cmp   rax, 0
   jl    .error
 
@@ -267,11 +256,8 @@ _start:
   cmp   rax, 0
   jle   .clear_connection
 
-  mov   rax, SYS_WRITE
-  mov   rdi, STDOUT_FILENO
-  mov   rsi, log.recv_packet
-  mov   rdx, log.recv_packet_len
-  syscall
+  mov   rdi, log.recv_packet
+  call  println
   cmp   rax, 0
   jl    .clear_connection
 

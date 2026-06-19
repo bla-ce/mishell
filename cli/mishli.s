@@ -20,8 +20,7 @@ mishli_usage_str  db "usage:  mishli --host <host_addr> HELLO                   
                   db "        mishli --host <host_addr> STOP <host_id> <service_id>       -> stop service", LINE_FEED
                   db "        mishli --host <host_addr> UNREGISTER <host_id> <service_id> -> unregister service", LINE_FEED
                   db "        mishli --host <host_addr> CATALOG                           -> list available service types", LINE_FEED
-                  db "        mishli --host <host_addr> LIST                              -> list available hosts", LINE_FEED
-mishli_usage_str_len equ $ - mishli_usage_str
+                  db "        mishli --host <host_addr> LIST                              -> list available hosts", LINE_FEED, NULL_CHAR
 
 host_flag db "--host", NULL_CHAR
 
@@ -80,11 +79,8 @@ _start:
   jmp   .exit
 
 .usage:
-  mov   rax, SYS_WRITE
-  mov   rdi, STDERR_FILENO
-  mov   rsi, mishli_usage_str
-  mov   rdx, mishli_usage_str_len
-  syscall
+  mov   rdi, mishli_usage_str
+  call  print
 
 .error:
   mov   rax, SYS_EXIT

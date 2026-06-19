@@ -18,11 +18,9 @@ req_op_str:
   .CATALOG    db "CATALOG", NULL_CHAR
   .LIST       db "LIST", NULL_CHAR
 
-res_ok      db "OK"
-res_ok_len  equ $ - res_ok
+res_ok      db "OK", NULL_CHAR
 
-res_error     db "ERROR: "
-res_error_len equ $ - res_error
+res_error     db "ERROR: ", NULL_CHAR
 
 req_op_str_table:
   .HELLO      dq req_op_str.HELLO
@@ -84,21 +82,7 @@ cli_hello:
   mov   byte [packet_t.op], req_ops.HELLO
   ; rest of the fields are already 0
 
-  ; send packet
-  mov   rax, SYS_WRITE
-  mov   rdi, [host_fd]
-  mov   rsi, packet_t
-  mov   rdx, PACKET_T_HEADER_LEN
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; get response
-  mov   rax, SYS_READ
-  mov   rdi, [host_fd]
-  mov   rsi, packet_t
-  mov   rdx, PACKET_T_LEN
-  syscall
+  call  cli_send_and_recv_packet
   cmp   rax, 0
   jl    .error
 
@@ -107,11 +91,8 @@ cli_hello:
   jne   .error
 
   ; print ok
-  mov   rax, SYS_WRITE
-  mov   rdi, STDOUT_FILENO
-  mov   rsi, res_ok
-  mov   rdx, res_ok_len
-  syscall
+  mov   rdi, res_ok
+  call  print
 
   mov   rax, SUCCESS_CODE
   jmp   .return
@@ -137,21 +118,45 @@ cli_stop:
 cli_list:
   ret
 
+; gets the catalog of service types and prints them
 cli_catalog:
+  ret
+
+; sends a packet from packet_t and receives the response
+; overwritting packet_t
+cli_send_and_recv_packet:
+  ; send packet
+  mov   rax, SYS_WRITE
+  mov   rdi, [host_fd]
+  mov   rsi, packet_t
+  mov   rdx, PACKET_T_HEADER_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; get response
+  mov   rax, SYS_READ
+  mov   rdi, [host_fd]
+  mov   rsi, packet_t
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
   ret
 
 ; print ERROR and the error message from payload
 cli_print_error:
-  mov   rax, SYS_WRITE
-  mov   rdi, STDOUT_FILENO
-  mov   rsi, res_error
-  mov   rdx, res_error_len
-  syscall
+  mov   rdi, res_error
+  call  print
 
-  mov   rax, SYS_WRITE
-  mov   rdi, STDOUT_FILENO
-  mov   rsi, packet_t.payload
-  movzx rdx, word [packet_t.payload_len]
-  syscall
-
+  mov   rdi, packet_t.payload
+  call  println
   ret

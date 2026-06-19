@@ -22,8 +22,7 @@ HOST_T_OFF_SERVICES       equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 usage_str     db "usage: mishell init --port <port> --name <name>", LINE_FEED
-              db "       mishell connect <remote_ip>:<remote_port> --port <port> --name <name>", LINE_FEED
-usage_str_len equ $ - usage_str
+              db "       mishell connect <remote_ip>:<remote_port> --port <port> --name <name>", LINE_FEED, NULL_CHAR
 
 section .bss
 
@@ -303,11 +302,8 @@ init_or_join_network:
   jmp   .return
 
 .usage:
-  mov   rax, SYS_WRITE
-  mov   rdi, STDERR_FILENO
-  mov   rsi, usage_str
-  mov   rdx, usage_str_len
-  syscall
+  mov   rdi, usage_str
+  call  println
 
 .error:
   mov   rax, FAILURE_CODE
@@ -445,7 +441,7 @@ host_connect_to_remote:
 
   xor   rdx, rdx
   mov   rcx, HOST_T_LEN
-  idiv  rcx
+  div   rcx
   mov   byte [curr_host_idx], al
 
   ; close connection
