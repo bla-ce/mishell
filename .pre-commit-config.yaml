@@ -15,14 +15,6 @@ repos:
 
 - repo: local
   hooks:
-    - id: build-cli
-      name: build-cli
-      entry: bash -c 'make mishli'
-      language: system
-      pass_filenames: false
-
-- repo: local
-  hooks:
     - id: unit-test
       name: unit-test
       entry: bash -c 'make test-unit'

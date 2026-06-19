@@ -25,9 +25,6 @@ mishell:
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
 
-mishli:
-	$(MAKE) -C cli
-
 run-init:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)
 	nasm -o $(BUILD_DIR)/$(MISHELL_PATH).o $(SRC_DIR)/$(MISHELL_PATH).s \
