@@ -524,8 +524,6 @@ op_query:
   test  rsi, rsi
   jz    .error
 
-  ; TODO: auth for querying services
-
   mov   rax, [rsp]
 
   ; get the service
@@ -588,8 +586,6 @@ op_catalog:
 
   test  rsi, rsi
   jz    .error
-
-  ; TODO: auth for catalog
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE

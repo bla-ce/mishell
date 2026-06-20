@@ -19,6 +19,20 @@ sockaddr_in_t_end:
 
 events resb EPOLL_EVENT_T_LEN * MAX_EVENTS
 
+section .rodata
+
+log:
+  .listen_tcp       db "[MISHELL] listening on tcp socket", NULL_CHAR
+  .accept_new_conn  db "[MISHELL] accepted new connection", NULL_CHAR
+  .recv_packet      db "[MISHELL] received packet from client", NULL_CHAR
+
+SOCKADDR_IN_T_OFF_SIN_FAMILY  equ 0x0
+SOCKADDR_IN_T_OFF_SIN_PORT    equ SOCKADDR_IN_T_OFF_SIN_FAMILY + 0x2
+SOCKADDR_IN_T_OFF_SIN_ADDR    equ SOCKADDR_IN_T_OFF_SIN_PORT + 0x2
+SOCKADDR_IN_T_OFF_SIN_ZERO    equ SOCKADDR_IN_T_OFF_SIN_ADDR + 0x4
+
+SOCKADDR_IN_T_LEN equ sockaddr_in_t_end - sockaddr_in_t
+
 section .data
 
 enable dd 1
@@ -33,25 +47,165 @@ sockaddr_in_t_len dq sockaddr_in_t_end - sockaddr_in_t
 LISTEN_BACKLOG  equ 50
 
 section .text
+; creates a socket and connects it to a remote addr
+; @param  rdi: ip
+; @param  rsi: port (byte order)
+; @return rax: sock fd
+net_tcp_connect_to_remote_addr:
+  sub   rsp, 0x18+SOCKADDR_IN_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> ip
+  ; [rsp+0x8]   -> port
+  ; [rsp+0x10]  -> sock fd
+  ; [rsp+0x18]  -> sockaddr_in struct
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  ; create tcp socket
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_INET
+  mov   rsi, SOCK_STREAM
+  mov   rdx, 0
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x10], rax
+
+  ; bind tcp socket
+  lea   rdi, [rsp+0x18]
+  mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_FAMILY], AF_INET
+  mov   ax, word [rsp+0x8]
+  xchg  al, ah ; bswap 16-bit registers
+  mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_PORT], ax
+  mov   eax, dword [rsp]
+  mov   dword [rdi+SOCKADDR_IN_T_OFF_SIN_ADDR], eax
+  mov   qword [rdi+SOCKADDR_IN_T_OFF_SIN_ZERO], 0
+
+  ; connect to socket
+  mov   rax, SYS_CONNECT
+  mov   rdi, [rsp+0x10]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, [sockaddr_in_t_len]
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   rax, [rsp+0x10]
+  jmp   .return
+
+.error:
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x10]
+  syscall
+
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18+SOCKADDR_IN_T_LEN
+  ret
+
+; initialises a new tcp socket, creating the socket, binding it
+; to port and ip and listening to it
+; @param  rdi: ip
+; @param  rsi: port (byte order)
+; @return rax: sock fd
+net_init_tcp_socket:
+  sub   rsp, 0x18+SOCKADDR_IN_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> ip
+  ; [rsp+0x8]   -> port
+  ; [rsp+0x10]  -> sock fd
+  ; [rsp+0x18]  -> sockaddr_in struct
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  ; create tcp socket
+  mov   rax, SYS_SOCKET
+  mov   rdi, AF_INET
+  mov   rsi, SOCK_STREAM
+  mov   rdx, 0
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x10], rax
+
+  ; enable reuse address
+  mov   rax, SYS_SETSOCKOPT
+  mov   rdi, [rsp+0x10]
+  mov   rsi, SOL_SOCKET
+  mov   rdx, SO_REUSEADDR
+  mov   r10, enable
+  mov   r8, 4
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; bind tcp socket
+  lea   rdi, [rsp+0x18]
+  mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_FAMILY], AF_INET
+  mov   ax, word [rsp+0x8]
+  xchg  al, ah ; bswap 16-bit registers
+  mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_PORT], ax
+  mov   eax, dword [rsp]
+  mov   dword [rdi+SOCKADDR_IN_T_OFF_SIN_ADDR], eax
+  mov   qword [rdi+SOCKADDR_IN_T_OFF_SIN_ZERO], 0
+
+  mov   rax, SYS_BIND
+  mov   rdi, [rsp+0x10]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, [sockaddr_in_t_len]
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; listen to tcp
+  mov   rax, SYS_LISTEN
+  mov   rdi, [rsp+0x10]
+  mov   rsi, LISTEN_BACKLOG
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, log.listen_tcp
+  call  println
+  cmp   rax, 0
+  jl    .error
+
+  mov   rax, [rsp+0x10]
+  jmp   .return
+
+.error:
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x10]
+  syscall
+
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18+SOCKADDR_IN_T_LEN
+  ret
+
 ; converts the character string into a network address
 ; TODO: support inetv6
 ; @param  rdi: pointer to the string
-; @param  rsi: pointer to the destination
-; @return rax: return code
+; @return rax: network address (dword)
 inet_pton:
-  sub   rsp, 0x18
+  sub   rsp, 0x10
 
   ; STACK USAGE
   ; [rsp]     -> pointer to the string (s)
   ; [rsp+0x8] -> pointer to the destination buffer (d)
 
   mov   [rsp], rdi
-  mov   [rsp+0x8], rsi
+  mov   qword [rsp+0x8], 0
 
   test  rdi, rdi
-  jz    .error
-
-  test  rsi, rsi
   jz    .error
 
   xor   r9b, r9b    ; bytes counter (i)
@@ -105,7 +259,7 @@ inet_pton:
 
 .move_value:
   ; d[i] = v;
-  mov   rdi, [rsp+0x8]
+  lea   rdi, [rsp+0x8]
   mov   byte [rdi+r9], r11b
 
   ; if (s[j]==0 && i==3) return 1;
@@ -133,7 +287,7 @@ inet_pton:
   jmp   .outer_loop
 .outer_loop_end:
 
-  mov   rax, SUCCESS_CODE
+  movsx rax, dword [rsp+0x8]
 
   jmp   .return
 
@@ -141,5 +295,5 @@ inet_pton:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x18
+  add   rsp, 0x10
   ret

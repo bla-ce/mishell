@@ -10,10 +10,10 @@ SERVICE_TYPE_NAME_MAX_LEN equ 0x10
 COMMANDS_MAX_COUNT_PER_SERVICE_TYPE equ 0x10
 
 service_types_str:
-  .PING db "PING", NULL_CHAR
+  .PING   db "PING", NULL_CHAR
 
 service_types_str_table:
-  .PING dq service_types_str.PING
+  .PING   dq service_types_str.PING
 
 service_types:
   .PING     equ 0x0

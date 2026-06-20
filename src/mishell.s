@@ -9,13 +9,6 @@
 
 global _start
 
-section .rodata
-
-log:
-  .listen_tcp       db "[MISHELL] listening on tcp socket", NULL_CHAR
-  .accept_new_conn  db "[MISHELL] accepted new connection", NULL_CHAR
-  .recv_packet      db "[MISHELL] received packet from client", NULL_CHAR
-
 section .text
 
 _start:
@@ -80,57 +73,13 @@ _start:
   cmp   rax, 0
   jl    .error
 
-  ; create tcp socket
-  mov   rax, SYS_SOCKET
-  mov   rdi, AF_INET
-  mov   rsi, SOCK_STREAM
-  mov   rdx, 0
-  syscall
+  xor   rdi, rdi
+  movzx rsi, word [host_port]
+  call  net_init_tcp_socket
   cmp   rax, 0
   jl    .error
 
   mov   [tcp_fd], rax
-
-  ; enable reuse address
-  mov   rax, SYS_SETSOCKOPT
-  mov   rdi, [tcp_fd]
-  mov   rsi, SOL_SOCKET
-  mov   rdx, SO_REUSEADDR
-  mov   r10, enable
-  mov   r8, 4
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; bind tcp socket
-  mov   ax, word [host_port]
-  xchg  al, ah ; bswap 16-bit registers
-
-  mov   word [sockaddr_in_t.sin_family], AF_INET
-  mov   word [sockaddr_in_t.sin_port], ax
-  mov   dword [sockaddr_in_t.sin_addr], 0
-  mov   qword [sockaddr_in_t.sin_zero], 0
-
-  mov   rax, SYS_BIND
-  mov   rdi, [tcp_fd]
-  mov   rsi, sockaddr_in_t
-  mov   rdx, [sockaddr_in_t_len]
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  ; listen to tcp
-  mov   rax, SYS_LISTEN
-  mov   rdi, [tcp_fd]
-  mov   rsi, LISTEN_BACKLOG
-  syscall
-  cmp   rax, 0
-  jl    .error
-
-  mov   rdi, log.listen_tcp
-  call  println
-  cmp   rax, 0
-  jl    .error
 
   ; initialise epoll instance
   mov   rax, SYS_EPOLL_CREATE1

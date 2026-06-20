@@ -78,36 +78,17 @@ host_proxy_request:
 
   mov   [rsp+0x10], rax
 
-  ; init packet for host
-  mov   rax, SYS_SOCKET
-  mov   rdi, AF_INET
-  mov   rsi, SOCK_STREAM
-  xor   rdx, rdx
-  syscall
+  mov   rax, [rsp+0x10]
+  movsx rdi, dword [rax+HOST_T_OFF_IP]
+
+  movzx rdx, word [rax+HOST_T_OFF_PORT]
+  xchg  dl, dh
+  mov   rsi, rdx
+  call  net_tcp_connect_to_remote_addr
   cmp   rax, 0
   jl    .error
 
   mov   [rsp+0x18], rax
-
-  ; populate sockaddr
-  mov   word [sockaddr_in_t.sin_family], AF_INET
-
-  ; get port and ip from host struct
-  mov   rsi, [rsp+0x10]
-  mov   ax, [rsi+HOST_T_OFF_PORT]
-  mov   word [sockaddr_in_t.sin_port], ax
-  mov   eax, [rsi+HOST_T_OFF_IP]
-  mov   dword [sockaddr_in_t.sin_addr], eax
-  mov   qword [sockaddr_in_t.sin_zero], 0
-
-  ; connect to host
-  mov   rax, SYS_CONNECT
-  mov   rdi, [rsp+0x18]
-  mov   rsi, sockaddr_in_t
-  mov   rdx, qword [sockaddr_in_t_len]
-  syscall
-  cmp   rax, 0
-  jl    .error
 
   ; send the packet to the host
   mov   rax, SYS_WRITE
@@ -319,6 +300,8 @@ init_or_join_network:
 ; @param  rdx: pointer to the name of the remote host
 ; @return rax: return code
 host_connect_to_remote:
+  push  r12
+  push  r13
   sub   rsp, 0x20 + PACKET_T_LEN
 
   ; STACK USAGE
@@ -342,17 +325,13 @@ host_connect_to_remote:
   test  rdx, rdx
   jz    .error
 
-  ; create socket
-  mov   rax, SYS_SOCKET
-  mov   rdi, AF_INET
-  mov   rsi, SOCK_STREAM
-  xor   rdx, rdx
-  syscall
+  ; get ip from cli
+  mov   rdi, [rsp]
+  call  inet_pton
+  cmp   rax, 0
+  jl    .error
 
-  mov   [rsp+0x18], rax
-
-  ; populate sockaddr: TODO: we might want to use the stack here
-  mov   word [sockaddr_in_t.sin_family], AF_INET
+  mov   r12, rax
 
   ; port to network order
   mov   rdi, [rsp+0x8]
@@ -360,26 +339,15 @@ host_connect_to_remote:
   cmp   rax, 0
   jl    .error
 
-  xchg  al, ah ; bswap 16-bit registers
-  mov   word [sockaddr_in_t.sin_port], ax
+  mov   r13, rax
 
-  ; get ip from cli
-  mov   rdi, [rsp]
-  mov   rsi, sockaddr_in_t.sin_addr
-  call  inet_pton
+  mov   rdi, r12
+  mov   rsi, r13
+  call  net_tcp_connect_to_remote_addr
   cmp   rax, 0
   jl    .error
 
-  mov   qword [sockaddr_in_t.sin_zero], 0
-
-  ; connect to socket
-  mov   rax, SYS_CONNECT
-  mov   rdi, [rsp+0x18]
-  mov   rsi, sockaddr_in_t
-  mov   rdx, [sockaddr_in_t_len]
-  syscall
-  cmp   rax, 0
-  jl    .error
+  mov   [rsp+0x18], rax
 
   ; send join op
   lea   rdi, [rsp+0x20]
@@ -461,6 +429,8 @@ host_connect_to_remote:
   mov   rax, FAILURE_CODE
 
 .return:
+  pop   r12
+  pop   r13
   add   rsp, 0x20 + PACKET_T_LEN
   ret
 
@@ -527,7 +497,7 @@ host_init:
   ; STACK USAGE
   ; [rsp]       -> pointer to the host struct
   ; [rsp+0x8]   -> ip of the host
-  ; [rsp+0x10]  -> port of the host (host order)
+  ; [rsp+0x10]  -> port of the host (network)
   ; [rsp+0x18]  -> pointer to the name of the host
   ; [rsp+0x20]  -> error code
 
@@ -641,35 +611,17 @@ host_update_network:
   cmp   rax, TRUE
   je    .skip_host
 
-  mov   rax, SYS_SOCKET
-  mov   rdi, AF_INET
-  mov   rsi, SOCK_STREAM
-  xor   rdx, rdx
-  syscall
+  mov   rax, [rsp+0x10]
+  movsx rdi, dword [rax+HOST_T_OFF_IP]
+
+  movzx rdx, word [rax+HOST_T_OFF_PORT]
+  xchg  dl, dh
+  mov   rsi, rdx
+  call  net_tcp_connect_to_remote_addr
   cmp   rax, 0
   jl    .error
 
   mov   [rsp+0x8], rax
-
-  ; populate sockaddr
-  mov   word [sockaddr_in_t.sin_family], AF_INET
-
-  ; get port and ip from host struct
-  mov   rdi, [rsp+0x10]
-  mov   ax, [rdi+HOST_T_OFF_PORT]
-  mov   word [sockaddr_in_t.sin_port], ax
-  mov   eax, [rdi+HOST_T_OFF_IP]
-  mov   dword [sockaddr_in_t.sin_addr], eax
-  mov   qword [sockaddr_in_t.sin_zero], 0
-
-  ; connect to host
-  mov   rax, SYS_CONNECT
-  mov   rdi, [rsp+0x8]
-  mov   rsi, sockaddr_in_t
-  mov   rdx, qword [sockaddr_in_t_len]
-  syscall
-  cmp   rax, 0
-  jl    .error
 
   ; send the packet to the host
   mov   rax, SYS_WRITE
