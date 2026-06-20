@@ -40,8 +40,8 @@ _start:
   ; [rsp+0x18]  -> pointer to host address
   ; [rsp+0x20]  -> pointer to op
   ; [rsp+0x28]  -> first argument (host id)
-  ; [rsp+0x30]  -> first argument (service id)
-  ; [rsp+0x38]  -> first argument (service type or command)
+  ; [rsp+0x30]  -> second argument (service id)
+  ; [rsp+0x38]  -> third argument (service type or command)
 
   cmp   qword [rsp], MISHLI_MIN_ARG
   jl    .usage
@@ -64,6 +64,19 @@ _start:
   call  mishli_cli_op_fn_from_str
   cmp   rax, 0
   jl    .usage
+
+  ; populate base packet
+  mov   word [packet_t.magic], MAGIC_VALUE
+  mov   byte [packet_t.flags], FL_USER
+  mov   byte [packet_t.dest_host], 0
+
+  ; call cli function
+  mov   rdi, [rsp+0x28]
+  mov   rsi, [rsp+0x30]
+  mov   rdx, [rsp+0x38]
+  call  rax
+  cmp   rax, 0
+  jl    .error
 
   ; close fd
   mov   rax, SYS_CLOSE

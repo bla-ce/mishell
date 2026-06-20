@@ -65,33 +65,33 @@ err_code_to_len_table:
   .COMMAND_NOT_FOUND              dw error_msg.command_not_found_len
 
 error_msg:
-  .internal db "internal error"
+  .internal db "internal error", NULL_CHAR
   .internal_len equ $ - error_msg.internal
-  .invalid_magic db "invalid magic value in packet"
+  .invalid_magic db "invalid magic value in packet", NULL_CHAR
   .invalid_magic_len equ $ - error_msg.invalid_magic
-  .invalid_op db "invalid op value in packet"
+  .invalid_op db "invalid op value in packet", NULL_CHAR
   .invalid_op_len equ $ - error_msg.invalid_op
-  .invalid_mode db "invalid mode flag in packet"
+  .invalid_mode db "invalid mode flag in packet", NULL_CHAR
   .invalid_mode_len equ $ - error_msg.invalid_mode
-  .host_limit_reached db "host limit has been reached"
+  .host_limit_reached db "host limit has been reached", NULL_CHAR
   .host_limit_reached_len equ $ - error_msg.host_limit_reached
-  .host_not_found db "host not found"
+  .host_not_found db "host not found", NULL_CHAR
   .host_not_found_len equ $ - error_msg.host_not_found
-  .host_name_already_exists db "a host with this name already exists"
+  .host_name_already_exists db "a host with this name already exists", NULL_CHAR
   .host_name_already_exists_len equ $ - error_msg.host_name_already_exists
-  .host_addr_already_exists db "a host with this ip and port already exists"
+  .host_addr_already_exists db "a host with this ip and port already exists", NULL_CHAR
   .host_addr_already_exists_len equ $ - error_msg.host_addr_already_exists
-  .service_per_host_limit_reached db "service limit per host has been reached"
+  .service_per_host_limit_reached db "service limit per host has been reached", NULL_CHAR
   .service_per_host_limit_reached_len equ $ - error_msg.service_per_host_limit_reached
-  .service_not_found db "service not found"
+  .service_not_found db "service not found", NULL_CHAR
   .service_not_found_len equ $ - error_msg.service_not_found
-  .service_invalid_name db "invalid service name"
+  .service_invalid_name db "invalid service name", NULL_CHAR
   .service_invalid_name_len equ $ - error_msg.service_invalid_name
-  .service_invalid_type db "invalid service type"
+  .service_invalid_type db "invalid service type", NULL_CHAR
   .service_invalid_type_len equ $ - error_msg.service_invalid_type
-  .service_stop_before_unregister db "stop service before unregistering it"
+  .service_stop_before_unregister db "stop service before unregistering it", NULL_CHAR
   .service_stop_before_unregister_len equ $ - error_msg.service_stop_before_unregister
-  .service_not_started db "service not started"
+  .service_not_started db "service not started", NULL_CHAR
   .service_not_started_len equ $ - error_msg.service_not_started
-  .command_not_found db "command not found"
+  .command_not_found db "command not found", NULL_CHAR
   .command_not_found_len equ $ - error_msg.command_not_found

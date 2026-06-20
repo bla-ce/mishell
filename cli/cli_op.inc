@@ -85,7 +85,37 @@ mishli_cli_op_fn_from_str:
   add   rsp, 0x8
   ret
 
+; sends HELLO command to remote host
+; @return rax: return code
 cli_hello:
+  sub   rsp, PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]   -> pointer to the packet (req and resp)
+
+  mov   word [rsp+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rsp+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [rsp+PACKET_T_OFF_DEST_HOST], 0
+  mov   byte [rsp+PACKET_T_OFF_OP], req_ops.HELLO
+  mov   word [rsp+PACKET_T_OFF_PAYLOAD_LEN], 0
+
+  lea   rdi, [rsp]
+  call  cli_transaction
+  cmp   rax, 0
+  jl    .error
+
+  ; print ok
+  mov   rdi, res_ok
+  call  println
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, PACKET_T_LEN
   ret
 
 cli_register:
@@ -113,4 +143,91 @@ cli_update:
   ret
 
 cli_query:
+  ret
+
+; sends a packet to remote host and get the response back
+; the request packet is being overwritten by the response
+; @param  rdi: pointer to the packet struct
+; @return rax: return code
+cli_transaction:
+  sub   rsp, 0x8
+
+  ; STACK USAGE
+  ; [rsp]   -> pointer to the packet struct
+
+  mov   [rsp], rdi
+
+  test  rdi, rdi
+  jz    .no_print
+
+  ; get payload length
+  movzx rdx, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
+  add   rdx, PACKET_T_HEADER_LEN
+
+  ; send response packet
+  mov   rax, SYS_WRITE
+  mov   rdi, [host_fd]
+  mov   rsi, [rsp]
+  ; rdx already populated
+  syscall
+  cmp   rax, 0
+  jl    .no_print
+
+  ; get response
+  mov   rax, SYS_READ
+  mov   rdi, [host_fd]
+  mov   rsi, [rsp]
+  mov   rdx, PACKET_T_LEN
+  syscall
+  cmp   rax, 0
+  jl    .no_print
+
+  ; check response op
+  mov   rdi, [rsp]
+  cmp   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
+  jne   .error
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rdi, [rsp]
+  call  cli_print_error
+
+.no_print:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x8
+  ret
+
+; print ERROR and the error message from payload
+; @param  rdi: pointer to the packet
+; @return rax: return code
+cli_print_error:
+  sub   rsp, 0x8
+
+  ; STACK USAGE
+  ; [rsp]   -> pointer to the packet
+
+  mov   [rsp], rdi
+
+  test  rdi, rdi
+  jz    .error
+
+  mov   rdi, res_error
+  call  print
+
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  call  println
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x8
   ret
