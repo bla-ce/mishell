@@ -403,7 +403,6 @@ host_connect_to_remote:
   rep   movsb
 
   ; get number of hosts from payload len
-  ; TODO: without div? probably aligning the struct to do shr
   lea   rsi, [rsp+0x20]
   movzx rax, word [rsi+PACKET_T_OFF_PAYLOAD_LEN]
 
@@ -510,7 +509,7 @@ host_init:
   test  rdi, rdi
   jz    .error
 
-  test  rdx, rdx
+  test  rcx, rcx
   jz    .error
 
   mov   qword [rsp+0x20], error_codes.HOST_ADDR_ALREADY_EXISTS

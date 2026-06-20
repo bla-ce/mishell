@@ -73,7 +73,6 @@ strlen:
 ; converts null-terminated string to an integer
 ; @param  rdi: string
 ; @return rax: int or -1 if error
-; TODO: there's probably a bunch of optimisations here
 atoi:
   sub   rsp, 0x20
 

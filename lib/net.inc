@@ -192,7 +192,6 @@ net_init_tcp_socket:
   ret
 
 ; converts the character string into a network address
-; TODO: support inetv6
 ; @param  rdi: pointer to the string
 ; @return rax: network address (dword)
 inet_pton:
