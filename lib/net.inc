@@ -206,14 +206,14 @@ inet_pton:
   test  rdi, rdi
   jz    .error
 
-  xor   r9b, r9b    ; bytes counter (i)
+  xor   r9, r9    ; bytes counter (i)
 
 .outer_loop:
   cmp   r9b, 4
   jge   .error
 
   ; reset values
-  xor   r10b, r10b  ; digit counter (j)
+  xor   r10, r10  ; digit counter (j)
   xor   r11, r11  ; byte value (v)
 
 .inner_loop:

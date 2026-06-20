@@ -6,6 +6,7 @@
 %include "packet.inc"
 %include "service.inc"
 %include "service_type.inc"
+%include "cli_op.inc"
 
 global _start
 
@@ -55,6 +56,12 @@ _start:
   ; connect to remote host
   mov   rdi, [rsp+0x18]
   call  mishli_connect_to_host
+  cmp   rax, 0
+  jl    .usage
+
+  ; check if op is valid
+  mov   rdi, [rsp+0x20]
+  call  mishli_cli_op_fn_from_str
   cmp   rax, 0
   jl    .usage
 
