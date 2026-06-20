@@ -7,7 +7,7 @@ req_ops:
   .START      equ 0x3
   .STOP       equ 0x4
   .UNREGISTER equ 0x5
-  .LIST       equ 0x6
+  .NETWORK    equ 0x6
   .UPDATE     equ 0x7
   .QUERY      equ 0x8
   .CATALOG    equ 0x9
@@ -25,7 +25,7 @@ req_op_fn_table:
   .START      dq op_start
   .STOP       dq op_stop
   .UNREGISTER dq op_unregister
-  .LIST       dq op_list
+  .NETWORK    dq op_network
   .UPDATE     dq op_update
   .QUERY      dq op_query
   .CATALOG    dq op_catalog
@@ -402,7 +402,7 @@ op_unregister:
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @return rax: return code
-op_list:
+op_network:
   sub   rsp, 0x18
 
   ; STACK USAGE
