@@ -7,14 +7,16 @@ repos:
 
 - repo: local
   hooks:
-    - id: build
-      name: build
+    - id: build mishell
+      name: build mishell
       entry: bash -c 'make mishell'
       language: system
       pass_filenames: false
-
-- repo: local
-  hooks:
+    - id: build mishli
+      name: build mishli
+      entry: bash -c 'make mishli'
+      language: system
+      pass_filenames: false
     - id: unit-test
       name: unit-test
       entry: bash -c 'make test-unit'

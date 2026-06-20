@@ -249,7 +249,7 @@ _start:
   mov   rdi, [epoll_fd]
   syscall
 
-  mov   rdi, 0
+  mov   rdi, SUCCESS_CODE
   jmp   .exit
 
 .error:
