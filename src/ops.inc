@@ -85,17 +85,6 @@ op_join:
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
-  ; check if host exists
-  mov   qword [rsp+0x10], error_codes.HOST_NAME_ALREADY_EXISTS
-  mov   rdi, [rsp]
-  add   rdi, PACKET_T_OFF_PAYLOAD+HOST_T_OFF_NAME
-  call  host_get_by_name
-  cmp   rax, 0
-  jl    .new_host
-
-  jmp   .error
-
-.new_host:
   ; make sure we haven't reached the host limit
   mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
   cmp   byte [curr_host_idx], HOST_MAX_COUNT

@@ -512,6 +512,12 @@ host_init:
   test  rcx, rcx
   jz    .error
 
+  mov   qword [rsp+0x20], error_codes.HOST_NAME_ALREADY_EXISTS
+  mov   rdi, [rsp+0x18]
+  call  host_get_by_name
+  cmp   rax, 0
+  jge   .error
+
   mov   qword [rsp+0x20], error_codes.HOST_ADDR_ALREADY_EXISTS
   mov   rdi, [rsp+0x8]
   mov   rsi, [rsp+0x10]

@@ -200,6 +200,15 @@ _start:
   cmp   rax, error_codes.INTERNAL
   jne   .error
 
+  ; duplicated host name should return failure
+  mov   rdi, test_host
+  xor   rsi, rsi
+  mov   rdx, 5959
+  mov   rcx, dummy_host_1
+  call  host_init
+  cmp   rax, error_codes.HOST_NAME_ALREADY_EXISTS
+  jne   .error
+
   mov   rdi, SUCCESS_CODE
   jmp   .exit
 
