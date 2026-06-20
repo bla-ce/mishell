@@ -4,7 +4,6 @@ service_t:
   .name   resb SERVICE_NAME_MAX_LEN
   .type   resb 0x1
   .status resb 0x1
-  .pad    resb 0x3
 service_t_end:
 
 section .rodata

@@ -32,7 +32,6 @@ host_t:
   .name           resb HOST_NAME_MAX_LEN
   .services       resb SERVICES_LEN
   .services_count resb 0x1
-  .pad            resb 0x5
 host_t_end:
 
 host_name resb HOST_NAME_MAX_LEN
