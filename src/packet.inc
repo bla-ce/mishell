@@ -152,7 +152,7 @@ packet_verify:
   ; [rsp+0x8] -> error code
 
   mov   [rsp], rdi
-  mov   qword [rsp+0x8], 0
+  mov   qword [rsp+0x8], error_codes.INTERNAL
 
   test  rdi, rdi
   jz    .error

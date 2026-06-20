@@ -36,6 +36,55 @@ _start:
   rep   scasb
   jne   .error
 
+  ; packet verify
+  ; null ptr return failure mode
+  xor   rdi, rdi
+  call  packet_verify
+  cmp   rax, error_codes.INTERNAL
+  jne   .error
+
+  ; invalid magic value return INVALID_MAGIC
+  mov   word [test_packet+PACKET_T_OFF_MAGIC], 0x1234
+
+  mov   rdi, test_packet
+  call  packet_verify
+  cmp   rax, error_codes.INVALID_MAGIC
+  jne   .error
+
+  ; invalid mode flag should return INVALID_MODE
+  mov   word [test_packet+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [test_packet+PACKET_T_OFF_FLAGS], 0x24
+  mov   rdi, test_packet
+  call  packet_verify
+  cmp   rax, error_codes.INVALID_MODE
+  jne   .error
+
+  ; invalid op should return INVALID_OP
+  mov   word [test_packet+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [test_packet+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [test_packet+PACKET_T_OFF_OP], req_ops.COUNT
+  mov   rdi, test_packet
+  call  packet_verify
+  cmp   rax, error_codes.INVALID_OP
+  jne   .error
+
+  mov   word [test_packet+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [test_packet+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [test_packet+PACKET_T_OFF_OP], -1
+  mov   rdi, test_packet
+  call  packet_verify
+  cmp   rax, error_codes.INVALID_OP
+  jne   .error
+
+  ; happy path
+  mov   word [test_packet+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [test_packet+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   byte [test_packet+PACKET_T_OFF_OP], req_ops.HELLO
+  mov   rdi, test_packet
+  call  packet_verify
+  cmp   rax, SUCCESS_CODE
+  jne   .error
+
   mov   rdi, SUCCESS_CODE
   jmp   .exit
 
