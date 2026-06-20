@@ -589,39 +589,33 @@ host_init:
   add   rsp, 0x28
   ret
 
-; updates each host in the network with new array except the one
-; passed in rdi.
-; TODO: arguments should be an array of host to not update with
-; count
-; @param  rdi: pointer to the host name to skip
+; updates each host in the network with new host array
+; @return rax: return code
 host_update_network:
   push  r12
   push  r13
-  sub   rsp, 0x20+PACKET_T_LEN
+  sub   rsp, 0x18+PACKET_T_LEN
 
   ; STACK USAGE
-  ; [rsp]       -> pointer to the host name to skip (can be null)
-  ; [rsp+0x8]   -> array length
-  ; [rsp+0x10]  -> sock fd
-  ; [rsp+0x18]  -> temp host
-  ; [rsp+0x20]  -> packet
-
-  mov   [rsp], rdi
+  ; [rsp+0]     -> array length
+  ; [rsp+0x8]   -> sock fd
+  ; [rsp+0x10]  -> temp host
+  ; [rsp+0x18]  -> packet
 
   ; get array length
   movzx r12, byte [curr_host_idx]
   test  r12, r12
   jz    .done
   imul  rax, r12, HOST_T_LEN
-  mov   [rsp+0x8], rax
+  mov   [rsp], rax
 
   ; build packet
-  lea   rdi, [rsp+0x20]
+  lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.UPDATE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
-  mov   ax, [rsp+0x8]
+  mov   ax, [rsp]
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
 
   add   rdi, PACKET_T_OFF_PAYLOAD
@@ -638,18 +632,11 @@ host_update_network:
   ; get host
   imul  rax, r13, HOST_T_LEN
   lea   rdi, [hosts+rax]
-  mov   [rsp+0x18], rdi
+  mov   [rsp+0x10], rdi
 
   ; check if we need to skip the host
   add   rdi, HOST_T_OFF_NAME
   mov   rsi, host_name
-  call  strcmp
-  cmp   rax, TRUE
-  je    .skip_host
-
-  mov   rdi, [rsp+0x18]
-  add   rdi, HOST_T_OFF_NAME
-  mov   rsi, [rsp]
   call  strcmp
   cmp   rax, TRUE
   je    .skip_host
@@ -662,13 +649,13 @@ host_update_network:
   cmp   rax, 0
   jl    .error
 
-  mov   [rsp+0x10], rax
+  mov   [rsp+0x8], rax
 
   ; populate sockaddr
   mov   word [sockaddr_in_t.sin_family], AF_INET
 
   ; get port and ip from host struct
-  mov   rdi, [rsp+0x18]
+  mov   rdi, [rsp+0x10]
   mov   ax, [rdi+HOST_T_OFF_PORT]
   mov   word [sockaddr_in_t.sin_port], ax
   mov   eax, [rdi+HOST_T_OFF_IP]
@@ -677,7 +664,7 @@ host_update_network:
 
   ; connect to host
   mov   rax, SYS_CONNECT
-  mov   rdi, [rsp+0x10]
+  mov   rdi, [rsp+0x8]
   mov   rsi, sockaddr_in_t
   mov   rdx, qword [sockaddr_in_t_len]
   syscall
@@ -686,8 +673,8 @@ host_update_network:
 
   ; send the packet to the host
   mov   rax, SYS_WRITE
-  mov   rdi, [rsp+0x10]
-  lea   rsi, [rsp+0x20]
+  mov   rdi, [rsp+0x8]
+  lea   rsi, [rsp+0x18]
   mov   rdx, PACKET_T_LEN
   syscall
   cmp   rax, 0
@@ -695,7 +682,7 @@ host_update_network:
 
   ; close connection
   mov   rax, SYS_CLOSE
-  mov   rdi, [rsp+0x10]
+  mov   rdi, [rsp+0x8]
   syscall
 
 .skip_host:
@@ -710,7 +697,7 @@ host_update_network:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x20+PACKET_T_LEN
+  add   rsp, 0x18+PACKET_T_LEN
   pop   r13
   pop   r12
   ret

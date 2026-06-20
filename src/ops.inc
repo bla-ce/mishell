@@ -133,8 +133,6 @@ op_join:
   mov   rsi, hosts
   rep   movsb
 
-  mov   rdi, [rsp+0x8]
-  add   rdi, PACKET_T_OFF_DEST_HOST ; update each host except current
   call  host_update_network
   cmp   rax, 0
   jl    .error
@@ -484,7 +482,7 @@ op_update:
   movzx rax, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
   xor   rdx, rdx
   mov   rcx, HOST_T_LEN
-  idiv  rcx
+  div   rcx
   mov   byte [curr_host_idx], al
 
   mov   rdi, [rsp+0x8]
