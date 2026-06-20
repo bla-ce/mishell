@@ -74,7 +74,7 @@ net_tcp_connect_to_remote_addr:
 
   mov   [rsp+0x10], rax
 
-  ; bind tcp socket
+  ; connect to socket
   lea   rdi, [rsp+0x18]
   mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_FAMILY], AF_INET
   mov   ax, word [rsp+0x8]
@@ -84,7 +84,6 @@ net_tcp_connect_to_remote_addr:
   mov   dword [rdi+SOCKADDR_IN_T_OFF_SIN_ADDR], eax
   mov   qword [rdi+SOCKADDR_IN_T_OFF_SIN_ZERO], 0
 
-  ; connect to socket
   mov   rax, SYS_CONNECT
   mov   rdi, [rsp+0x10]
   lea   rsi, [rsp+0x18]
