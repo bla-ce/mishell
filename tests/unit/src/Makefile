@@ -3,3 +3,4 @@
 test-unit:
 	$(MAKE) -C host
 	$(MAKE) -C op
+	$(MAKE) -C packet

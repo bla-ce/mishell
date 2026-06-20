@@ -52,6 +52,7 @@ jobs:
         suite:
           - unit/src/host
           - unit/src/op
+          - unit/src/packet
           - unit/lib/string
           - unit/lib/net
     steps:
