@@ -95,98 +95,97 @@ service_get_by_name:
 
 ; initialises a new service from a REGISTER packet and adds it to
 ; the host struct list of services
-; @param  rdi: pointer to the packet struct
-; @param  rsi: pointer to the host struct
+; @param  rdi: pointer to the name of the service
+; @param  rsi: type of the service
+; @param  rdx: pointer to the host struct
 ; @return
   ; - rax: pointer to the service struct
   ; - rdx: error code
 service_init:
-  sub   rsp, 0x20
+  sub   rsp, 0x28
 
   ; STACK USAGE
-  ; [rsp]       -> pointer to the packet struct
-  ; [rsp+0x8]   -> pointer to the host struct
-  ; [rsp+0x10]  -> pointer to the service struct
-  ; [rsp+0x18]  -> error code
+  ; [rsp]       -> pointer to the name of the service
+  ; [rsp+0x8]   -> type of the service
+  ; [rsp+0x10]  -> pointer to the host struct
+  ; [rsp+0x18]  -> pointer to the service struct
+  ; [rsp+0x20]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   qword [rsp+0x18], error_codes.INTERNAL  ; default
+  mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x20], error_codes.INTERNAL  ; default
 
   test  rdi, rdi
   jz    .error
 
-  test  rsi, rsi
+  test  rdx, rdx
   jz    .error
 
   ; validate service payload
   mov   rdi, [rsp]
-  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, [rsp+0x8]
   call  service_validate
-  mov   [rsp+0x18], rax
+  mov   [rsp+0x20], rax
   test  rax, rax
   jnz   .error
 
   ; get pointer to the service
-  mov   rax, [rsp+0x8]
+  mov   rax, [rsp+0x10]
   movzx r9, byte [rax+HOST_T_OFF_SERVICES_COUNT]
   lea   rdi, [rax+HOST_T_OFF_SERVICES]
 
   imul  rax, r9, SERVICE_T_LEN
   add   rdi, rax
 
-  mov   [rsp+0x10], rdi
+  mov   [rsp+0x18], rdi
 
   ; memset service
   xor   rax, rax
   mov   rcx, SERVICE_T_LEN
   rep   stosb
 
-  ; copy service packet
-  mov   rdi, [rsp+0x10]
-  mov   rsi, [rsp]
-  add   rsi, PACKET_T_OFF_PAYLOAD
-  mov   rcx, SERVICE_T_LEN
-  rep   movsb
-
   ; add default status to the service
+  mov   rsi, [rsp+0x18]
   mov   byte [rsi+SERVICE_T_OFF_STATUS], service_status.REGISTERED
 
   ; increase service count for the host
-  mov   rdi, [rsp+0x8]
+  mov   rdi, [rsp+0x10]
   inc   byte [rdi+HOST_T_OFF_SERVICES_COUNT]
 
   mov   rdx, SUCCESS_CODE
-  mov   rax, [rsp+0x10]
+  mov   rax, [rsp+0x18]
   jmp   .return
 
 .error:
-  mov   rdx, [rsp+0x18]
+  mov   rdx, [rsp+0x20]
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x20
+  add   rsp, 0x28
   ret
 
 ; validates the service struct
-; @param  rdi: pointer to the service struct
+; @param  rdi: pointer to the name of the service
+; @param  rsi: service type
 ; @return rax: return code
 service_validate:
-  sub   rsp, 0x10
+  sub   rsp, 0x18
 
   ; STACK USAGE
-  ; [rsp]     -> pointer to the service struct
-  ; [rsp+0x8] -> error code
+  ; [rsp]       -> pointer to the name of the service
+  ; [rsp+0x8]   -> service type
+  ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
-  mov   qword [rsp+0x8], error_codes.INTERNAL
+  mov   [rsp+0x8], rsi
+  mov   qword [rsp+0x10], error_codes.INTERNAL
 
   test  rdi, rdi
   jz    .error
 
   ; validate name len
-  mov   qword [rsp+0x8], error_codes.SERVICE_INVALID_NAME
-  add   rdi, SERVICE_T_OFF_NAME
+  mov   qword [rsp+0x10], error_codes.SERVICE_INVALID_NAME
   call  strlen
   cmp   rax, 0
   jl    .error
@@ -194,17 +193,16 @@ service_validate:
   jge   .error
 
   ; validate type
-  mov   qword [rsp+0x8], error_codes.SERVICE_INVALID_TYPE
-  mov   rdi, [rsp]
-  cmp   byte [rdi+SERVICE_T_OFF_TYPE], service_types.COUNT
+  mov   qword [rsp+0x10], error_codes.SERVICE_INVALID_TYPE
+  cmp   byte [rsp+0x8], service_types.COUNT
   jge   .error
 
   mov   rax, SUCCESS_CODE
   jmp   .return
 
 .error:
-  mov   rax, [rsp+0x8]
+  mov   rax, [rsp+0x10]
 
 .return:
-  add   rsp, 0x10
+  add   rsp, 0x18
   ret

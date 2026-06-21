@@ -115,8 +115,8 @@ op_join:
 
   ; add host array to payload
   mov   rdi, [rsp+0x8]
-  movzx cx, byte [curr_host_idx]
-  imul  cx, HOST_T_LEN
+  movzx rcx, byte [curr_host_idx]
+  imul  rcx, HOST_T_LEN
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], cx
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
@@ -175,12 +175,14 @@ op_register:
 
   ; initialises a new service
   mov   qword [rsp+0x18], error_codes.INTERNAL
-  mov   rdi, [rsp]
-  mov   rsi, [rsp+0x10]
+  mov   rax, [rsp]
+  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_NAME]
+  movzx rsi, byte [rax+PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_TYPE]
+  mov   rdx, [rsp+0x10]
   call  service_init
   mov   [rsp+0x18], rdx ; save error code if it failed
-  test  rdx, rdx
-  jnz   .error
+  cmp   rax, 0
+  jl    .error
 
   mov   rdi, [rsp+0x8]
   add   rdi, PACKET_T_OFF_PAYLOAD
