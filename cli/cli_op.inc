@@ -45,6 +45,7 @@ section .text
 ; @param  rdi: pointer to the string
 ; @return rax: op value
 mishli_cli_op_fn_from_str:
+  push  r12
   sub   rsp, 0x8
 
   ; STACK USAGE
@@ -55,26 +56,26 @@ mishli_cli_op_fn_from_str:
   test  rdi, rdi
   jz    .error
 
-  xor   r9, r9
+  xor   r12, r12
 
 .loop:
-  cmp   r9, req_ops.COUNT
+  cmp   r12, req_ops.COUNT
   jge   .error
 
   mov   rdi, [rsp]
-  mov   rsi, qword [req_op_str_table+r9*0x8]
+  mov   rsi, qword [req_op_str_table+r12*0x8]
   call  strcmp
   cmp   rax, TRUE
   je    .done
 
-  inc   r9
+  inc   r12
   jmp   .loop
 
 .done:
-  shl   r9, 3   ; r9 *= 8
+  shl   r12, 3   ; r12 *= 8
 
   ; get cli function from op
-  mov   rax, [req_op_cli_table+r9]
+  mov   rax, [req_op_cli_table+r12]
 
   jmp   .return
 
@@ -83,6 +84,7 @@ mishli_cli_op_fn_from_str:
 
 .return:
   add   rsp, 0x8
+  pop   r12
   ret
 
 ; sends HELLO command to remote host

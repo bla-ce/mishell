@@ -11,7 +11,7 @@ req_ops:
   .UPDATE     equ 0x7
   .QUERY      equ 0x8
   .CATALOG    equ 0x9
-  .COUNT      equ 0x10
+  .COUNT      equ 0xA
 
 res_ops:
   .OK     equ 0x0
