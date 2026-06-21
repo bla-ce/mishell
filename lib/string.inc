@@ -1,4 +1,8 @@
-section .data
+section .rodata
+
+UNSIGNED_BYTE_STR_MAX_SIZE  equ 4
+
+ITOA_STR_MAX_SIZE equ 22
 
 section .text
 ; compares two strings
@@ -240,4 +244,99 @@ print_char:
   syscall
 
   leave
+  ret
+
+; converts int in rdi into string
+; string pointer needs to be passed
+; make sure the size include the null character at the end of the string
+; @param  rdi: int
+; @param  rsi: string
+; @param  rdx: size
+; @return rax: pointer to str(int)
+itoa:
+  push  r12
+  sub   rsp, 0x18+ITOA_STR_MAX_SIZE
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the number to be converted
+  ; [rsp+0x8]   -> pointer to the final string
+  ; [rsp+0x10]  -> size of the string
+  ; [rsp+0x18]  -> pointer to the temp string
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
+
+  test  rsi, rsi
+  jz    .error
+
+  test  rdx, rdx
+  jz    .error
+
+  ; go to the end of the buf (print backward)
+  lea   rdi, [rsp+0x18]
+  add   rdi, [rsp+0x10]
+
+  ; go back to let an extra null char at the end
+  dec   rdi
+  mov   byte [rdi], NULL_CHAR
+
+  dec   rdi
+
+  ; check if number is negative
+  mov   rax, [rsp]
+  cmp   rax, 0
+  jg    .loop
+
+  neg   rax
+
+.loop:
+  xor   rdx, rdx
+  mov   rcx, 0xA              ; divisor, dividend in rax
+  div   rcx                   ; quotient in rax and remainder in edx
+
+  add   rdx, ZERO_CHAR
+
+  mov   byte [rdi], dl
+
+  dec   rdi
+
+  cmp   rax, 0
+  jne   .loop
+
+.loop_end:
+  cmp   qword [rsp], 0
+  jge   .skip_hyphen
+
+  mov   byte [rdi], HYPHEN
+  dec   rdi
+
+.skip_hyphen:
+  inc   rdi
+
+  ; get size of the string
+  mov   r12, rdi
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, [rsp+0x8]
+  mov   rsi, r12
+  mov   rcx, rax
+  rep   movsb
+
+  ; add null char
+  mov   rax, NULL_CHAR
+  stosb
+
+  mov   rax, [rsp+0x8]
+
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18+ITOA_STR_MAX_SIZE
+  pop   r12
   ret

@@ -6,6 +6,8 @@ section .bss
 
 section .data
 
+str_itoa times ITOA_STR_MAX_SIZE db 0
+
 ; strlen test data
 string db "Hello, Sir!", NULL_CHAR
 string_len equ $ - string - 1
@@ -315,6 +317,170 @@ _start:
   mov   rsi, string2
   call  strcmp
   cmp   rax, FALSE
+  jne   .error
+
+  ; --- itoa: positive numbers ---
+  mov   rdi, 0
+  mov   rsi, str_itoa
+  mov   rdx, 1
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_0
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, 1
+  mov   rsi, str_itoa
+  mov   rdx, 1
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_1
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, 9
+  mov   rsi, str_itoa
+  mov   rdx, 1
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_9
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, 10
+  mov   rsi, str_itoa
+  mov   rdx, 2
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_10
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, 42
+  mov   rsi, str_itoa
+  mov   rdx, 2
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_42
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, 100
+  mov   rsi, str_itoa
+  mov   rdx, 3
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_100
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, 123
+  mov   rsi, str_itoa
+  mov   rdx, 3
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_123
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, 65535
+  mov   rsi, str_itoa
+  mov   rdx, 5
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_65535
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  ; --- itoa: negative numbers ---
+
+  mov   rdi, -1
+  mov   rsi, str_itoa
+  mov   rdx, 2
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_neg1
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, -42
+  mov   rsi, str_itoa
+  mov   rdx, 3
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_neg42
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, -123
+  mov   rsi, str_itoa
+  mov   rdx, 4
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, atoi_str_neg123
+  mov   rsi, str_itoa
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  ; --- atoi: error cases ---
+
+  ; empty string
+  mov   rdi, 42
+  xor   rsi, rsi
+  mov   rdx, 3
+  call  itoa
+  cmp   rax, FAILURE_CODE
+  jne   .error
+
+  ; empty size
+  mov   rdi, 42
+  mov   rsi, str_itoa
+  mov   rdx, 0
+  call  itoa
+  cmp   rax, FAILURE_CODE
   jne   .error
 
   mov   rdi, SUCCESS_CODE
