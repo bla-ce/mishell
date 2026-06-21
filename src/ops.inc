@@ -234,11 +234,11 @@ op_start:
   jl    .error
 
   ; find service inside host struct
-  ; payload is host name followed by service name
+  ; payload is the service name
   mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
-  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+HOST_NAME_MAX_LEN]
+  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD]
   call  service_get_by_name
   cmp   rax, 0
   jl    .error
@@ -287,11 +287,11 @@ op_stop:
   jz    .error
 
   ; find service inside host struct
-  ; payload is host name followed by service name
+  ; payload is the service name
   mov   qword [rsp+0x10], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
-  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+HOST_NAME_MAX_LEN]
+  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD]
   call  service_get_by_name
   cmp   rax, 0
   jl    .error

@@ -20,8 +20,8 @@ req_op_str:
   .STOP       db "stop", NULL_CHAR
   .UNREGISTER db "unregister", NULL_CHAR
   .NETWORK    db "network", NULL_CHAR
-  .UPDATE     dq "update", NULL_CHAR
-  .QUERY      dq "query", NULL_CHAR
+  .UPDATE     db "update", NULL_CHAR
+  .QUERY      db "query", NULL_CHAR
   .CATALOG    db "catalog", NULL_CHAR
 
 res_ok    db "OK", NULL_CHAR
@@ -278,10 +278,154 @@ cli_unregister:
   add   rsp, 0x10+PACKET_T_LEN
   ret
 
+; sends START command to the host to start a service
+; @param  rdi: pointer to the host name
+; @param  rsi: pointer to the service name
+; @return rax: return code
 cli_start:
+  sub   rsp, 0x10+PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the host name
+  ; [rsp+0x8]   -> pointer to the service name
+  ; [rsp+0x10]  -> pointer to the packet (req and resp)
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.START
+
+  ; copy host name
+  mov   rdi, [rsp]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  add   rdi, PACKET_T_OFF_DEST_HOST
+  mov   rsi, [rsp]
+  mov   rcx, rax
+  rep   movsb
+
+  ; copy service name
+  mov   rdi, [rsp+0x8]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, [rsp+0x8]
+  mov   rcx, rax
+  rep   movsb
+
+  ; add null char
+  mov   rax, NULL_CHAR
+  stosb
+
+  lea   rdi, [rsp+0x10]
+  call  cli_transaction
+  cmp   rax, 0
+  jl    .error
+
+  ; print ok
+  mov   rdi, res_ok
+  call  println
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x10+PACKET_T_LEN
   ret
 
+; sends STOP command to the host to stop a service
+; @param  rdi: pointer to the host name
+; @param  rsi: pointer to the service name
+; @return rax: return code
 cli_stop:
+  sub   rsp, 0x10+PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the host name
+  ; [rsp+0x8]   -> pointer to the service name
+  ; [rsp+0x10]  -> pointer to the packet (req and resp)
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.STOP
+
+  ; copy host name
+  mov   rdi, [rsp]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  add   rdi, PACKET_T_OFF_DEST_HOST
+  mov   rsi, [rsp]
+  mov   rcx, rax
+  rep   movsb
+
+  ; copy service name
+  mov   rdi, [rsp+0x8]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, [rsp+0x8]
+  mov   rcx, rax
+  rep   movsb
+
+  ; add null char
+  mov   rax, NULL_CHAR
+  stosb
+
+  lea   rdi, [rsp+0x10]
+  call  cli_transaction
+  cmp   rax, 0
+  jl    .error
+
+  ; print ok
+  mov   rdi, res_ok
+  call  println
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x10+PACKET_T_LEN
   ret
 
 cli_catalog:
