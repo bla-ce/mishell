@@ -176,9 +176,8 @@ op_register:
   ; initialises a new service
   mov   qword [rsp+0x18], error_codes.INTERNAL
   mov   rax, [rsp]
-  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_NAME]
-  movzx rsi, byte [rax+PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_TYPE]
-  mov   rdx, [rsp+0x10]
+  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
+  mov   rsi, [rsp+0x10]
   call  service_init
   mov   [rsp+0x18], rdx ; save error code if it failed
   cmp   rax, 0
@@ -340,6 +339,7 @@ op_unregister:
   test  rsi, rsi
   jz    .error
 
+  mov   qword [rsp+0x18], error_codes.HOST_NOT_FOUND
   add   rdi, PACKET_T_OFF_DEST_HOST
   call  host_get_by_name
   cmp   rax, 0
@@ -348,11 +348,11 @@ op_unregister:
   mov   [rsp+0x10], rax
 
   ; find service inside host struct
-  ; payload is host name followed by service name
+  ; payload is service name
   mov   qword [rsp+0x18], error_codes.SERVICE_NOT_FOUND
   mov   rax, [rsp]
-  lea   rdi, [rax+PACKET_T_OFF_PAYLOAD]
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+HOST_NAME_MAX_LEN]
+  lea   rdi, [rax+PACKET_T_OFF_DEST_HOST]
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD]
   call  service_get_by_name
   cmp   rax, 0
   jl    .error

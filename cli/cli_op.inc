@@ -124,7 +124,7 @@ cli_hello:
 ; @param  rdx: pointer to the service name
 ; @return rax: return code
 cli_register:
-  sub   rsp, 0x10+PACKET_T_LEN
+  sub   rsp, 0x18+PACKET_T_LEN
 
   ; STACK USAGE
   ; [rsp]       -> pointer to the host name
@@ -143,7 +143,7 @@ cli_register:
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rsi
+  mov   [rsp+0x10], rdx
 
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
@@ -169,8 +169,8 @@ cli_register:
 
   ; create service struct
   lea   rdi, [rsp+0x18]
-  add   rdi, PACKET_T_OFF_PAYLOAD
-  mov   rsi, [rsp]
+  add   rdi, PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_NAME
+  mov   rsi, [rsp+0x10]
   mov   rcx, rax
   rep   movsb
 
@@ -200,10 +200,82 @@ cli_register:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, PACKET_T_LEN
+  add   rsp, 0x18+PACKET_T_LEN
   ret
 
+; sends UNREGISTER command to the host to unregister a service
+; @param  rdi: pointer to the host name
+; @param  rsi: pointer to the service name
+; @return rax: return code
 cli_unregister:
+  sub   rsp, 0x10+PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the host name
+  ; [rsp+0x8]   -> pointer to the service name
+  ; [rsp+0x10]  -> pointer to the packet (req and resp)
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.UNREGISTER
+
+  ; copy host name
+  mov   rdi, [rsp]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  add   rdi, PACKET_T_OFF_DEST_HOST
+  mov   rsi, [rsp]
+  mov   rcx, rax
+  rep   movsb
+
+  ; copy service name
+  mov   rdi, [rsp+0x8]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, [rsp+0x8]
+  mov   rcx, rax
+  rep   movsb
+
+  ; add null char
+  mov   rax, NULL_CHAR
+  stosb
+
+  lea   rdi, [rsp+0x10]
+  call  cli_transaction
+  cmp   rax, 0
+  jl    .error
+
+  ; print ok
+  mov   rdi, res_ok
+  call  println
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x10+PACKET_T_LEN
   ret
 
 cli_start:
