@@ -13,14 +13,18 @@ global _start
 section .rodata
 
 mishli_usage_str db ""
-  db "usage:  mishli --host <host_addr> HELLO                                     -> check if host is up", LINE_FEED
-  db "        mishli --host <host_addr> REGISTER <host_name> <type> <service_name>  -> register new service", LINE_FEED
-  db "        mishli --host <host_addr> START <host_name> <service_name>            -> start service", LINE_FEED
-  db "        mishli --host <host_addr> STOP <host_name> <service_name>             -> stop service", LINE_FEED
-  db "        mishli --host <host_addr> UNREGISTER <host_name> <service_name>       -> unregister service", LINE_FEED
-  db "        mishli --host <host_addr> QUERY <host_name> <service_name> <command>  -> query a running service", LINE_FEED
-  db "        mishli --host <host_addr> CATALOG                                   -> list available service types", LINE_FEED
-  db "        mishli --host <host_addr> NETWORK                                   -> list available hosts", NULL_CHAR
+  db "Usage: mishli --host HOST_ADDR OPTION [ARGS...]", LINE_FEED, LINE_FEED
+  db "Discovery Commands:", LINE_FEED
+  db "  hello                             Check if host is up", LINE_FEED
+  db "  catalog                           List available service types", LINE_FEED
+  db "  network                           List available hosts", LINE_FEED, LINE_FEED
+  db "Management Commands", LINE_FEED
+  db "  register HOST TYPE SERVICE_NAME   Register new service", LINE_FEED
+  db "  start HOST SERVICE_NAME           Start service", LINE_FEED
+  db "  stop HOST SERVICE_NAME            Stop service", LINE_FEED
+  db "  unregister HOST SERVICE_NAME      Unregister service", LINE_FEED, LINE_FEED
+  db "Query Services:", LINE_FEED
+  db "  query HOST SERVICE_NAME COMMAND   Query a running service", LINE_FEED, NULL_CHAR
 
 MISHLI_MIN_ARG equ 0x4
 

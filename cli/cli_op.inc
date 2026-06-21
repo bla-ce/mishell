@@ -13,16 +13,16 @@ req_op_cli_table:
   .CATALOG    dq cli_catalog
 
 req_op_str:
-  .HELLO      db "HELLO", NULL_CHAR
-  .JOIN       db "JOIN", NULL_CHAR
-  .REGISTER   db "REGISTER", NULL_CHAR
-  .START      db "START", NULL_CHAR
-  .STOP       db "STOP", NULL_CHAR
-  .UNREGISTER db "UNREGISTER", NULL_CHAR
-  .NETWORK    db "NETWORK", NULL_CHAR
-  .UPDATE     dq "UPDATE", NULL_CHAR
-  .QUERY      dq "QUERY", NULL_CHAR
-  .CATALOG    db "CATALOG", NULL_CHAR
+  .HELLO      db "hello", NULL_CHAR
+  .JOIN       db "join", NULL_CHAR
+  .REGISTER   db "register", NULL_CHAR
+  .START      db "start", NULL_CHAR
+  .STOP       db "stop", NULL_CHAR
+  .UNREGISTER db "unregister", NULL_CHAR
+  .NETWORK    db "network", NULL_CHAR
+  .UPDATE     dq "update", NULL_CHAR
+  .QUERY      dq "query", NULL_CHAR
+  .CATALOG    db "catalog", NULL_CHAR
 
 res_ok    db "OK", NULL_CHAR
 res_error db "ERROR: ", NULL_CHAR
