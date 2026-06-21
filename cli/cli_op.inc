@@ -121,6 +121,7 @@ cli_hello:
 ; sends REGISTER command to the host to register a new service
 ; @param  rdi: pointer to the host name
 ; @param  rsi: pointer to the service type
+; @param  rdx: pointer to the service name
 ; @return rax: return code
 cli_register:
   sub   rsp, 0x10+PACKET_T_LEN
@@ -128,7 +129,8 @@ cli_register:
   ; STACK USAGE
   ; [rsp]       -> pointer to the host name
   ; [rsp+0x8]   -> pointer to the service type
-  ; [rsp+0x10]  -> pointer to the packet (req and resp)
+  ; [rsp+0x10]  -> pointer to the service name
+  ; [rsp+0x18]  -> pointer to the packet (req and resp)
 
   test  rdi, rdi
   jz    .error
@@ -136,10 +138,14 @@ cli_register:
   test  rsi, rsi
   jz    .error
 
+  test  rdx, rdx
+  jz    .error
+
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rsi
 
-  lea   rdi, [rsp+0x10]
+  lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_USER
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.REGISTER
@@ -150,8 +156,20 @@ cli_register:
   cmp   rax, 0
   jl    .error
 
-  lea   rdi, [rsp+0x10]
+  lea   rdi, [rsp+0x18]
   add   rdi, PACKET_T_OFF_DEST_HOST
+  mov   rsi, [rsp]
+  mov   rcx, rax
+  rep   movsb
+
+  mov   rdi, [rsp+0x10]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  ; create service struct
+  lea   rdi, [rsp+0x18]
+  add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, [rsp]
   mov   rcx, rax
   rep   movsb
@@ -162,11 +180,11 @@ cli_register:
   cmp   rax, 0
   jl    .error
 
-  lea   rdi, [rsp+0x10]
-  mov   byte [rdi+PACKET_T_OFF_PAYLOAD], al
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0x1  ; one byte
+  lea   rdi, [rsp+0x18]
+  mov   byte [rdi+PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_TYPE], al
 
-  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
+
   call  cli_transaction
   cmp   rax, 0
   jl    .error

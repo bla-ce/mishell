@@ -13,14 +13,14 @@ global _start
 section .rodata
 
 mishli_usage_str db ""
-  db "usage:  mishli --host <host_addr> HELLO                                   -> check if host is up", LINE_FEED
-  db "        mishli --host <host_addr> REGISTER <host_id> <type>               -> register new service", LINE_FEED
-  db "        mishli --host <host_addr> START <host_id> <service_id>            -> start service", LINE_FEED
-  db "        mishli --host <host_addr> STOP <host_id> <service_id>             -> stop service", LINE_FEED
-  db "        mishli --host <host_addr> UNREGISTER <host_id> <service_id>       -> unregister service", LINE_FEED
-  db "        mishli --host <host_addr> QUERY <host_id> <service_id> <command>  -> query a running service", LINE_FEED
-  db "        mishli --host <host_addr> CATALOG                                 -> list available service types", LINE_FEED
-  db "        mishli --host <host_addr> NETWORK                                 -> list available hosts", NULL_CHAR
+  db "usage:  mishli --host <host_addr> HELLO                                     -> check if host is up", LINE_FEED
+  db "        mishli --host <host_addr> REGISTER <host_id> <type> <service_name>  -> register new service", LINE_FEED
+  db "        mishli --host <host_addr> START <host_id> <service_name>            -> start service", LINE_FEED
+  db "        mishli --host <host_addr> STOP <host_id> <service_name>             -> stop service", LINE_FEED
+  db "        mishli --host <host_addr> UNREGISTER <host_id> <service_name>       -> unregister service", LINE_FEED
+  db "        mishli --host <host_addr> QUERY <host_id> <service_name> <command>  -> query a running service", LINE_FEED
+  db "        mishli --host <host_addr> CATALOG                                   -> list available service types", LINE_FEED
+  db "        mishli --host <host_addr> NETWORK                                   -> list available hosts", NULL_CHAR
 
 MISHLI_MIN_ARG equ 0x4
 
