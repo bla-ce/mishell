@@ -49,10 +49,11 @@ EPOLL_CTL_ADD equ 1
 EPOLL_CTL_DEL equ 2
 
 ; ASCII
-NULL_CHAR equ 0
-LINE_FEED equ 0xA
-HYPHEN    equ 0x2D
-DOT       equ 0x2E
-ZERO_CHAR equ 0x30
-COLON     equ 0x3A
-NINE_CHAR equ 0x39
+NULL_CHAR       equ 0
+HORIZONTAL_TAB  equ 0x9
+LINE_FEED       equ 0xA
+HYPHEN          equ 0x2D
+DOT             equ 0x2E
+ZERO_CHAR       equ 0x30
+COLON           equ 0x3A
+NINE_CHAR       equ 0x39

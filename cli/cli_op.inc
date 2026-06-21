@@ -39,6 +39,8 @@ req_op_str_table:
   .QUERY      dq req_op_str.QUERY
   .CATALOG    dq req_op_str.CATALOG
 
+mishli_tab_catalog db "  ", NULL_CHAR
+
 section .text
 
 ; returns the op value from a string
@@ -430,15 +432,89 @@ cli_stop:
   add   rsp, 0x10+PACKET_T_LEN
   ret
 
+; sends CATALOG command to get list of available service types
+; @return rax: return code
 cli_catalog:
+  push  r12
+  push  r13
+  push  r14
+  sub   rsp, PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]   -> pointer to the packet (req and resp)
+
+  mov   word [rsp+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rsp+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [rsp+PACKET_T_OFF_OP], req_ops.CATALOG
+  mov   word [rsp+PACKET_T_OFF_PAYLOAD_LEN], 0
+
+  lea   rdi, [rsp]
+  call  cli_transaction
+  cmp   rax, 0
+  jl    .error
+
+  ; get number of service types
+  lea   rdi, [rsp]
+  xor   rdx, rdx
+  movzx rax, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
+  mov   rcx, SERVICE_TYPE_T_LEN
+  div   rcx
+
+  mov   r12, rax
+
+  xor   r13, r13
+
+  ; print service types
+.loop:
+  cmp   r13, r12
+  jge   .loop_end
+
+  ; get service type
+  lea   r14, [rsp]
+  imul  rax, r13, SERVICE_TYPE_T_LEN
+  add   rax, PACKET_T_OFF_PAYLOAD
+  add   r14, rax
+
+  ; print name
+  mov   rdi, r14
+  add   rdi, SERVICE_TYPE_T_OFF_NAME
+  call  println
+
+  ; print horizontal tab
+  mov   rdi, mishli_tab_catalog
+  call  print
+
+  ; print description
+  mov   rdi, r14
+  add   rdi, SERVICE_TYPE_T_OFF_DESC
+  call  println
+
+  inc   r13
+  jmp   .loop
+
+.loop_end:
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, PACKET_T_LEN
+  pop   r14
+  pop   r13
+  pop   r12
   ret
 
 cli_network:
   ret
 
+; TODO: return error
 cli_join:
   ret
 
+; TODO: return error
 cli_update:
   ret
 
