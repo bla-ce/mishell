@@ -10,17 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  mishell:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install nasm
-        run: sudo apt-get update && sudo apt-get install -y nasm
-
-      - name: mishell builds
-        run: make
-
   test-e2e:
     runs-on: ubuntu-latest
     steps:
@@ -32,11 +21,8 @@ jobs:
       - name: mishell builds
         run: make
 
-      - name: Run mishell
-        run: |
-          make run-init &
-          echo $! > server.pid
-          sleep 1
+      - name: mishli builds
+        run: make mishli
 
       - name: Run e2e tests
         run: make test-e2e

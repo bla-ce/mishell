@@ -26,6 +26,9 @@ mishell:
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
 
+cli:
+	$(MAKE) -C cli
+
 mishli:
 	$(MAKE) -C cli
 
