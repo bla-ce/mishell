@@ -118,7 +118,71 @@ cli_hello:
   add   rsp, PACKET_T_LEN
   ret
 
+; sends REGISTER command to the host to register a new service
+; @param  rdi: pointer to the host name
+; @param  rsi: pointer to the service type
+; @return rax: return code
 cli_register:
+  sub   rsp, 0x10+PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the host name
+  ; [rsp+0x8]   -> pointer to the service type
+  ; [rsp+0x10]  -> pointer to the packet (req and resp)
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  lea   rdi, [rsp+0x10]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.REGISTER
+
+  ; copy host name
+  mov   rdi, [rsp]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  add   rdi, PACKET_T_OFF_DEST_HOST
+  mov   rsi, [rsp]
+  mov   rcx, rax
+  rep   movsb
+
+  ; atoi type
+  mov   rdi, [rsp+0x8]
+  call  atoi
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  mov   byte [rdi+PACKET_T_OFF_PAYLOAD], al
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0x1  ; one byte
+
+  lea   rdi, [rsp+0x10]
+  call  cli_transaction
+  cmp   rax, 0
+  jl    .error
+
+  ; print ok
+  mov   rdi, res_ok
+  call  println
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, PACKET_T_LEN
   ret
 
 cli_unregister:
