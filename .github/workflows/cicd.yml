@@ -27,9 +27,6 @@ jobs:
       - name: Run e2e tests
         run: make test-e2e
 
-      - name: Shutdown mishell
-        run: kill $(cat server.pid)
-
   test-unit:
     runs-on: ubuntu-latest
     strategy:
