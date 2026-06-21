@@ -67,7 +67,7 @@ _start:
   mov   rdi, [rsp+0x20]
   call  mishli_cli_op_fn_from_str
   cmp   rax, 0
-  jl    .usage
+  jle   .usage
 
   ; populate base packet
   mov   word [packet_t.magic], MAGIC_VALUE

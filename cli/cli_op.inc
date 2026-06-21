@@ -2,13 +2,13 @@ section .rodata
 
 req_op_cli_table:
   .HELLO      dq cli_hello
-  .JOIN       dq cli_join
+  .JOIN       dq 0  ; not allowed
   .REGISTER   dq cli_register
   .START      dq cli_start
   .STOP       dq cli_stop
   .UNREGISTER dq cli_unregister
   .NETWORK    dq cli_network
-  .UPDATE     dq cli_update
+  .UPDATE     dq 0  ; not allowed
   .QUERY      dq cli_query
   .CATALOG    dq cli_catalog
 
@@ -523,14 +523,6 @@ cli_catalog:
   ret
 
 cli_network:
-  ret
-
-; TODO: return error
-cli_join:
-  ret
-
-; TODO: return error
-cli_update:
   ret
 
 ; sends QUERY command to the host to query an existing service
