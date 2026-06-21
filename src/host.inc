@@ -21,8 +21,10 @@ HOST_T_OFF_NAME           equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_SERVICES       equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
-usage_str     db "usage: mishell init --port <port> --name <name>", LINE_FEED
-              db "       mishell connect <remote_ip>:<remote_port> --port <port> --name <name>", LINE_FEED, NULL_CHAR
+usage_str db "Usage: mishell COMMAND [ARGS...]", LINE_FEED, LINE_FEED
+          db "Available Commands:", LINE_FEED
+          db "  init            --port PORT --name NAME   Initialize a new network", LINE_FEED
+          db "  connect IP:PORT --port PORT --name NAME   Join an existing network", LINE_FEED, NULL_CHAR
 
 section .bss
 

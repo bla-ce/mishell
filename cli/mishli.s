@@ -13,7 +13,7 @@ global _start
 section .rodata
 
 mishli_usage_str db ""
-  db "Usage: mishli --host HOST_ADDR OPTION [ARGS...]", LINE_FEED, LINE_FEED
+  db "Usage: mishli --host HOST_ADDR COMMAND [ARGS...]", LINE_FEED, LINE_FEED
   db "Discovery Commands:", LINE_FEED
   db "  hello                             Check if host is up", LINE_FEED
   db "  catalog                           List available service types", LINE_FEED

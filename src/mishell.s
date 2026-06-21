@@ -9,6 +9,10 @@
 
 global _start
 
+section .rodata
+
+MISHELL_MIN_ARG equ 0x5
+
 section .text
 
 _start:
@@ -23,6 +27,9 @@ _start:
   ; [rsp+PACKET_T_LEN+0x28] -> pointer to listening port (connect) or name flag (init)
   ; [rsp+PACKET_T_LEN+0x30] -> pointer to name flag (connect) or name (init)
   ; [rsp+PACKET_T_LEN+0x38] -> pointer to name (connect)
+
+  cmp   qword [rsp+PACKET_T_LEN], MISHELL_MIN_ARG
+  jl    .usage
 
   ; check if port flag has been set
   mov   rdi, [rsp+PACKET_T_LEN+0x18]
@@ -251,6 +258,10 @@ _start:
 
   mov   rdi, SUCCESS_CODE
   jmp   .exit
+
+.usage:
+  mov   rdi, usage_str
+  call  println
 
 .error:
   ; close tcp socket
