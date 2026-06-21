@@ -39,7 +39,7 @@ req_op_str_table:
   .QUERY      dq req_op_str.QUERY
   .CATALOG    dq req_op_str.CATALOG
 
-mishli_tab_catalog db "  ", NULL_CHAR
+mishli_tab_catalog db "    ", NULL_CHAR
 
 section .text
 
@@ -474,6 +474,21 @@ cli_catalog:
   imul  rax, r13, SERVICE_TYPE_T_LEN
   add   rax, PACKET_T_OFF_PAYLOAD
   add   r14, rax
+
+  ; print index
+  mov   rdi, OPENING_BRACKET
+  call  print_char
+
+  ; hack because we don't have more than 10 service types
+  mov   rdi, r13
+  add   rdi, ZERO_CHAR
+  call  print_char
+
+  mov   rdi, CLOSING_BRACKET
+  call  print_char
+
+  mov   rdi, SPACE
+  call  print_char
 
   ; print name
   mov   rdi, r14

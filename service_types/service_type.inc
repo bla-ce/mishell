@@ -24,6 +24,11 @@ service_types_table:
 
 SERVICE_TYPE_T_LEN equ service_type_t_end - service_type_t
 
+MAX_SERVICE_TYPES equ 0xA - 1 ; service types are 0-indexed
+
+; trick to make sure we have not exceeded service type count
+times MAX_SERVICE_TYPES - service_types.COUNT db 0
+
 section .bss
 
 service_type_t:
