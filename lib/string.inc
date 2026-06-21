@@ -1,6 +1,6 @@
 section .rodata
 
-UNSIGNED_BYTE_STR_MAX_SIZE  equ 4
+UNSIGNED_WORD_STR_MAX_SIZE  equ 7
 
 ITOA_STR_MAX_SIZE equ 22
 

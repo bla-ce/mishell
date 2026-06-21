@@ -565,7 +565,18 @@ cli_network:
   add   rax, PACKET_T_OFF_PAYLOAD
   add   r14, rax
 
-  ; TODO: print ip and port
+  movsx rdi, dword [r14+HOST_T_OFF_IP]
+  movzx rax, word [r14+HOST_T_OFF_PORT]
+  xchg  al, ah
+  mov   rsi, rax
+  call  cli_print_host_addr
+  cmp   rax, 0
+  jl    .error
+
+
+  ; print space
+  mov   rdi, SPACE
+  call  print_char
 
   ; print name
   mov   rdi, r14
@@ -760,4 +771,72 @@ cli_print_error:
 
 .return:
   add   rsp, 0x8
+  ret
+
+; prints ip:port pair of the host
+; @param  rdi: ip of the host
+; @param  rsi: port of the host
+; @return rax: return code
+cli_print_host_addr:
+  push  r12
+  sub   rsp, 0x10+UNSIGNED_WORD_STR_MAX_SIZE
+
+  ; STACK USAGE
+  ; [rsp]       -> ip of the host
+  ; [rsp+0x8]   -> port of the host (byte order)
+  ; [rsp+0x10]  -> pointer to the byte string
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  xor   r12, r12
+
+.loop:
+  ; get byte
+  lea   rax, [rsp]
+  movzx rdi, byte [rax+r12]
+  lea   rsi, [rsp+0x10]
+  mov   rdx, UNSIGNED_WORD_STR_MAX_SIZE
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  ; print byte
+  lea   rdi, [rsp+0x10]
+  call  print
+
+  inc   r12
+
+  cmp   r12, 4
+  jge   .loop_end
+
+  mov   rdi, DOT
+  call  print_char
+
+  jmp   .loop
+
+.loop_end:
+  mov   rdi, COLON
+  call  print_char
+
+  ; print port
+  movzx rdi, word [rsp+0x8]
+  lea   rsi, [rsp+0x10]
+  mov   rdx, UNSIGNED_WORD_STR_MAX_SIZE
+  call  itoa
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x10]
+  call  print
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x10+UNSIGNED_WORD_STR_MAX_SIZE
+  pop   r12
   ret
