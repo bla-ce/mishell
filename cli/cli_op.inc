@@ -479,7 +479,7 @@ cli_catalog:
   mov   rdi, OPENING_BRACKET
   call  print_char
 
-  ; hack because we don't have more than 10 service types
+  ; little hack because we don't have more than 10 service types
   mov   rdi, r13
   add   rdi, ZERO_CHAR
   call  print_char
@@ -533,7 +533,89 @@ cli_join:
 cli_update:
   ret
 
+; sends QUERY command to the host to query an existing service
+; @param  rdi: pointer to the host name
+; @param  rsi: pointer to the service name
+; @param  rdx: pointer to the service command
+; @return rax: return code
 cli_query:
+  sub   rsp, 0x18+PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the host name
+  ; [rsp+0x8]   -> pointer to the service name
+  ; [rsp+0x10]  -> pointer to the service command
+  ; [rsp+0x18]  -> pointer to the packet (req and resp)
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  test  rdx, rdx
+  jz    .error
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
+
+  lea   rdi, [rsp+0x18]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_USER
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.QUERY
+
+  ; copy host name
+  mov   rdi, [rsp]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x18]
+  add   rdi, PACKET_T_OFF_DEST_HOST
+  mov   rsi, [rsp]
+  mov   rcx, rax
+  rep   movsb
+
+  ; copy service name
+  mov   rdi, [rsp+0x8]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x18]
+  add   rdi, PACKET_T_OFF_DEST_SERVICE
+  mov   rsi, [rsp+0x8]
+  mov   rcx, rax
+  rep   movsb
+
+  ; copy the command
+  mov   rdi, [rsp+0x10]
+  call  atoi
+  cmp   rax, 0
+  jl    .error
+
+  lea   rdi, [rsp+0x18]
+  mov   byte [rdi+PACKET_T_OFF_PAYLOAD], al
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 1
+
+  call  cli_transaction
+  cmp   rax, 0
+  jl    .error
+
+  ; print payload
+  lea   rdi, [rsp+0x18]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  call  println
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18+PACKET_T_LEN
   ret
 
 ; sends a packet to remote host and get the response back
