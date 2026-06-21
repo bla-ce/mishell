@@ -51,44 +51,44 @@ make mishli
 
 Check if a host is up:
 ```bash
-./bin/mishli --host 127.0.0.1:7474 HELLO
+./bin/mishli --host 127.0.0.1:7474 hello
 ```
 
 List all hosts in the network:
 ```bash
-./bin/mishli --host 127.0.0.1:7474 NETWORK
+./bin/mishli --host 127.0.0.1:7474 network
 ```
 
 List available service types for the target host:
 ```bash
-./bin/mishli --host 127.0.0.1:7474 CATALOG
+./bin/mishli --host 127.0.0.1:7474 catalog
 ```
 
 Register a service on a host:
 ```bash
-# NOTE: for now, type has to be the index, you can use the CATALOG command to get the index
-./bin/mishli --host 127.0.0.1:7474 REGISTER <host_name> <type_index> <service_name>
+# NOTE: for now, type has to be the index, you can use the catalog command to get the index
+./bin/mishli --host 127.0.0.1:7474 register <host_name> <type_index> <service_name>
 ```
 
 Start a service:
 ```bash
-./bin/mishli --host 127.0.0.1:7474 START <host_name> <service_name>
+./bin/mishli --host 127.0.0.1:7474 start <host_name> <service_name>
 ```
 
 Stop a service:
 ```bash
-./bin/mishli --host 127.0.0.1:7474 STOP <host_name> <service_name>
+./bin/mishli --host 127.0.0.1:7474 stop <host_name> <service_name>
 ```
 
 Query a service (e.g., ping):
 ```bash
-# NOTE: for now, command has to be the index, CATALOG will output available commands in a future release
-./bin/mishli --host 127.0.0.1:7474 QUERY <host_name> <service_name> 0
+# NOTE: for now, command has to be the index, catalog will output available commands in a future release
+./bin/mishli --host 127.0.0.1:7474 query <host_name> <service_name> 0
 ```
 
 Unregister a service:
 ```bash
-./bin/mishli --host 127.0.0.1:7474 UNREGISTER <host_name> <service_name>
+./bin/mishli --host 127.0.0.1:7474 unregister <host_name> <service_name>
 ```
 
 ### Built-in Services
