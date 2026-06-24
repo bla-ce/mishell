@@ -104,7 +104,7 @@ service_init:
   sub   rsp, 0x20
 
   ; STACK USAGE
-  ; [rsp]       -> pointer to the packet struct
+  ; [rsp]       -> pointer to the packet payload
   ; [rsp+0x8]   -> pointer to the host struct
   ; [rsp+0x10]  -> pointer to the service struct
   ; [rsp+0x18]  -> error code
@@ -118,13 +118,6 @@ service_init:
 
   test  rsi, rsi
   jz    .error
-
-  ; validate service payload
-  mov   rdi, [rsp]
-  call  service_validate
-  mov   [rsp+0x18], rax
-  test  rax, rax
-  jnz   .error
 
   ; get pointer to the service
   mov   rax, [rsp+0x8]
@@ -141,14 +134,36 @@ service_init:
   mov   rcx, SERVICE_T_LEN
   rep   stosb
 
-  ; copy service packet
+  ; packet is service_type_name + service_name
+  ; validate name len
+  mov   qword [rsp+0x18], error_codes.SERVICE_INVALID_NAME
+  mov   rax, [rsp]
+  lea   rdi, [rax+SERVICE_TYPE_NAME_MAX_LEN]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+  cmp   rax, SERVICE_NAME_MAX_LEN
+  jge   .error
+
+  ; copy service name
   mov   rdi, [rsp+0x10]
   mov   rsi, [rsp]
-  mov   rcx, SERVICE_T_LEN
+  add   rsi, SERVICE_TYPE_NAME_MAX_LEN
+  mov   rcx, rax
   rep   movsb
 
+  ; get type byte from string
+  mov   qword [rsp+0x18], error_codes.SERVICE_INVALID_TYPE
+  mov   rdi, [rsp]
+  call  service_type_from_str
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, [rsp+0x10]
+  mov   byte [rdi+SERVICE_T_OFF_TYPE], al
+
   ; add default status to the service
-  mov   byte [rsi+SERVICE_T_OFF_STATUS], service_status.REGISTERED
+  mov   byte [rdi+SERVICE_T_OFF_STATUS], service_status.REGISTERED
 
   ; increase service count for the host
   mov   rdi, [rsp+0x8]
@@ -164,45 +179,4 @@ service_init:
 
 .return:
   add   rsp, 0x20
-  ret
-
-; validates the service struct
-; @param  rdi: pointer to the service struct
-; @return rax: return code
-service_validate:
-  sub   rsp, 0x10
-
-  ; STACK USAGE
-  ; [rsp]     -> pointer to the service struct
-  ; [rsp+0x8] -> error code
-
-  mov   [rsp], rdi
-  mov   qword [rsp+0x8], error_codes.INTERNAL
-
-  test  rdi, rdi
-  jz    .error
-
-  ; validate name len
-  mov   qword [rsp+0x8], error_codes.SERVICE_INVALID_NAME
-  add   rdi, SERVICE_T_OFF_NAME
-  call  strlen
-  cmp   rax, 0
-  jl    .error
-  cmp   rax, SERVICE_NAME_MAX_LEN
-  jge   .error
-
-  ; validate type
-  mov   qword [rsp+0x8], error_codes.SERVICE_INVALID_TYPE
-  mov   rdi, [rsp]
-  cmp   byte [rdi+SERVICE_T_OFF_TYPE], service_types.COUNT
-  jge   .error
-
-  mov   rax, SUCCESS_CODE
-  jmp   .return
-
-.error:
-  mov   rax, [rsp+0x8]
-
-.return:
-  add   rsp, 0x10
   ret

@@ -4,8 +4,22 @@ MISHLI_PATH=../../bin/mishli
 
 echo -n "sending REGISTER with args should return OK..."
 
-payload=$($MISHLI_PATH --host 127.0.0.1:7474 register home 0 ping)
+payload=$($MISHLI_PATH --host 127.0.0.1:7474 register home PING ping)
 expected="OK"
+
+if [ "$payload" = "$expected" ]; then
+  echo -e "\033[32mPASSED\033[0m"
+else
+  echo -e "\033[31mFAILED\033[0m"
+  echo "Expected: $expected"
+  echo "Received: $payload"
+  exit 1
+fi
+
+echo -n "sending REGISTER with undefined service type should return ERROR..."
+
+payload=$($MISHLI_PATH --host 127.0.0.1:7474 register home SYSMON sysmon)
+expected="ERROR: invalid service type"
 
 if [ "$payload" = "$expected" ]; then
   echo -e "\033[32mPASSED\033[0m"
@@ -18,7 +32,7 @@ fi
 
 echo -n "sending REGISTER with the same name should return ERROR..."
 
-payload=$($MISHLI_PATH --host 127.0.0.1:7474 register home 0 ping)
+payload=$($MISHLI_PATH --host 127.0.0.1:7474 register home PING ping)
 expected="ERROR: a service with this name already exists"
 
 if [ "$payload" = "$expected" ]; then

@@ -173,11 +173,12 @@ op_register:
   cmp   byte [rax+HOST_T_OFF_SERVICES_COUNT], SERVICE_MAX_COUNT_PER_HOST
   jge   .error
 
+  ; payload is service type name + service name
   ; make sure no service has the same name
   mov   qword [rsp+0x18], error_codes.SERVICE_ALREADY_EXISTS
   mov   rax, [rsp]
   mov   rdi, host_name
-  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_NAME]
+  lea   rsi, [rax+PACKET_T_OFF_PAYLOAD+SERVICE_TYPE_NAME_MAX_LEN]
   call  service_get_by_name
   cmp   rax, 0
   jg    .error

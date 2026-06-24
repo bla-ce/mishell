@@ -166,29 +166,42 @@ cli_register:
   mov   rcx, rax
   rep   movsb
 
+  mov   rdi, [rsp+0x8]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  ; copy service type name
+  lea   rdi, [rsp+0x18]
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, [rsp+0x8]
+  mov   rcx, rax
+  rep   movsb
+
+  ; add null char
+  mov   al, NULL_CHAR
+  stosb
+
   mov   rdi, [rsp+0x10]
   call  strlen
   cmp   rax, 0
   jl    .error
 
-  ; create service struct
+  ; copy service name
   lea   rdi, [rsp+0x18]
-  add   rdi, PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_NAME
+  add   rdi, PACKET_T_OFF_PAYLOAD+SERVICE_TYPE_NAME_MAX_LEN
   mov   rsi, [rsp+0x10]
   mov   rcx, rax
   rep   movsb
 
-  ; atoi type
-  mov   rdi, [rsp+0x8]
-  call  atoi
-  cmp   rax, 0
-  jl    .error
+  ; add null char
+  mov   al, NULL_CHAR
+  stosb
 
   lea   rdi, [rsp+0x18]
-  mov   byte [rdi+PACKET_T_OFF_PAYLOAD+SERVICE_T_OFF_TYPE], al
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_TYPE_NAME_MAX_LEN+SERVICE_NAME_MAX_LEN
 
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
-
+  lea   rdi, [rsp+0x18]
   call  cli_transaction
   cmp   rax, 0
   jl    .error

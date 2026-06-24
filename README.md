@@ -66,8 +66,7 @@ List available service types for the target host:
 
 Register a service on a host:
 ```bash
-# NOTE: for now, type has to be the index, you can use the catalog command to get the index
-./bin/mishli --host 127.0.0.1:7474 register <host_name> <type_index> <service_name>
+./bin/mishli --host 127.0.0.1:7474 register <host_name> <type> <service_name>
 ```
 
 Start a service:
@@ -93,7 +92,7 @@ Unregister a service:
 
 ### Built-in Services
 
-- **PING** (`type=0`): Simple service that responds "pong" to command `0`
+- **PING**: Simple service that responds "pong" to command `0`
 
 ## Tests
 
