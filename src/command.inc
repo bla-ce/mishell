@@ -1,4 +1,21 @@
-section .data
+section .bss
+
+command_t:
+  .name         resb COMMAND_NAME_MAX_LEN
+  .description  resb COMMAND_DESC_MAX_LEN
+  .fn           resq 0x1
+command_t_end:
+
+section .rodata
+
+COMMAND_T_LEN equ command_t_end - command_t
+
+COMMAND_T_OFF_NAME equ 0x0
+COMMAND_T_OFF_DESC equ COMMAND_T_OFF_NAME + COMMAND_NAME_MAX_LEN
+COMMAND_T_OFF_FN   equ COMMAND_T_OFF_DESC + COMMAND_DESC_MAX_LEN
+
+COMMAND_NAME_MAX_LEN equ 0x20
+COMMAND_DESC_MAX_LEN equ 0x100
 
 section .text
 ; returns the command from a service type
