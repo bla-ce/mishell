@@ -672,14 +672,19 @@ cli_query:
 
   ; copy the command
   mov   rdi, [rsp+0x10]
-  call  atoi
+  call  strlen
   cmp   rax, 0
   jl    .error
 
   lea   rdi, [rsp+0x18]
-  mov   byte [rdi+PACKET_T_OFF_PAYLOAD], al
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 1
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
 
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  mov   rsi, [rsp+0x10]
+  mov   rcx, rax
+  rep   movsb
+
+  lea   rdi, [rsp+0x18]
   call  cli_transaction
   cmp   rax, 0
   jl    .error

@@ -20,17 +20,20 @@ COMMAND_DESC_MAX_LEN equ 0x100
 section .text
 ; returns the command from a service type
 ; @param  rdi: pointer to the service struct
-; @param  rsi: OP byte
+; @param  rsi: pointer to the command name
 ; @return rax: pointer to the command
 command_get_by_op:
-  sub   rsp, 0x10
+  push  r12
+  push  r13
+  sub   rsp, 0x18
 
   ; STACK USAGE
-  ; [rsp]     -> pointer to the service struct
-  ; [rsp+0x8] -> OP byte
+  ; [rsp]       -> pointer to the service struct
+  ; [rsp+0x8]   -> pointer to the command name
+  ; [rsp+0x10]  -> pointer to the command being tested
 
   mov   [rsp], rdi
-  mov   qword [rsp+0x8], rsi
+  mov   [rsp+0x8], rsi
 
   test  rdi, rdi
   jz    .error
@@ -38,18 +41,39 @@ command_get_by_op:
   test  rsi, rsi
   jl    .error
 
-  cmp   rsi, COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
-  jge   .error
-
   ; get service type pointer
   movzx rax, byte [rdi+SERVICE_T_OFF_TYPE]
   shl   rax, 3 ; rax *= 8
-  mov   rdi, [service_types_table+rax]
+  mov   r12, [service_types_table+rax]
 
-  ; get service command
-  movzx rdx, byte [rsp+0x8]
-  shl   rdx, 3  ; rdx *= 8
-  mov   rax, [rdi+rdx+SERVICE_TYPE_T_OFF_COMMANDS]
+  ; save pointer to service type commands
+  add   r12, SERVICE_TYPE_T_OFF_COMMANDS
+
+  xor   r13, r13
+
+  ; compare query name
+.loop:
+  cmp   r13, COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
+  jge   .error
+
+  ; get pointer to the command
+  mov   rax, r13
+  shl   rax, 3
+
+  mov   rdi, [r12+rax]
+  mov   [rsp+0x10], rdi
+
+  add   rdi, COMMAND_T_OFF_NAME
+  mov   rsi, [rsp+0x8]
+  call  strcmp
+  cmp   rax, TRUE
+  je    .loop_end
+
+  inc   r13
+  jmp   .loop
+
+.loop_end:
+  mov   rax, [rsp+0x10]
 
   jmp   .return
 
@@ -57,5 +81,7 @@ command_get_by_op:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, 0x10
+  add   rsp, 0x18
+  pop   r13
+  pop   r12
   ret

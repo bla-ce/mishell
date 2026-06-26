@@ -542,7 +542,7 @@ op_query:
  mov   qword [rsp+0x10], error_codes.COMMAND_NOT_FOUND
   ; find command inside the service
   mov   rdi, [rsp]
-  movzx rsi, byte [rdi+PACKET_T_OFF_PAYLOAD]
+  lea   rsi, [rdi+PACKET_T_OFF_PAYLOAD]
   mov   rdi, rax
   call  command_get_by_op
   cmp   rax, 0
