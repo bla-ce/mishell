@@ -548,11 +548,13 @@ op_query:
   cmp   rax, 0
   jle   .error
 
-  ; call op
+  ; get fn and call it
+  mov   rdx, qword [rax+COMMAND_T_OFF_FN]
+
   mov   qword [rsp+0x10], error_codes.INTERNAL ; back to default
   mov   rdi, [rsp]
   mov   rsi, [rsp+0x8]
-  call  rax
+  call  rdx
   cmp   rax, 0
   jl    .error
 
