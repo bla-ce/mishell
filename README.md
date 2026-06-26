@@ -79,10 +79,9 @@ Stop a service:
 ./bin/mishli --host 127.0.0.1:7474 stop <host_name> <service_name>
 ```
 
-Query a service (e.g., ping):
+Query a service:
 ```bash
-# NOTE: for now, command has to be the index, catalog will output available commands in a future release
-./bin/mishli --host 127.0.0.1:7474 query <host_name> <service_name> 0
+./bin/mishli --host 127.0.0.1:7474 query <host_name> <service_name> <command_name>
 ```
 
 Unregister a service:
@@ -92,7 +91,7 @@ Unregister a service:
 
 ### Built-in Services
 
-- **PING**: Simple service that responds "pong" to command `0`
+- **PING**: Simple service that responds "pong" to command `PING`
 
 ## Tests
 
