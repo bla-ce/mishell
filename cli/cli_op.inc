@@ -40,6 +40,7 @@ req_op_str_table:
   .CATALOG    dq req_op_str.CATALOG
 
 mishli_tab_catalog db "    ", NULL_CHAR
+mishli_cmd_catalog db "Commands:", NULL_CHAR
 
 section .text
 
@@ -445,16 +446,18 @@ cli_stop:
   add   rsp, 0x10+PACKET_T_LEN
   ret
 
-  ; sends CATALOG command to get list of available service types
+; sends CATALOG command to get list of available service types
 ; @return rax: return code
 cli_catalog:
   push  r12
   push  r13
   push  r14
-  sub   rsp, PACKET_T_LEN
+  sub   rsp, 0x10+PACKET_T_LEN
 
   ; STACK USAGE
-  ; [rsp]   -> pointer to the packet (req and resp)
+  ; [rsp]       -> pointer to current service type
+  ; [rsp+0x8]   -> pointer to current command
+  ; [rsp+0x10]  -> pointer to the packet (req and resp)
 
   mov   word [rsp+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rsp+PACKET_T_OFF_FLAGS], FL_USER
@@ -483,39 +486,77 @@ cli_catalog:
   jge   .loop_end
 
   ; get service type
-  lea   r14, [rsp]
+  lea   rdi, [rsp]
   imul  rax, r13, SERVICE_TYPE_T_LEN
   add   rax, PACKET_T_OFF_PAYLOAD
-  add   r14, rax
+  add   rdi, rax
 
-  ; print index
-  mov   rdi, OPENING_BRACKET
+  mov   [rsp], rdi
+
+  ; print name
+  mov   rdi, [rsp]
+  add   rdi, SERVICE_TYPE_T_OFF_NAME
+  call  print
+
+  ; print horizontal tab
+  mov   rdi, COLON
   call  print_char
-
-  ; little hack because we don't have more than 10 service types
-  mov   rdi, r13
-  add   rdi, ZERO_CHAR
-  call  print_char
-
-  mov   rdi, CLOSING_BRACKET
-  call  print_char
-
   mov   rdi, SPACE
   call  print_char
 
-  ; print name
-  mov   rdi, r14
-  add   rdi, SERVICE_TYPE_T_OFF_NAME
+  ; print description
+  mov   rdi, [rsp]
+  add   rdi, SERVICE_TYPE_T_OFF_DESC
   call  println
 
   ; print horizontal tab
   mov   rdi, mishli_tab_catalog
   call  print
 
-  ; print description
-  mov   rdi, r14
-  add   rdi, SERVICE_TYPE_T_OFF_DESC
+  mov   rdi, mishli_cmd_catalog
   call  println
+
+  xor   r14, r14
+
+.inner_loop:
+  cmp   r14, COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
+  jge   .inner_loop_end
+
+  ; get command
+  mov   rax, [rsp]
+  add   rax, SERVICE_TYPE_T_OFF_COMMANDS
+  mov   rdi, [rax+r14*0x8]
+
+  test  rdi, rdi
+  jz    .inner_loop_end
+
+  mov   [rsp+0x10], rdi
+
+  mov   rdi, mishli_tab_catalog
+  call  print
+  mov   rdi, mishli_tab_catalog
+  call  print
+
+  ; print command name
+  mov   rdi, [rsp+0x10]
+  add   rdi, COMMAND_T_OFF_NAME
+  call  print
+
+  mov   rdi, COLON
+  call  print_char
+
+  mov   rdi, SPACE
+  call  print_char
+
+  ; print command description
+  mov   rdi, [rsp+0x10]
+  add   rdi, COMMAND_T_OFF_DESC
+  call  println
+
+  inc   r14
+  jmp   .inner_loop
+
+.inner_loop_end:
 
   inc   r13
   jmp   .loop
@@ -529,7 +570,7 @@ cli_catalog:
   mov   rax, FAILURE_CODE
 
 .return:
-  add   rsp, PACKET_T_LEN
+  add   rsp, 0x10+PACKET_T_LEN
   pop   r14
   pop   r13
   pop   r12
