@@ -64,9 +64,8 @@ service_type_from_str:
 
   ; get service type pointer
   mov   rdi, [rsp]
-  mov   rax, r12
-  shl   rax, 3
-  mov   rsi, qword [service_types_str_table+rax]
+  add   rdi, SERVICE_TYPE_T_OFF_NAME
+  mov   rsi, qword [service_types_str_table+r12*8]
   call  strcmp
   cmp   rax, TRUE
   je    .loop_end

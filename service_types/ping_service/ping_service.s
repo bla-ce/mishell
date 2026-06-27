@@ -12,11 +12,11 @@ ping_service_t_end:
 pong_msg db "pong"
 
 ping_cmd_ping_t:
+  .fn           dq ping_cmd_ping_fn
   .name         db "PING", NULL_CHAR
                 times COMMAND_NAME_MAX_LEN - ($ - ping_cmd_ping_t.name) db 0
   .description  db "A command returning pong", NULL_CHAR
                 times COMMAND_DESC_MAX_LEN - ($ - ping_cmd_ping_t.description) db 0
-  .fn           dq ping_cmd_ping_fn
 ping_cmd_ping_t_end:
 
 section .text

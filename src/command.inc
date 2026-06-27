@@ -1,18 +1,18 @@
 section .bss
 
 command_t:
+  .fn           resq 0x1
   .name         resb COMMAND_NAME_MAX_LEN
   .description  resb COMMAND_DESC_MAX_LEN
-  .fn           resq 0x1
 command_t_end:
 
 section .rodata
 
 COMMAND_T_LEN equ command_t_end - command_t
 
-COMMAND_T_OFF_NAME equ 0x0
+COMMAND_T_OFF_FN   equ 0x0
+COMMAND_T_OFF_NAME equ COMMAND_T_OFF_FN + 0x8
 COMMAND_T_OFF_DESC equ COMMAND_T_OFF_NAME + COMMAND_NAME_MAX_LEN
-COMMAND_T_OFF_FN   equ COMMAND_T_OFF_DESC + COMMAND_DESC_MAX_LEN
 
 COMMAND_NAME_MAX_LEN equ 0x20
 COMMAND_DESC_MAX_LEN equ 0x100
@@ -57,11 +57,11 @@ command_get_by_op:
   jge   .error
 
   ; get pointer to the command
-  mov   rax, r13
-  shl   rax, 3
-
-  mov   rdi, [r12+rax]
+  mov   rdi, [r12+r13*0x8]
   mov   [rsp+0x10], rdi
+
+  test  rdi, rdi
+  jz    .error
 
   add   rdi, COMMAND_T_OFF_NAME
   mov   rsi, [rsp+0x8]
