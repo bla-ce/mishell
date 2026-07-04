@@ -648,7 +648,7 @@ host_update_network:
   mov   rsi, host_name
   call  strcmp
   cmp   rax, TRUE
-  je    .skip_host
+  je    .next_host
 
   mov   rax, [rsp+0x10]
   movsx rdi, dword [rax+HOST_T_OFF_IP]
@@ -658,7 +658,7 @@ host_update_network:
   mov   rsi, rdx
   call  net_tcp_connect_to_remote_addr
   cmp   rax, 0
-  jl    .error
+  jl    .next_host
 
   mov   [rsp+0x8], rax
 
@@ -676,7 +676,7 @@ host_update_network:
   mov   rdi, [rsp+0x8]
   syscall
 
-.skip_host:
+.next_host:
   inc   r13
   jmp   .loop
 

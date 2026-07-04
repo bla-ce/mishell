@@ -107,13 +107,13 @@ op_join:
   test  rax, rax
   jnz   .error
 
-  inc   byte [curr_host_idx]
-
   ; update host status
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rdi, [hosts+eax]
   mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.UP
+
+  inc   byte [curr_host_idx]
 
   ; add host array to payload
   mov   rdi, [rsp+0x8]
