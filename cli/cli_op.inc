@@ -634,6 +634,15 @@ cli_network:
   ; print name
   mov   rdi, r14
   add   rdi, HOST_T_OFF_NAME
+  call  print
+
+  ; print space
+  mov   rdi, SPACE
+  call  print_char
+
+  ; print status
+  movzx eax, byte [r14+HOST_T_OFF_STATUS]
+  mov   rdi, qword [host_status_str_table+0x8*eax]
   call  println
 
   inc   r13
