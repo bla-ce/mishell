@@ -66,16 +66,110 @@ default_host_name db "default", NULL_CHAR
 section .text
 
 host_hearbeat:
-  sub   rsp, 0x8
+  push  r12
+  push  r13
+  sub   rsp, 0x18+PACKET_T_LEN
+
+  ; STACK USAGE
+  ; [rsp]       -> array length
+  ; [rsp+0x8]   -> sock fd
+  ; [rsp+0x18]  -> packet
 
   ; read timer fd value to reset timer
   mov   rax, SYS_READ
   mov   rdi, [timer_fd]
-  lea   rsi, [rsp]
+  lea   rsi, [rsp]  ; using rsp for convenience here
   mov   rdx, 8
   syscall
 
-  add   rsp, 0x8
+  ; get array length
+  movzx r12, byte [curr_host_idx]
+  test  r12, r12
+  jz    .done
+  imul  rax, r12, HOST_T_LEN
+  mov   [rsp], rax
+
+  ; build packet
+  lea   rdi, [rsp+0x18]
+  mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
+  mov   byte [rdi+PACKET_T_OFF_OP], req_ops.HELLO
+  mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+
+  xor   r13, r13
+
+.loop:
+  cmp   r13, r12
+  jge   .done
+
+  ; get host
+  imul  rax, r13, HOST_T_LEN
+  lea   rdi, [hosts+rax]
+  mov   [rsp+0x10], rdi
+
+  ; check if we need to skip the host
+  add   rdi, HOST_T_OFF_NAME
+  mov   rsi, host_name
+  call  strcmp
+  cmp   rax, TRUE
+  je    .next_host
+
+  mov   rax, [rsp+0x10]
+  movsx rdi, dword [rax+HOST_T_OFF_IP]
+
+  movzx rdx, word [rax+HOST_T_OFF_PORT]
+  xchg  dl, dh
+  mov   rsi, rdx
+  call  net_tcp_connect_to_remote_addr
+  cmp   rax, 0
+  jl    .host_down
+
+  mov   [rsp+0x8], rax
+
+  ; send the packet to the host
+  mov   rax, SYS_WRITE
+  mov   rdi, [rsp+0x8]
+  lea   rsi, [rsp+0x18]
+  mov   rdx, PACKET_T_HEADER_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; if response is not OK, host is down
+  lea   rsi, [rsp+0x18]
+  cmp   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
+  jne   .host_down
+
+  ; host is up
+  mov   rax, [rsp+0x10]
+  mov   byte [rax+HOST_T_OFF_STATUS], HOST_STATUS.UP
+
+  ; close connection
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp+0x8]
+  syscall
+
+  jmp   .next_host
+
+.host_down:
+  mov   rax, [rsp+0x10]
+  mov   byte [rax+HOST_T_OFF_STATUS], HOST_STATUS.DOWN
+
+.next_host:
+  inc   r13
+  jmp   .loop
+
+.done:
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18+PACKET_T_LEN
+  pop   r13
+  pop   r12
   ret
 
 ; @param  rdi: pointer to the request packet
