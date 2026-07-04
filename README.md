@@ -9,6 +9,7 @@ A peer-to-peer service management system. Mishell forms a network of nodes where
 - **Built-in Services**: Services are compiled-in plugins, not separate processes
 - **Binary Protocol**: Custom network protocol over TCP
 - **CLI Client**: `mishli` for interacting with the network
+- **Healthcheck**: Hosts are healthchecked every 10sec
 
 ## Prerequisites
 
