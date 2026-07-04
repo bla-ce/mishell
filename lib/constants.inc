@@ -8,22 +8,24 @@ SUCCESS_CODE equ 0
 FAILURE_CODE equ -1
 
 ; syscalls
-SYS_READ          equ 0
-SYS_WRITE         equ 1
-SYS_CLOSE         equ 3
-SYS_SOCKET        equ 41
-SYS_CONNECT       equ 42
-SYS_ACCEPT        equ 43
-SYS_BIND          equ 49
-SYS_LISTEN        equ 50
-SYS_GETPEERNAME   equ 52
-SYS_SETSOCKOPT    equ 54
-SYS_EXIT          equ 60
-SYS_FCNTL         equ 72
-SYS_UNLINK        equ 87
-SYS_EPOLL_WAIT    equ 232
-SYS_EPOLL_CTL     equ 233
-SYS_EPOLL_CREATE1 equ 291
+SYS_READ            equ 0
+SYS_WRITE           equ 1
+SYS_CLOSE           equ 3
+SYS_SOCKET          equ 41
+SYS_CONNECT         equ 42
+SYS_ACCEPT          equ 43
+SYS_BIND            equ 49
+SYS_LISTEN          equ 50
+SYS_GETPEERNAME     equ 52
+SYS_SETSOCKOPT      equ 54
+SYS_EXIT            equ 60
+SYS_FCNTL           equ 72
+SYS_UNLINK          equ 87
+SYS_EPOLL_WAIT      equ 232
+SYS_EPOLL_CTL       equ 233
+SYS_TIMERFD_CREATE  equ 283
+SYS_TIMERFD_SETTIME equ 286
+SYS_EPOLL_CREATE1   equ 291
 
 ; fileno
 STDOUT_FILENO equ 1
@@ -60,3 +62,7 @@ COLON           equ 0x3A
 NINE_CHAR       equ 0x39
 OPENING_BRACKET equ 0x5B
 CLOSING_BRACKET equ 0x5D
+
+CLOCK_MONOTONIC equ 1
+
+TFD_NONBLOCK equ O_NONBLOCK

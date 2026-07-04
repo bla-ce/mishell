@@ -111,6 +111,28 @@ _start:
   cmp   rax, 0
   jl    .error
 
+  ; create timerfd for host hearbeat
+  mov   rdi, HEARBEAT_TIME
+  call  net_create_timerfd
+  cmp   rax, 0
+  jl    .error
+
+  mov   [timer_fd], rax
+
+  ; add timer fd to the epoll instance
+  mov   dword [epoll_event_t.events], EPOLLET
+  or    dword [epoll_event_t.events], EPOLLIN
+  mov   [epoll_event_t.data], rax
+
+  mov   rax, SYS_EPOLL_CTL
+  mov   rdi, [epoll_fd]
+  mov   rsi, EPOLL_CTL_ADD
+  mov   rdx, [timer_fd]
+  mov   r10, epoll_event_t
+  syscall
+  cmp   rax, 0
+  jl    .error
+
 .outer_loop:
   ; epoll wait
   mov   rax, SYS_EPOLL_WAIT
@@ -138,6 +160,10 @@ _start:
   mov   rax, [rdi + rcx + 4]
 
   mov   [conn_fd], rax
+
+  ; check if heartbeat
+  cmp   rax , [timer_fd]
+  je    .hearbeat
 
   ; check if conn fd is a new connection
   cmp   rax, [tcp_fd]
@@ -221,6 +247,11 @@ _start:
   lea   rdi, [rsp]
   mov   rsi, [conn_fd]
   call  packet_dispatch
+
+  jmp   .next_connection
+
+.hearbeat:
+  call  host_hearbeat
 
   jmp   .next_connection
 

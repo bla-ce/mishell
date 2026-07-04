@@ -33,6 +33,8 @@ HOST_STATUS_STR:
 host_status_str_table dq HOST_STATUS_STR.DOWN
                       dq HOST_STATUS_STR.UP
 
+HEARBEAT_TIME equ 10
+
 usage_str db "Usage: mishell COMMAND [ARGS...]", LINE_FEED, LINE_FEED
           db "Available Commands:", LINE_FEED
           db "  init            --port PORT --name NAME   Initialize a new network", LINE_FEED
@@ -62,6 +64,20 @@ host_ip   dd 0
 default_host_name db "default", NULL_CHAR
 
 section .text
+
+host_hearbeat:
+  sub   rsp, 0x8
+
+  ; read timer fd value to reset timer
+  mov   rax, SYS_READ
+  mov   rdi, [timer_fd]
+  lea   rsi, [rsp]
+  mov   rdx, 8
+  syscall
+
+  add   rsp, 0x8
+  ret
+
 ; @param  rdi: pointer to the request packet
 ; @param  rsi: pointer to the response packet
 ; @return rax: return code

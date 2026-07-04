@@ -2,6 +2,7 @@ section .bss
 
 epoll_fd  resq 1
 tcp_fd    resq 1
+timer_fd  resq 1
 conn_fd   resq 1
 nfds      resq 1
 
@@ -18,6 +19,12 @@ sockaddr_in_t:
 sockaddr_in_t_end:
 
 events resb EPOLL_EVENT_T_LEN * MAX_EVENTS
+
+itimerspec_t:
+  .it_interval_tv_sec   resq 1
+  .it_interval_tv_nsec  resq 1
+  .it_value_tv_sec      resq 1
+  .it_value_tv_nsec     resq 1
 
 section .rodata
 
@@ -286,6 +293,59 @@ inet_pton:
 
   movsx rax, dword [rsp+0x8]
 
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x10
+  ret
+
+; creates a timer fd to deliver timed notifications via fd
+; NOTE: for this project, we hardcode flags and clockid
+; @param  rdi: time in seconds
+; @return rax: fd
+net_create_timerfd:
+  sub   rsp, 0x10
+
+  ; STACK USAGE
+  ; [rsp]       -> time
+  ; [rsp+0x8]   -> file descriptor
+
+  mov   [rsp], rdi
+
+  ; create timer fd
+  mov   rax, SYS_TIMERFD_CREATE
+  mov   rdi, CLOCK_MONOTONIC
+  mov   rsi, TFD_NONBLOCK
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x8], rax
+
+  ; reset itimerspec
+  mov   qword [itimerspec_t.it_interval_tv_sec], 0
+  mov   qword [itimerspec_t.it_interval_tv_nsec], 0
+  mov   qword [itimerspec_t.it_value_tv_sec], 0
+  mov   qword [itimerspec_t.it_value_tv_nsec], 0
+
+  mov   rax, [rsp]
+  mov   qword [itimerspec_t.it_interval_tv_sec], rax
+  mov   qword [itimerspec_t.it_value_tv_sec], rax
+
+  ; set time value
+  mov   rax, SYS_TIMERFD_SETTIME
+  mov   rdi, [rsp+0x8]
+  xor   rsi, rsi
+  mov   rdx, itimerspec_t
+  xor   r10, r10
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   rax, [rsp+0x8]
   jmp   .return
 
 .error:
