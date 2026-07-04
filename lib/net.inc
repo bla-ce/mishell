@@ -78,8 +78,7 @@ net_tcp_connect_to_remote_addr:
   lea   rdi, [rsp+0x18]
   mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_FAMILY], AF_INET
   mov   ax, word [rsp+0x8]
-  xchg  al, ah ; bswap 16-bit registers
-  mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_PORT], ax
+  movbe word [rdi+SOCKADDR_IN_T_OFF_SIN_PORT], ax
   mov   eax, dword [rsp]
   mov   dword [rdi+SOCKADDR_IN_T_OFF_SIN_ADDR], eax
   mov   qword [rdi+SOCKADDR_IN_T_OFF_SIN_ZERO], 0
@@ -149,8 +148,7 @@ net_init_tcp_socket:
   lea   rdi, [rsp+0x18]
   mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_FAMILY], AF_INET
   mov   ax, word [rsp+0x8]
-  xchg  al, ah ; bswap 16-bit registers
-  mov   word [rdi+SOCKADDR_IN_T_OFF_SIN_PORT], ax
+  movbe word [rdi+SOCKADDR_IN_T_OFF_SIN_PORT], ax
   mov   eax, dword [rsp]
   mov   dword [rdi+SOCKADDR_IN_T_OFF_SIN_ADDR], eax
   mov   qword [rdi+SOCKADDR_IN_T_OFF_SIN_ZERO], 0
