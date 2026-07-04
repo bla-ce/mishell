@@ -20,14 +20,18 @@ PORT ?= 7474
 NAME ?= default
 REMOTE_ADDR ?= 127.0.0.1:7474
 
+all:
+	mkdir -p $(BUILD_DIR) $(BIN_DIR)
+	nasm -o $(BUILD_DIR)/$(MISHELL_PATH).o $(SRC_DIR)/$(MISHELL_PATH).s \
+		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
+	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
+	$(MAKE) -C cli
+
 mishell:
 	mkdir -p $(BUILD_DIR) $(BIN_DIR)
 	nasm -o $(BUILD_DIR)/$(MISHELL_PATH).o $(SRC_DIR)/$(MISHELL_PATH).s \
 		$(INCLUDE_FLAGS) $(DEBUG_FLAGS) $(BASE_FLAGS)
 	ld -o $(BIN_DIR)/$(MISHELL_PATH) $(BUILD_DIR)/$(MISHELL_PATH).o
-
-cli:
-	$(MAKE) -C cli
 
 mishli:
 	$(MAKE) -C cli

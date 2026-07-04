@@ -107,11 +107,13 @@ op_join:
   test  rax, rax
   jnz   .error
 
-  ; build response packet
-  mov   rdi, [rsp+0x8]
-  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-
   inc   byte [curr_host_idx]
+
+  ; update host status
+  movzx eax, byte [curr_host_idx]
+  imul  eax, HOST_T_LEN
+  lea   rdi, [hosts+eax]
+  mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.UP
 
   ; add host array to payload
   mov   rdi, [rsp+0x8]
@@ -121,6 +123,10 @@ op_join:
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
   rep   movsb
+
+  ; build response packet
+  mov   rdi, [rsp+0x8]
+  mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
 
   call  host_update_network
   cmp   rax, 0

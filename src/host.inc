@@ -18,8 +18,20 @@ HOST_NAME_MAX_LEN equ 0x20
 HOST_T_OFF_IP             equ 0x0
 HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_NAME           equ HOST_T_OFF_PORT + 0x2
-HOST_T_OFF_SERVICES       equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
+HOST_T_OFF_STATUS         equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
+HOST_T_OFF_SERVICES       equ HOST_T_OFF_STATUS + 0x1
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
+
+HOST_STATUS:
+  .DOWN equ 0x0
+  .UP   equ 0x1
+
+HOST_STATUS_STR:
+  .DOWN db "DOWN", NULL_CHAR
+  .UP   db "UP", NULL_CHAR
+
+host_status_str_table dq HOST_STATUS_STR.DOWN
+                      dq HOST_STATUS_STR.UP
 
 usage_str db "Usage: mishell COMMAND [ARGS...]", LINE_FEED, LINE_FEED
           db "Available Commands:", LINE_FEED
@@ -32,6 +44,7 @@ host_t:
   .ipv4           resd 0x1
   .port           resw 0x1
   .name           resb HOST_NAME_MAX_LEN
+  .status         resb 0x1
   .services       resb SERVICES_LEN
   .services_count resb 0x1
 host_t_end:

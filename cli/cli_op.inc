@@ -627,7 +627,6 @@ cli_network:
   cmp   rax, 0
   jl    .error
 
-
   ; print space
   mov   rdi, SPACE
   call  print_char
