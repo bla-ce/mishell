@@ -19,7 +19,8 @@ HOST_T_OFF_IP             equ 0x0
 HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_NAME           equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_STATUS         equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
-HOST_T_OFF_SERVICES       equ HOST_T_OFF_STATUS + 0x1
+HOST_T_OFF_UP             equ HOST_T_OFF_STATUS + 0x1
+HOST_T_OFF_SERVICES       equ HOST_T_OFF_UP + 0x8
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 HOST_STATUS:
@@ -47,6 +48,7 @@ host_t:
   .port           resw 0x1
   .name           resb HOST_NAME_MAX_LEN
   .status         resb 0x1
+  .last_up        resq 0x1
   .services       resb SERVICES_LEN
   .services_count resb 0x1
 host_t_end:
@@ -143,6 +145,13 @@ host_hearbeat:
   ; host is up
   mov   rax, [rsp+0x10]
   mov   byte [rax+HOST_T_OFF_STATUS], HOST_STATUS.UP
+
+  call  time_now
+  cmp   rax, 0
+  jl    .error
+
+  ; update last_up
+  mov   qword [rax+HOST_T_OFF_UP], rax
 
   ; close connection
   mov   rax, SYS_CLOSE
