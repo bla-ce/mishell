@@ -17,6 +17,8 @@ trap cleanup EXIT
 $MISHELL_PATH init --port 7474 --name home > /dev/null 2>&1 &
 HOME_PID=$!
 
+sleep 0.2
+
 echo -n "network with one host up (home)..."
 payload=$($MISHLI_PATH --host 127.0.0.1:7474 network)
 expected="0.0.0.0:7474 home UP"
@@ -34,6 +36,8 @@ fi
 $MISHELL_PATH connect 127.0.0.1:7474 --port 5656 --name lab > /dev/null 2>&1 &
 LAB_PID=$!
 
+sleep 0.2
+
 echo -n "network with two hosts up (lab)..."
 payload=$($MISHLI_PATH --host 127.0.0.1:7474 network)
 expected=$'0.0.0.0:7474 home UP\n0.0.0.0:5656 lab UP'
@@ -49,6 +53,8 @@ fi
 
 $MISHELL_PATH connect 127.0.0.1:5656 --port 3939 --name work > /dev/null 2>&1 &
 WORK_PID=$!
+
+sleep 0.2
 
 echo -n "network with three hosts up (work)..."
 payload=$($MISHLI_PATH --host 127.0.0.1:7474 network)
