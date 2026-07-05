@@ -378,7 +378,7 @@ host_exists:
   mov   rdi, [rsp+0x18]
 
   ; check address
-  mov   eax, [rsp]
+  mov   eax, [rsp+0x8]
   cmp   dword [rdi+HOST_T_OFF_IP], eax
   jne   .next
 
