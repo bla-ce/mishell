@@ -29,9 +29,9 @@ itimerspec_t:
 section .rodata
 
 log:
-  .listen_tcp       db "[MISHELL] listening on tcp socket", NULL_CHAR
-  .accept_new_conn  db "[MISHELL] accepted new connection", NULL_CHAR
-  .recv_packet      db "[MISHELL] received packet from client", NULL_CHAR
+  .listen_tcp       db "listening on tcp socket", NULL_CHAR
+  .accept_new_conn  db "accepted new connection", NULL_CHAR
+  .recv_packet      db "received packet from client", NULL_CHAR
 
 SOCKADDR_IN_T_OFF_SIN_FAMILY  equ 0x0
 SOCKADDR_IN_T_OFF_SIN_PORT    equ SOCKADDR_IN_T_OFF_SIN_FAMILY + 0x2
