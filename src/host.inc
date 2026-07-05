@@ -446,9 +446,14 @@ init_or_join_network:
   test  rax, rax
   jnz   .error
 
+  call  time_now
+  cmp   rax, 0
+  jl    .error
+
   ; add UP status to host
   mov   rdi, hosts
   mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.UP
+  mov   qword [rdi+HOST_T_OFF_LAST_UP], rax
 
   ; increase host count
   inc   byte [curr_host_idx]

@@ -107,11 +107,16 @@ op_join:
   test  rax, rax
   jnz   .error
 
+  call  time_now
+  cmp   rax, 0
+  jl    .error
+
   ; update host status
-  movzx eax, byte [curr_host_idx]
-  imul  eax, HOST_T_LEN
-  lea   rdi, [hosts+eax]
+  movzx edx, byte [curr_host_idx]
+  imul  edx, HOST_T_LEN
+  lea   rdi, [hosts+edx]
   mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.UP
+  mov   qword [rdi+HOST_T_OFF_LAST_UP], rax
 
   inc   byte [curr_host_idx]
 
