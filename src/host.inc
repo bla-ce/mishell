@@ -327,59 +327,84 @@ host_proxy_request:
   add   rsp, 0x20
   ret
 
-; checks if a host with a given ip/port pair already exists
-; @param  rdi: ip of the host
-; @param  rsi: port of the host (byte order)
-; @return rax: same host exists (boolean)
-host_addr_exists:
-  sub   rsp, 0x10
+; check if a host with the same address or name already exists
+; @param  rdi: pointer to the name of the host
+; @param  rsi: ip of the host
+; @param  rdx: port of the host
+; @return
+  ; rax: pointer to the host if it exists othewise 0
+  ; rdx: error code (address or name conflict)
+host_exists:
+  pop   r12
+  sub   rsp, 0x28
 
   ; STACK USAGE
-  ; [rsp]     -> ip of the host
-  ; [rsp+0x8] -> port of the host
+  ; [rsp]       -> pointer to the name of the host
+  ; [rsp+0x8]   -> ip of the host
+  ; [rsp+0x10]  -> port of the host
+  ; [rsp+0x18]  -> curr host pointer
+  ; [rsp+0x18]  -> error code
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
+  mov   [rsp+0x10], rdx
+  mov   qword [rsp+0x20], error_codes.INTERNAL
 
-  ; ip can be null
-  test  rsi, rsi
+  test  rdi, rdi
   jz    .error
 
-  xor   r9, r9  ; counter
+  test  rdx, rdx
+  jz    .error
+
+  xor   r12, r12
 
 .loop:
-  cmp   r9b, byte [curr_host_idx]
+  cmp   r12b, byte [curr_host_idx]
   jge   .loop_end
 
   imul  rax, r9, HOST_T_LEN
   lea   rdi, [hosts+rax]
 
+  mov   [rsp+0x18], rdi
+
+  ; check name
+  mov   qword [rsp+0x20], error_codes.HOST_NAME_ALREADY_EXISTS
+  add   rdi, HOST_T_OFF_NAME
+  call  strcmp
+  cmp   rax, TRUE
+  je    .exists
+
+  mov   qword [rsp+0x20], error_codes.HOST_ADDR_ALREADY_EXISTS
+  mov   rdi, [rsp+0x18]
+
+  ; check address
   mov   eax, [rsp]
   cmp   dword [rdi+HOST_T_OFF_IP], eax
   jne   .next
 
-  mov   ax, [rsp+0x8]
+  mov   ax, [rsp+0x10]
   cmp   word [rdi+HOST_T_OFF_PORT], ax
   je    .exists
 
 .next:
-  inc   r9b
+  inc   r12
   jmp   .loop
 
 .loop_end:
-  ; does not exist
-  mov   rax, FALSE
+  xor   rax, rax
   jmp   .return
 
+
 .exists:
-  mov   rax, TRUE
+  mov   rax, [rsp+0x18]
   jmp   .return
 
 .error:
-  mov   rax, FAILURE_CODE
+  mov   rdx, [rsp+0x20]
 
 .return:
-  add   rsp, 0x10
+  add   rsp, 0x28
+  pop   r12
   ret
 
 ; initialises a P2P network if init is passed, otherwise joins
@@ -715,20 +740,6 @@ host_init:
 
   test  rcx, rcx
   jz    .error
-
-  mov   qword [rsp+0x20], error_codes.HOST_NAME_ALREADY_EXISTS
-  mov   rdi, [rsp+0x18]
-  call  host_get_by_name
-  cmp   rax, 0
-  jge   .error
-
-  mov   qword [rsp+0x20], error_codes.HOST_ADDR_ALREADY_EXISTS
-  mov   rdi, [rsp+0x8]
-  mov   rsi, [rsp+0x10]
-  call  host_addr_exists
-  ; rax should be 0 (FALSE)
-  test  rax, rax
-  jnz   .error
 
   ; memset host to 0
   mov   rdi, [rsp]

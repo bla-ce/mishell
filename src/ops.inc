@@ -90,9 +90,11 @@ op_join:
   cmp   byte [curr_host_idx], HOST_MAX_COUNT
   jge   .error
 
-  ; get ip and port from request packet
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   mov   rsi, [rsp]
   add   rsi, PACKET_T_OFF_PAYLOAD
+
+  ; TODO: host validation here
 
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN

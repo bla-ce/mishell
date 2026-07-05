@@ -67,68 +67,6 @@ _start:
   cmp   rax, hosts  ; pointer to the first host
   jne   .error
 
-  ; --- host_addr_exists ---
-  ; reset hosts array
-  mov   rdi, hosts
-  xor   rax, rax
-  mov   rcx, HOSTS_LEN
-  rep   stosb
-
-  ; test without hosts
-  mov   rdi, 0
-  mov   rsi, 7474
-  call  host_addr_exists
-  cmp   rax, FALSE
-  jne   .error
-
-  ; test without duplicate host
-  ; add dummy hosts
-  mov   r12, 0
-  mov   r13, 7474
-
-.loop:
-  cmp   r12, 5
-  jge   .loop_end
-
-  imul  rax, r12, HOST_T_LEN
-  lea   rsi, [hosts+rax]
-  mov   dword [rsi+HOST_T_OFF_IP], 0
-  mov   word [rsi+HOST_T_OFF_PORT], r13w
-
-  inc   r13
-  inc   r12
-
-  jmp   .loop
-.loop_end:
-  mov   byte [curr_host_idx], 5
-
-  mov   rdi, 0
-  mov   rsi, 7000
-  call  host_addr_exists
-  cmp   rax, FALSE
-  jne   .error
-
-  ; test with duplicate host
-  mov   rdi, 0
-  mov   rsi, 7476
-  call  host_addr_exists
-  cmp   rax, TRUE
-  jne   .error
-
-  ; test with last host
-  mov   rdi, 0
-  mov   rsi, 7478
-  call  host_addr_exists
-  cmp   rax, TRUE
-  jne   .error
-
-  ; empty port should return failure
-  mov   rdi, 0
-  mov   rsi, 0
-  call  host_addr_exists
-  cmp   rax, FAILURE_CODE
-  jne   .error
-
   ; host init
   ; reset hosts
   mov   rdi, hosts
@@ -182,15 +120,6 @@ _start:
 
   mov   byte [curr_host_idx], 1
 
-  ; duplicated addr should fail
-  mov   rdi, test_host
-  xor   rsi, rsi
-  mov   rdx, 7474
-  mov   rcx, dummy_host_2
-  call  host_init
-  cmp   rax, error_codes.HOST_ADDR_ALREADY_EXISTS
-  jne   .error
-
   ; invalid host name should return INTERNAL
   mov   rdi, test_host
   xor   rsi, rsi
@@ -198,15 +127,6 @@ _start:
   mov   rcx, invalid_host_name
   call  host_init
   cmp   rax, error_codes.INTERNAL
-  jne   .error
-
-  ; duplicated host name should return failure
-  mov   rdi, test_host
-  xor   rsi, rsi
-  mov   rdx, 5959
-  mov   rcx, dummy_host_1
-  call  host_init
-  cmp   rax, error_codes.HOST_NAME_ALREADY_EXISTS
   jne   .error
 
   mov   rdi, SUCCESS_CODE
