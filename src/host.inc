@@ -446,15 +446,6 @@ init_or_join_network:
   test  rax, rax
   jnz   .error
 
-  call  time_now
-  cmp   rax, 0
-  jl    .error
-
-  ; add UP status to host
-  mov   rdi, hosts
-  mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.UP
-  mov   qword [rdi+HOST_T_OFF_LAST_UP], rax
-
   ; increase host count
   inc   byte [curr_host_idx]
 
@@ -697,7 +688,7 @@ host_get_by_name:
   add   rsp, 0x10
   ret
 
-; populates the host struct with ip, port and generates its id
+; populates the host struct with ip, port
 ; @param  rdi: pointer to the host struct
 ; @param  rsi: ip of the host
 ; @param  rdx: port of the host (network order)
@@ -766,6 +757,15 @@ host_init:
   mov   rsi, [rsp+0x18]
   mov   rcx, rax
   rep   movsb
+
+  call  time_now
+  cmp   rax, 0
+  jl    .error
+
+  ; set status and last up
+  mov   rdi, [rsp]
+  mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.UP
+  mov   qword [rdi+HOST_T_OFF_LAST_UP], rax
 
   mov   rax, SUCCESS_CODE
   jmp    .return
