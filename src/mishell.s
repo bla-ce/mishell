@@ -112,7 +112,7 @@ _start:
   jl    .error
 
   ; create timerfd for host hearbeat
-  mov   rdi, HEARBEAT_TIME
+  mov   rdi, HOST_HEARTBEAT
   call  net_create_timerfd
   cmp   rax, 0
   jl    .error

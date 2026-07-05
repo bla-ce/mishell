@@ -19,9 +19,11 @@ HOST_T_OFF_IP             equ 0x0
 HOST_T_OFF_PORT           equ HOST_T_OFF_IP + 0x4
 HOST_T_OFF_NAME           equ HOST_T_OFF_PORT + 0x2
 HOST_T_OFF_STATUS         equ HOST_T_OFF_NAME + HOST_NAME_MAX_LEN
-HOST_T_OFF_UP             equ HOST_T_OFF_STATUS + 0x1
-HOST_T_OFF_SERVICES       equ HOST_T_OFF_UP + 0x8
+HOST_T_OFF_LAST_UP        equ HOST_T_OFF_STATUS + 0x1
+HOST_T_OFF_SERVICES       equ HOST_T_OFF_LAST_UP + 0x8
 HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
+
+HOST_EXPIRY equ HOST_HEARTBEAT * 2
 
 HOST_STATUS:
   .DOWN equ 0x0
@@ -34,7 +36,7 @@ HOST_STATUS_STR:
 host_status_str_table dq HOST_STATUS_STR.DOWN
                       dq HOST_STATUS_STR.UP
 
-HEARBEAT_TIME equ 10
+HOST_HEARTBEAT equ 10
 
 usage_str db "Usage: mishell COMMAND [ARGS...]", LINE_FEED, LINE_FEED
           db "Available Commands:", LINE_FEED
@@ -66,6 +68,44 @@ host_ip   dd 0
 default_host_name db "default", NULL_CHAR
 
 section .text
+; checks it the host should be removed (now - last up > HOST_EXPIRY)
+; @param  rdi: pointer to the host
+; @return rax: host is expired (boolean)
+host_is_expired:
+  sub   rsp, 0x8
+
+  ; STACK USAGE
+  ; [rsp]   -> pointer to the host struct
+
+  mov   [rsp], rdi
+
+  test  rdi, rdi
+  jz    .error
+
+  call  time_now
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, [rsp]
+
+  sub   rax, qword [rdi+HOST_T_OFF_LAST_UP]
+
+  cmp   rax, HOST_EXPIRY
+  jge   .is_expired
+
+  mov   rax, FALSE
+  jmp   .return
+
+.is_expired:
+  mov   rax, TRUE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x8
+  ret
 
 host_hearbeat:
   push  r12
@@ -142,16 +182,14 @@ host_hearbeat:
   cmp   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
   jne   .host_down
 
-  ; host is up
-  mov   rax, [rsp+0x10]
-  mov   byte [rax+HOST_T_OFF_STATUS], HOST_STATUS.UP
-
   call  time_now
   cmp   rax, 0
   jl    .error
 
-  ; update last_up
-  mov   qword [rax+HOST_T_OFF_UP], rax
+  ; host is up
+  mov   rdi, [rsp+0x10]
+  mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.UP
+  mov   qword [rdi+HOST_T_OFF_LAST_UP], rax
 
   ; close connection
   mov   rax, SYS_CLOSE
@@ -163,6 +201,20 @@ host_hearbeat:
 .host_down:
   mov   rax, [rsp+0x10]
   mov   byte [rax+HOST_T_OFF_STATUS], HOST_STATUS.DOWN
+
+  ; check if host is expired and should be removed
+  mov   rdi, rax
+  call  host_is_expired
+  cmp   rax, TRUE
+  jne   .next_host
+
+  ; remove host
+  mov   rdi, [rsp+0x10]
+  xor   al, al
+  mov   rcx, HOST_T_LEN
+  rep   stosb
+
+  dec   byte [curr_host_idx]
 
 .next_host:
   inc   r13

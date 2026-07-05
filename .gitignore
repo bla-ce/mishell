@@ -4,8 +4,7 @@ build/
 *.sock
 __pycache__/
 _test_template.s
-THOUGHTS.md
-TODO.md
+docs/
 E2E.md
 python-tests.py
 cli/mishli.py
