@@ -91,21 +91,14 @@ op_join:
   jge   .error
 
   ; get ip and port from request packet
-  mov   rdi, [rsp]
-  add   rdi, PACKET_T_OFF_PAYLOAD
-  movsx rsi, dword [rdi+HOST_T_OFF_IP]
-  movzx rdx, word [rdi+HOST_T_OFF_PORT] ; should be network order
-  lea   rcx, [rdi+HOST_T_OFF_NAME]
+  mov   rsi, [rsp]
+  add   rsi, PACKET_T_OFF_PAYLOAD
 
-  ; populate host struct
-  mov   qword [rsp+0x10], error_codes.INTERNAL
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rdi, [hosts+eax]
-  call  host_init
-  mov   [rsp+0x10], rax
-  test  rax, rax
-  jnz   .error
+  mov   rcx, HOST_T_LEN
+  rep   movsb
 
   inc   byte [curr_host_idx]
 
