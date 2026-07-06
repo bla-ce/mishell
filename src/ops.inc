@@ -102,8 +102,17 @@ op_join:
   call  host_exists
   mov   [rsp+0x10], rdx
   test  rax, rax
-  jnz   .error
+  jz    .add_host
 
+  ; host exists, check if it's down
+  cmp   byte [rax+HOST_T_OFF_STATUS], HOST_STATUS.DOWN
+  jne   .error
+
+  ; move it back up
+  mov   byte [rax+HOST_T_OFF_STATUS], HOST_STATUS.UP
+  jmp   .send_update
+
+.add_host:
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   mov   rsi, [rsp]
   add   rsi, PACKET_T_OFF_PAYLOAD
@@ -115,6 +124,7 @@ op_join:
 
   inc   byte [curr_host_idx]
 
+.send_update:
   ; add host array to payload
   mov   rdi, [rsp+0x8]
   movzx rcx, byte [curr_host_idx]
@@ -132,7 +142,6 @@ op_join:
   cmp   rax, 0
   jl    .error
 
-.done:
   mov   rax, SUCCESS_CODE
 
   jmp   .return

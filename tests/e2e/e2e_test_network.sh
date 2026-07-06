@@ -143,3 +143,21 @@ else
   echo "Received: $payload"
   exit 1
 fi
+
+echo -n "connect using down host should bring it back up..."
+$MISHELL_PATH connect 127.0.0.1:7474 --port 5656 --name lab > /dev/null 2>&1 &
+LAB_PID=$!
+
+sleep 0.2
+
+payload=$($MISHLI_PATH --host 127.0.0.1:7474 network)
+expected=$'0.0.0.0:7474 home UP\n0.0.0.0:5656 lab UP\n0.0.0.0:3939 work UP'
+
+if [ "$payload" = "$expected" ]; then
+  echo -e "\033[32mPASSED\033[0m"
+else
+  echo -e "\033[31mFAILED\033[0m"
+  echo "Expected: $expected"
+  echo "Received: $payload"
+  exit 1
+fi
