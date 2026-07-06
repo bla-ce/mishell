@@ -14,20 +14,21 @@ error_codes:
   .HOST_NOT_FOUND                 equ 6
   .HOST_NAME_ALREADY_EXISTS       equ 7
   .HOST_ADDR_ALREADY_EXISTS       equ 8
+  .HOST_INVALID_NAME              equ 9
 
   ; service errors
-  .SERVICE_PER_HOST_LIMIT_REACHED equ 9
-  .SERVICE_NOT_FOUND              equ 10
-  .SERVICE_INVALID_NAME           equ 11
-  .SERVICE_INVALID_TYPE           equ 12
-  .SERVICE_STOP_BEFORE_UNREGISTER equ 13
-  .SERVICE_NOT_STARTED            equ 14
-  .SERVICE_ALREADY_EXISTS         equ 15
+  .SERVICE_PER_HOST_LIMIT_REACHED equ 10
+  .SERVICE_NOT_FOUND              equ 11
+  .SERVICE_INVALID_NAME           equ 12
+  .SERVICE_INVALID_TYPE           equ 13
+  .SERVICE_STOP_BEFORE_UNREGISTER equ 14
+  .SERVICE_NOT_STARTED            equ 15
+  .SERVICE_ALREADY_EXISTS         equ 16
 
   ; command errors
-  .COMMAND_NOT_FOUND              equ 16
+  .COMMAND_NOT_FOUND              equ 17
 
-  .COUNT                          equ 17
+  .COUNT                          equ 18
 
 err_code_to_msg_table:
   .NULL                           dq 0
@@ -39,6 +40,7 @@ err_code_to_msg_table:
   .HOST_NOT_FOUND                 dq error_msg.host_not_found
   .HOST_NAME_ALREADY_EXISTS       dq error_msg.host_name_already_exists
   .HOST_ADDR_ALREADY_EXISTS       dq error_msg.host_addr_already_exists
+  .HOST_INVALID_NAME              dq error_msg.host_invalid_name
   .SERVICE_PER_HOST_LIMIT_REACHED dq error_msg.service_per_host_limit_reached
   .SERVICE_NOT_FOUND              dq error_msg.service_not_found
   .SERVICE_INVALID_NAME           dq error_msg.service_invalid_name
@@ -58,6 +60,7 @@ err_code_to_len_table:
   .HOST_NOT_FOUND                 dw error_msg.host_not_found_len
   .HOST_NAME_ALREADY_EXISTS       dw error_msg.host_name_already_exists_len
   .HOST_ADDR_ALREADY_EXISTS       dw error_msg.host_addr_already_exists_len
+  .HOST_INVALID_NAME              dw error_msg.host_invalid_name_len
   .SERVICE_PER_HOST_LIMIT_REACHED dw error_msg.service_per_host_limit_reached_len
   .SERVICE_NOT_FOUND              dw error_msg.service_not_found_len
   .SERVICE_INVALID_NAME           dw error_msg.service_invalid_name_len
@@ -84,6 +87,8 @@ error_msg:
   .host_name_already_exists_len equ $ - error_msg.host_name_already_exists
   .host_addr_already_exists db "a host with this ip and port already exists", NULL_CHAR
   .host_addr_already_exists_len equ $ - error_msg.host_addr_already_exists
+  .host_invalid_name db "invalid host name", NULL_CHAR
+  .host_invalid_name_len equ $ - error_msg.host_invalid_name
   .service_per_host_limit_reached db "service limit per host has been reached", NULL_CHAR
   .service_per_host_limit_reached_len equ $ - error_msg.service_per_host_limit_reached
   .service_not_found db "service not found", NULL_CHAR

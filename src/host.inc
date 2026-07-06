@@ -71,6 +71,41 @@ host_ip   dd 0
 default_host_name db "default", NULL_CHAR
 
 section .text
+; validates a host struct
+; @param  rdi: pointer to the host struct
+; @return rax: return code or error code
+host_validate:
+  sub   rsp, 0x10
+
+  ; STACK USAGE
+  ; [rsp]     -> pointer to the host struct
+  ; [rsp+0x8] -> error code
+
+  mov   [rsp], rdi
+  mov   qword [rsp+0x8], error_codes.INTERNAL
+
+  test  rdi, rdi
+  jz    .error
+
+  ; validate name length
+  mov   qword [rsp+0x8], error_codes.HOST_INVALID_NAME
+  add   rdi, HOST_T_OFF_NAME
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+  cmp   rax, HOST_NAME_MAX_LEN
+  jge   .error
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, [rsp+0x8]
+
+.return:
+  add   rsp, 0x10
+  ret
+
 ; checks it the host should be removed (now - last up > HOST_EXPIRY)
 ; @param  rdi: pointer to the host
 ; @return rax: host is expired (boolean)

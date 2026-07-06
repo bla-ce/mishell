@@ -93,8 +93,12 @@ op_join:
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   mov   rdi, [rsp]
   add   rdi, PACKET_T_OFF_PAYLOAD
+  call  host_validate
+  cmp   rax, 0
+  jl    .error
 
-  ; TODO: host validation here
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_PAYLOAD
   call  host_exists
   mov   [rsp+0x10], rdx
   test  rax, rax

@@ -62,6 +62,20 @@ else
   exit 1
 fi
 
+# connect host with invalid name should fail
+echo -n "connect to network with invalid name should fail..."
+
+$MISHELL_PATH connect 127.0.0.1:7474 --port 5665 --name waytoolongnameforahostmaybebiggerthanthatactually
+return_code=$?
+
+if [ "$return_code" = "255" ]; then
+  echo -e "\033[32mPASSED\033[0m"
+else
+  echo -e "\033[31mFAILED\033[0m"
+  echo "Expected: $expected"
+  echo "Received: $payload"
+  exit 1
+fi
 
 # connect two other hosts
 $MISHELL_PATH connect 127.0.0.1:7474 --port 5656 --name lab > /dev/null 2>&1 &
