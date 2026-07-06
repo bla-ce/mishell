@@ -10,6 +10,7 @@ FAILURE_CODE equ -1
 ; syscalls
 SYS_READ            equ 0
 SYS_WRITE           equ 1
+SYS_OPEN            equ 2
 SYS_CLOSE           equ 3
 SYS_SOCKET          equ 41
 SYS_CONNECT         equ 42
@@ -68,3 +69,14 @@ CLOCK_REALTIME  equ 0
 CLOCK_MONOTONIC equ 1
 
 TFD_NONBLOCK equ O_NONBLOCK
+
+; FILE
+S_IRUSR equ 0x100
+S_IWUSR equ 0x080
+S_IRGRP equ 0x020
+S_IWGRP equ 0x010
+S_IROTH equ 0x004
+
+O_RDWR  equ 0x2
+O_CREAT equ 0x40
+O_TRUNC equ 0x200

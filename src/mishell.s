@@ -6,6 +6,7 @@
 %include "packet.inc"
 %include "service.inc"
 %include "service_type.inc"
+%include "state.inc"
 
 global _start
 
