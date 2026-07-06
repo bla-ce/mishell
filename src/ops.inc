@@ -91,11 +91,18 @@ op_join:
   jge   .error
 
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
-  mov   rsi, [rsp]
-  add   rsi, PACKET_T_OFF_PAYLOAD
+  mov   rdi, [rsp]
+  add   rdi, PACKET_T_OFF_PAYLOAD
 
   ; TODO: host validation here
+  call  host_exists
+  mov   [rsp+0x10], rdx
+  test  rax, rax
+  jnz   .error
 
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+  mov   rsi, [rsp]
+  add   rsi, PACKET_T_OFF_PAYLOAD
   movzx eax, byte [curr_host_idx]
   imul  eax, HOST_T_LEN
   lea   rdi, [hosts+eax]

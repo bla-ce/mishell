@@ -32,6 +32,37 @@ else
   exit 1
 fi
 
+# connect host on same ip/port should fail
+echo -n "connect to network with same ip/port should fail..."
+
+$MISHELL_PATH connect 127.0.0.1:7474 --port 7474 --name lab
+return_code=$?
+
+if [ "$return_code" = "255" ]; then
+  echo -e "\033[32mPASSED\033[0m"
+else
+  echo -e "\033[31mFAILED\033[0m"
+  echo "Expected: $expected"
+  echo "Received: $payload"
+  exit 1
+fi
+
+# connect host with same name should fail
+echo -n "connect to network with same name should fail..."
+
+$MISHELL_PATH connect 127.0.0.1:7474 --port 5665 --name home
+return_code=$?
+
+if [ "$return_code" = "255" ]; then
+  echo -e "\033[32mPASSED\033[0m"
+else
+  echo -e "\033[31mFAILED\033[0m"
+  echo "Expected: $expected"
+  echo "Received: $payload"
+  exit 1
+fi
+
+
 # connect two other hosts
 $MISHELL_PATH connect 127.0.0.1:7474 --port 5656 --name lab > /dev/null 2>&1 &
 LAB_PID=$!

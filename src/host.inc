@@ -328,32 +328,23 @@ host_proxy_request:
   ret
 
 ; check if a host with the same address or name already exists
-; @param  rdi: pointer to the name of the host
-; @param  rsi: ip of the host
-; @param  rdx: port of the host
+; @param  rdi: pointer to the host struct
 ; @return
-  ; rax: pointer to the host if it exists othewise 0
+  ; rax: pointer to the host if it exists otherwise 0
   ; rdx: error code (address or name conflict)
 host_exists:
-  pop   r12
-  sub   rsp, 0x28
+  push  r12
+  sub   rsp, 0x18
 
   ; STACK USAGE
-  ; [rsp]       -> pointer to the name of the host
-  ; [rsp+0x8]   -> ip of the host
-  ; [rsp+0x10]  -> port of the host
-  ; [rsp+0x18]  -> curr host pointer
-  ; [rsp+0x18]  -> error code
+  ; [rsp]       -> pointer to the host struct
+  ; [rsp+0x8]   -> curr host pointer
+  ; [rsp+0x10]  -> error code
 
   mov   [rsp], rdi
-  mov   [rsp+0x8], rsi
-  mov   [rsp+0x10], rdx
-  mov   qword [rsp+0x20], error_codes.INTERNAL
+  mov   qword [rsp+0x10], error_codes.INTERNAL
 
   test  rdi, rdi
-  jz    .error
-
-  test  rdx, rdx
   jz    .error
 
   xor   r12, r12
@@ -362,27 +353,30 @@ host_exists:
   cmp   r12b, byte [curr_host_idx]
   jge   .loop_end
 
-  imul  rax, r9, HOST_T_LEN
+  imul  rax, r12, HOST_T_LEN
   lea   rdi, [hosts+rax]
 
-  mov   [rsp+0x18], rdi
+  mov   [rsp+0x8], rdi
 
   ; check name
-  mov   qword [rsp+0x20], error_codes.HOST_NAME_ALREADY_EXISTS
+  mov   qword [rsp+0x10], error_codes.HOST_NAME_ALREADY_EXISTS
   add   rdi, HOST_T_OFF_NAME
+  mov   rsi, [rsp]
+  add   rsi, HOST_T_OFF_NAME
   call  strcmp
   cmp   rax, TRUE
   je    .exists
 
-  mov   qword [rsp+0x20], error_codes.HOST_ADDR_ALREADY_EXISTS
-  mov   rdi, [rsp+0x18]
+  mov   qword [rsp+0x10], error_codes.HOST_ADDR_ALREADY_EXISTS
+  mov   rdi, [rsp+0x8]
+  mov   rsi, [rsp]
 
   ; check address
-  mov   eax, [rsp+0x8]
+  mov   eax, dword [rsi+HOST_T_OFF_IP]
   cmp   dword [rdi+HOST_T_OFF_IP], eax
   jne   .next
 
-  mov   ax, [rsp+0x10]
+  mov   ax, word [rsi+HOST_T_OFF_PORT]
   cmp   word [rdi+HOST_T_OFF_PORT], ax
   je    .exists
 
@@ -396,14 +390,14 @@ host_exists:
 
 
 .exists:
-  mov   rax, [rsp+0x18]
+  mov   rax, [rsp+0x8]
   jmp   .return
 
 .error:
-  mov   rdx, [rsp+0x20]
+  mov   rdx, [rsp+0x10]
 
 .return:
-  add   rsp, 0x28
+  add   rsp, 0x18
   pop   r12
   ret
 
