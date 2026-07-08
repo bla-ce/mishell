@@ -31,12 +31,13 @@ state_save:
   cmp   rax, 0
   jl    .error
 
+  mov   rsi, rax
+  add   rsi, HOST_T_OFF_LAST_UP
+
   ; write state to the file (last up, services and services count)
   mov   rax, SYS_WRITE
   mov   rdi, [rsp]
-  mov   rsi, rax
-  add   rsi, HOST_T_OFF_LAST_UP
-  mov   rcx, HOST_STATE_LEN
+  mov   rdx, HOST_STATE_LEN
   syscall
   cmp   rax, 0
   jl    .error
@@ -79,16 +80,24 @@ state_load:
 
   mov   [rsp], rax
 
+  ; move cursor at the beginning of the file
+  mov   rax, SYS_LSEEK
+  mov   rdi, [rsp]
+  xor   rsi, rsi
+  xor   rdx, rdx
+  syscall
+
   mov   rdi, host_name
   call  host_get_by_name
   cmp   rax, 0
   jl    .error
 
-  mov   rax, SYS_READ
-  mov   rdi, [rsp]
   mov   rsi, rax
   add   rsi, HOST_T_OFF_LAST_UP
-  mov   rcx, HOST_STATE_LEN
+
+  mov   rax, SYS_READ
+  mov   rdi, [rsp]
+  mov   rdx, HOST_STATE_LEN
   syscall
   cmp   rax, 0
   jl    .error

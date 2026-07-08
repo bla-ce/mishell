@@ -118,6 +118,11 @@ packet_dispatch:
   ; rdx already populated
   syscall
 
+  ; save state
+  call  state_save
+  cmp   rax, 0
+  jl    .error
+
   mov   rax, SUCCESS_CODE
   jmp   .return
 

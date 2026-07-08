@@ -220,6 +220,11 @@ op_register:
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
 
+  ; save state
+  call  state_save
+  cmp   rax, 0
+  jl    .error
+
   mov   rax, SUCCESS_CODE
   jmp   .return
 

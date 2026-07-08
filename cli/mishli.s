@@ -7,6 +7,7 @@
 %include "service.inc"
 %include "service_type.inc"
 %include "cli_op.inc"
+%include "state.inc"
 
 global _start
 
