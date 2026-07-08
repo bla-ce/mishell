@@ -10,6 +10,7 @@ A peer-to-peer service management system. Mishell forms a network of nodes where
 - **Binary Protocol**: Custom network protocol over TCP
 - **CLI Client**: `mishli` for interacting with the network
 - **Healthcheck**: Hosts are healthchecked every 10sec
+- **Data Persistence**: Host services state is saved after each operation and loaded when starting mishell
 
 ## Prerequisites
 
