@@ -81,6 +81,9 @@ _start:
   cmp   rax, 0
   jl    .error
 
+  ; load state if there's one
+  call  state_load
+
   xor   rdi, rdi
   movzx rsi, word [host_port]
   call  net_init_tcp_socket
