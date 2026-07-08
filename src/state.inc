@@ -17,7 +17,7 @@ state_save:
   ; open file
   mov   rax, SYS_OPEN
   mov   rdi, state_path
-  mov   rsi, O_CREAT | O_TRUNC | O_RDWR
+  mov   rsi, O_CREAT | O_TRUNC | O_WRONLY
   mov   rdx, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH
   syscall
   cmp   rax, 0
@@ -61,5 +61,49 @@ state_save:
   ret
 
 ; retrieves service state from a file
+; @return rax: return code
 state_load:
+  sub   rsp, 0x8
+
+  ; STACK USAGE
+  ; [rsp] -> fd
+
+  ; open the file
+  mov   rax, SYS_OPEN
+  mov   rdi, state_path
+  mov   rsi, O_RDONLY
+  xor   rdx, rdx
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp], rax
+
+  mov   rdi, host_name
+  call  host_get_by_name
+  cmp   rax, 0
+  jl    .error
+
+  mov   rax, SYS_READ
+  mov   rdi, [rsp]
+  mov   rsi, rax
+  add   rsi, HOST_T_OFF_LAST_UP
+  mov   rcx, HOST_STATE_LEN
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  ; close the file
+  mov   rax, SYS_CLOSE
+  mov   rdi, [rsp]
+  syscall
+
+  mov   rax, SUCCESS_CODE
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x8
   ret

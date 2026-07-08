@@ -77,6 +77,8 @@ S_IRGRP equ 0x020
 S_IWGRP equ 0x010
 S_IROTH equ 0x004
 
-O_RDWR  equ 0x2
-O_CREAT equ 0x40
-O_TRUNC equ 0x200
+O_RDONLY  equ 0x0
+O_WRONLY  equ 0x1
+O_RDWR    equ 0x2
+O_CREAT   equ 0x40
+O_TRUNC   equ 0x200

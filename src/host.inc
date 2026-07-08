@@ -450,7 +450,7 @@ init_or_join_network:
   ; STACK USAGE
   ; [rsp]       -> pointer to the op
   ; [rsp+0x8]   -> addr of the remote host
-  ; [rsp+0x10]  -> addr of the remote host
+  ; [rsp+0x10]  -> pointer to the name of the current host
 
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
@@ -658,6 +658,9 @@ host_connect_to_remote:
 
   ; get host array from payload
   movzx rcx, word [rsi+PACKET_T_OFF_PAYLOAD_LEN]
+  cmp   rcx, PAYLOAD_MAX_LEN
+  jge   .error
+
   add   rsi, PACKET_T_OFF_PAYLOAD
   mov   rdi, hosts
   rep   movsb
