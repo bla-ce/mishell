@@ -451,7 +451,6 @@ cli_stop:
 cli_catalog:
   push  r12
   push  r13
-  push  r14
   sub   rsp, 0x10+PACKET_T_LEN
 
   ; STACK USAGE
@@ -509,55 +508,6 @@ cli_catalog:
   add   rdi, SERVICE_TYPE_T_OFF_DESC
   call  println
 
-  ; print horizontal tab
-  mov   rdi, mishli_tab_catalog
-  call  print
-
-  mov   rdi, mishli_cmd_catalog
-  call  println
-
-  xor   r14, r14
-
-.inner_loop:
-  cmp   r14, COMMANDS_MAX_COUNT_PER_SERVICE_TYPE
-  jge   .inner_loop_end
-
-  ; get command
-  mov   rax, [rsp]
-  add   rax, SERVICE_TYPE_T_OFF_COMMANDS
-  mov   rdi, [rax+r14*0x8]
-
-  test  rdi, rdi
-  jz    .inner_loop_end
-
-  mov   [rsp+0x10], rdi
-
-  mov   rdi, mishli_tab_catalog
-  call  print
-  mov   rdi, mishli_tab_catalog
-  call  print
-
-  ; print command name
-  mov   rdi, [rsp+0x10]
-  add   rdi, COMMAND_T_OFF_NAME
-  call  print
-
-  mov   rdi, COLON
-  call  print_char
-
-  mov   rdi, SPACE
-  call  print_char
-
-  ; print command description
-  mov   rdi, [rsp+0x10]
-  add   rdi, COMMAND_T_OFF_DESC
-  call  println
-
-  inc   r14
-  jmp   .inner_loop
-
-.inner_loop_end:
-
   inc   r13
   jmp   .loop
 
@@ -571,7 +521,6 @@ cli_catalog:
 
 .return:
   add   rsp, 0x10+PACKET_T_LEN
-  pop   r14
   pop   r13
   pop   r12
   ret
