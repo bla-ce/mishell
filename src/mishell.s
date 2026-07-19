@@ -2,6 +2,7 @@
 %include "errors.inc"
 %include "command.inc"
 %include "lib.inc"
+%include "logs.inc"
 %include "ops.inc"
 %include "packet.inc"
 %include "service.inc"
@@ -83,6 +84,13 @@ _start:
 
   ; load state if there's one
   call  state_load
+
+  ; initialise logan
+  mov   rdi, logan_t
+  xor   rsi, rsi
+  call  logan_init
+  cmp   rax, 0
+  jl    .error
 
   xor   rdi, rdi
   movzx rsi, word [host_port]
@@ -185,8 +193,9 @@ _start:
 
   mov   [conn_fd], rax
 
-  mov   rdi, log.accept_new_conn
-  call  println
+  mov   rdi, logan_t
+  mov   rsi, log.accept_new_conn
+  call  log_info
   cmp   rax, 0
   jl    .error
 
@@ -242,8 +251,9 @@ _start:
   cmp   rax, 0
   jle   .clear_connection
 
-  mov   rdi, log.recv_packet
-  call  println
+  mov   rdi, logan_t
+  mov   rsi, log.recv_packet
+  call  log_info
   cmp   rax, 0
   jl    .clear_connection
 

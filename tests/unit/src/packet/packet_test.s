@@ -4,6 +4,7 @@ global _start
 %include "errors.inc"
 %include "command.inc"
 %include "lib.inc"
+%include "logs.inc"
 %include "ops.inc"
 %include "packet.inc"
 %include "service.inc"

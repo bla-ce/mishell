@@ -1,6 +1,7 @@
 global _start
 
 %include "lib.inc"
+%include "logs.inc"
 
 section .bss
 

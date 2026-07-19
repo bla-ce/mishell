@@ -28,11 +28,6 @@ itimerspec_t:
 
 section .rodata
 
-log:
-  .listen_tcp       db "listening on tcp socket", NULL_CHAR
-  .accept_new_conn  db "accepted new connection", NULL_CHAR
-  .recv_packet      db "received packet from client", NULL_CHAR
-
 SOCKADDR_IN_T_OFF_SIN_FAMILY  equ 0x0
 SOCKADDR_IN_T_OFF_SIN_PORT    equ SOCKADDR_IN_T_OFF_SIN_FAMILY + 0x2
 SOCKADDR_IN_T_OFF_SIN_ADDR    equ SOCKADDR_IN_T_OFF_SIN_PORT + 0x2
@@ -176,8 +171,9 @@ net_init_tcp_socket:
   cmp   rax, 0
   jl    .error
 
-  mov   rdi, log.listen_tcp
-  call  println
+  mov   rdi, logan_t
+  mov   rsi, log.listen_tcp
+  call  log_info
   cmp   rax, 0
   jl    .error
 

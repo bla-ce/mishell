@@ -40,9 +40,6 @@ host_status_str_table dq HOST_STATUS_STR.DOWN
 
 HOST_HEARTBEAT equ 10
 
-log_host_is_down    db " is down", NULL_CHAR
-log_host_is_expired db " is expired, removing it from the network", NULL_CHAR
-
 usage_str db "Usage: mishell COMMAND [ARGS...]", LINE_FEED, LINE_FEED
           db "Available Commands:", LINE_FEED
           db "  init            --port PORT --name NAME   Initialize a new network", LINE_FEED
@@ -246,8 +243,11 @@ host_hearbeat:
   call  print
 
   ; log host is down
-  mov   rdi, log_host_is_down
-  call  println
+  mov   rdi, logan_t
+  mov   rsi, log.host_is_down
+  call  log_info
+  cmp   rax, 0
+  jl    .error
 
   ; check if host is expired and should be removed
   mov   rdi, [rsp+0x10]
@@ -261,8 +261,11 @@ host_hearbeat:
   call  print
 
   ; log host is down
-  mov   rdi, log_host_is_expired
-  call  println
+  mov   rdi, logan_t
+  mov   rsi, log.host_is_expired
+  call  log_info
+  cmp   rax, 0
+  jl    .error
 
   ; remove host
   mov   rdi, [rsp+0x10]
