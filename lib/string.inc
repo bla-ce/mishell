@@ -340,3 +340,55 @@ itoa:
   add   rsp, 0x18+ITOA_STR_MAX_SIZE
   pop   r12
   ret
+
+; catenates the string pointed to by rdi after the string pointed
+; to by rsi. User is responsible for providing a destination
+; buffer large enough
+; @param  rdi: pointer to the destination
+; @param  rsi: pointer to the source
+; @return rax: pointer to the destination
+strcat:
+  sub   rsp, 0x18
+
+  ; STACK USAGE
+  ; [rsp]       -> pointer to the destination
+  ; [rsp+0x8]   -> pointer to the source
+  ; [rsp+0x10]  -> pointer to the end of destination
+
+  mov   [rsp], rdi
+  mov   [rsp+0x8], rsi
+
+  test  rdi, rdi
+  jz    .error
+
+  test  rsi, rsi
+  jz    .error
+
+  ; get length of dst
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, [rsp]
+  add   rdi, rax
+  mov   [rsp+0x10], rdi
+
+  mov   rdi, [rsp+0x8]
+  call  strlen
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, [rsp+0x10]
+  mov   rsi, [rsp+0x8]
+  mov   rcx, rax
+  rep   movsb
+
+  mov   rax, [rsp]
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x18
+  ret
