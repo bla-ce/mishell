@@ -61,6 +61,11 @@ atoi_str_comma      db "1,234", NULL_CHAR
 atoi_str_neg_alpha  db "-abc", NULL_CHAR
 atoi_str_neg_mixed  db "-12a", NULL_CHAR
 
+strcat_str_1  db "Hello", NULL_CHAR
+  .pad        times 8 db 0
+strcat_str_2  db ", World!", NULL_CHAR
+strcat_str_3  db "Hello, World!", NULL_CHAR
+
 section .text
 _start:
   ; --- strlen tests ---
@@ -486,6 +491,33 @@ _start:
 
   mov   rdi, SUCCESS_CODE
   jmp   .exit
+
+  ; --- strcat tests ---
+  mov   rdi, strcat_str_1
+  mov   rsi, strcat_str_2
+  call  strcat
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, rax
+  mov   rsi, strcat_str_3
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  ; --- strcat error cases ---
+
+  mov   rdi, strcat_str_1
+  xor   rsi, rsi
+  call  strcat
+  cmp   rax, FAILURE_CODE
+  jne   .error
+
+  xor   rdi, rdi
+  mov   rsi, strcat_str_1
+  call  strcat
+  cmp   rax, FAILURE_CODE
+  jne   .error
 
 .error:
   mov   rdi, FAILURE_CODE
