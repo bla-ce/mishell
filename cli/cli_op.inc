@@ -12,33 +12,6 @@ req_op_cli_table:
   .QUERY      dq cli_query
   .CATALOG    dq cli_catalog
 
-req_op_str:
-  .HELLO      db "hello", NULL_CHAR
-  .JOIN       db "join", NULL_CHAR
-  .REGISTER   db "register", NULL_CHAR
-  .START      db "start", NULL_CHAR
-  .STOP       db "stop", NULL_CHAR
-  .UNREGISTER db "unregister", NULL_CHAR
-  .NETWORK    db "network", NULL_CHAR
-  .UPDATE     db "update", NULL_CHAR
-  .QUERY      db "query", NULL_CHAR
-  .CATALOG    db "catalog", NULL_CHAR
-
-res_ok    db "OK", NULL_CHAR
-res_error db "ERROR: ", NULL_CHAR
-
-req_op_str_table:
-  .HELLO      dq req_op_str.HELLO
-  .JOIN       dq req_op_str.JOIN
-  .REGISTER   dq req_op_str.REGISTER
-  .START      dq req_op_str.START
-  .STOP       dq req_op_str.STOP
-  .UNREGISTER dq req_op_str.UNREGISTER
-  .NETWORK    dq req_op_str.NETWORK
-  .UPDATE     dq req_op_str.UPDATE
-  .QUERY      dq req_op_str.QUERY
-  .CATALOG    dq req_op_str.CATALOG
-
 mishli_tab_catalog db "    ", NULL_CHAR
 mishli_cmd_catalog db "Commands:", NULL_CHAR
 

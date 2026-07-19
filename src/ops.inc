@@ -13,10 +13,29 @@ req_ops:
   .CATALOG    equ 0x9
   .COUNT      equ 0xA
 
-res_ops:
-  .OK     equ 0x0
-  .ERROR  equ 0x1
-  .COUNT  equ 0x2
+req_op_str:
+  .HELLO      db "hello", NULL_CHAR
+  .JOIN       db "join", NULL_CHAR
+  .REGISTER   db "register", NULL_CHAR
+  .START      db "start", NULL_CHAR
+  .STOP       db "stop", NULL_CHAR
+  .UNREGISTER db "unregister", NULL_CHAR
+  .NETWORK    db "network", NULL_CHAR
+  .UPDATE     db "update", NULL_CHAR
+  .QUERY      db "query", NULL_CHAR
+  .CATALOG    db "catalog", NULL_CHAR
+
+req_op_str_table:
+  .HELLO      dq req_op_str.HELLO
+  .JOIN       dq req_op_str.JOIN
+  .REGISTER   dq req_op_str.REGISTER
+  .START      dq req_op_str.START
+  .STOP       dq req_op_str.STOP
+  .UNREGISTER dq req_op_str.UNREGISTER
+  .NETWORK    dq req_op_str.NETWORK
+  .UPDATE     dq req_op_str.UPDATE
+  .QUERY      dq req_op_str.QUERY
+  .CATALOG    dq req_op_str.CATALOG
 
 req_op_fn_table:
   .HELLO      dq op_hello
@@ -29,6 +48,14 @@ req_op_fn_table:
   .UPDATE     dq op_update
   .QUERY      dq op_query
   .CATALOG    dq op_catalog
+
+res_ok    db "OK", NULL_CHAR
+res_error db "ERROR: ", NULL_CHAR
+
+res_ops:
+  .OK     equ 0x0
+  .ERROR  equ 0x1
+  .COUNT  equ 0x2
 
 section .text
 

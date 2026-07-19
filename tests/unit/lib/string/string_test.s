@@ -65,11 +65,12 @@ strcat_str_1  db "Hello", NULL_CHAR
   .pad        times 8 db 0
 strcat_str_2  db ", World!", NULL_CHAR
 strcat_str_3  db "Hello, World!", NULL_CHAR
+strcat_empty  db NULL_CHAR
+  .pad        times 8 db 0
 
 section .text
 _start:
   ; --- strlen tests ---
-
   mov   rdi, string
   call  strlen
   cmp   rax, string_len
@@ -501,6 +502,30 @@ _start:
 
   mov   rdi, rax
   mov   rsi, strcat_str_3
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, strcat_str_1
+  mov   rsi, strcat_empty
+  call  strcat
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, rax
+  mov   rsi, strcat_str_1
+  call  strcmp
+  cmp   rax, TRUE
+  jne   .error
+
+  mov   rdi, strcat_empty
+  mov   rsi, strcat_str_1
+  call  strcat
+  cmp   rax, 0
+  jl    .error
+
+  mov   rdi, rax
+  mov   rsi, strcat_str_1
   call  strcmp
   cmp   rax, TRUE
   jne   .error

@@ -381,6 +381,7 @@ strcat:
   mov   rdi, [rsp+0x10]
   mov   rsi, [rsp+0x8]
   mov   rcx, rax
+  inc   rcx     ; include null char
   rep   movsb
 
   mov   rax, [rsp]
