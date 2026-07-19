@@ -1,4 +1,4 @@
-section .data
+section .rodata
 
 ; bool
 FALSE equ 0
@@ -82,4 +82,5 @@ O_RDONLY  equ 0x0
 O_WRONLY  equ 0x1
 O_RDWR    equ 0x2
 O_CREAT   equ 0x40
+O_APPEND  equ 0x400
 O_TRUNC   equ 0x200

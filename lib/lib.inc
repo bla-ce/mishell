@@ -2,3 +2,4 @@
 %include "net.inc"
 %include "time.inc"
 %include "string.inc"
+%include "logan.inc"

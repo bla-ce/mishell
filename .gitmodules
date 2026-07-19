@@ -1,0 +1,3 @@
+[submodule "lib/logan"]
+	path = lib/logan
+	url = git@github.com:bla-ce/logan.git
