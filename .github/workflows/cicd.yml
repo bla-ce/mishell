@@ -14,6 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Install nasm
         run: sudo apt-get update && sudo apt-get install -y nasm
@@ -40,6 +42,8 @@ jobs:
           - unit/lib/net
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - name: Install nasm
         run: sudo apt-get update && sudo apt-get install -y nasm
       - name: Run ${{ matrix.suite }} tests
