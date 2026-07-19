@@ -193,12 +193,6 @@ _start:
 
   mov   [conn_fd], rax
 
-  mov   rdi, logan_t
-  mov   rsi, log.accept_new_conn
-  call  log_info
-  cmp   rax, 0
-  jl    .error
-
   ; set conn fd non blocking
   mov   rax, SYS_FCNTL
   mov   rdi, [conn_fd]
@@ -240,7 +234,7 @@ _start:
   lea   rdi, [rsp]
   call  packet_reset
   cmp   rax, 0
-  jl    .error
+  jl    .clear_connection
 
   ; get packet
   mov   rax, SYS_READ
@@ -250,12 +244,6 @@ _start:
   syscall
   cmp   rax, 0
   jle   .clear_connection
-
-  mov   rdi, logan_t
-  mov   rsi, log.recv_packet
-  call  log_info
-  cmp   rax, 0
-  jl    .clear_connection
 
   ; handle the packet
   lea   rdi, [rsp]

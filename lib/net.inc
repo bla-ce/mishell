@@ -69,7 +69,7 @@ net_tcp_connect_to_remote_addr:
   mov   rax, SYS_SOCKET
   mov   rdi, AF_INET
   mov   rsi, SOCK_STREAM
-  mov   rdx, 0
+  xor   rdx, rdx
   syscall
   cmp   rax, 0
   jl    .error
@@ -128,7 +128,7 @@ net_init_tcp_socket:
   mov   rax, SYS_SOCKET
   mov   rdi, AF_INET
   mov   rsi, SOCK_STREAM
-  mov   rdx, 0
+  xor   rdx, rdx
   syscall
   cmp   rax, 0
   jl    .error
@@ -168,12 +168,6 @@ net_init_tcp_socket:
   mov   rdi, [rsp+0x10]
   mov   rsi, LISTEN_BACKLOG
   syscall
-  cmp   rax, 0
-  jl    .error
-
-  mov   rdi, logan_t
-  mov   rsi, log.listen_tcp
-  call  log_info
   cmp   rax, 0
   jl    .error
 

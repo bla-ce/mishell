@@ -532,7 +532,6 @@ init_or_join_network:
 
   jmp   .loop
 .loop_end:
-
   ; rdi points to the port
   mov   rsi, rdi
   mov   rdi, [rsp+0x8]
