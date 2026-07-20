@@ -25,7 +25,7 @@ jobs:
 
       - name: Run mishell
         run: |
-          make run &
+          make run-init &
           echo $! > mishell.pid
           sleep 2
 
