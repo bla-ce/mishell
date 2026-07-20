@@ -49,6 +49,52 @@ sockaddr_in_t_len dq sockaddr_in_t_end - sockaddr_in_t
 LISTEN_BACKLOG  equ 50
 
 section .text
+; initialises an epoll instance and add an fd to the interest list
+; @param  rdi: file descriptor to add to the interest list
+; @return rax: epoll fd
+net_epoll_init:
+  sub   rsp, 0x10
+
+  ; STACK USAGE
+  ; [rsp]     -> fd to add to the interest list
+  ; [rsp+0x8] -> epoll fd
+
+  mov   [rsp], rdi
+
+  ; initialise epoll instance
+  mov   rax, SYS_EPOLL_CREATE1
+  xor   rdi, rdi
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   [rsp+0x8], rax
+
+  ; add tcp socket to the epoll interest list
+  mov   dword [epoll_event_t.events], EPOLLIN
+  mov   rax, [rsp]
+  mov   [epoll_event_t.data], rax
+
+  mov   rax, SYS_EPOLL_CTL
+  mov   rdi, [rsp+0x8]
+  mov   rsi, EPOLL_CTL_ADD
+  mov   rdx, [rsp]
+  mov   r10, epoll_event_t
+  syscall
+  cmp   rax, 0
+  jl    .error
+
+  mov   rax, [rsp+0x8]
+
+  jmp   .return
+
+.error:
+  mov   rax, FAILURE_CODE
+
+.return:
+  add   rsp, 0x10
+  ret
+
 ; creates a socket and connects it to a remote addr
 ; @param  rdi: ip
 ; @param  rsi: port (byte order)

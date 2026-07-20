@@ -100,28 +100,12 @@ _start:
 
   mov   [tcp_fd], rax
 
-  ; initialise epoll instance
-  mov   rax, SYS_EPOLL_CREATE1
-  xor   rdi, rdi
-  syscall
+  mov   rdi, [tcp_fd]
+  call  net_epoll_init
   cmp   rax, 0
   jl    .error
 
   mov   [epoll_fd], rax
-
-  ; add tcp socket to the epoll interest list
-  mov   dword [epoll_event_t.events], EPOLLIN
-  mov   rax, [tcp_fd]
-  mov   [epoll_event_t.data], rax
-
-  mov   rax, SYS_EPOLL_CTL
-  mov   rdi, [epoll_fd]
-  mov   rsi, EPOLL_CTL_ADD
-  mov   rdx, [tcp_fd]
-  mov   r10, epoll_event_t
-  syscall
-  cmp   rax, 0
-  jl    .error
 
   ; create timerfd for host hearbeat
   mov   rdi, HOST_HEARTBEAT
