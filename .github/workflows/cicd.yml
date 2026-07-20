@@ -23,10 +23,17 @@ jobs:
       - name: mishell and mishli build
         run: make
 
-      - name: Run e2e tests
+      - name: Run mishell
         run: |
-          make run-init &
-          make test-e2e
+          make run &
+          echo $! > mishell.pid
+          sleep 2
+
+      - name: Run e2e tests
+        run: make test-e2e
+
+      - name: Kill Mishell
+        run: kill $(cat mishell.pid)
 
   test-unit:
     runs-on: ubuntu-latest
