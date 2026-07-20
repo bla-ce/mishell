@@ -25,7 +25,8 @@ HOST_T_OFF_SERVICES_COUNT equ HOST_T_OFF_SERVICES + SERVICES_LEN
 
 HOST_STATE_LEN equ host_t_end - host_t.last_up
 
-HOST_EXPIRY equ HOST_HEARTBEAT * 10
+HOST_EXPIRY equ HOST_HEARTBEAT * 3
+HOST_HEARTBEAT equ 3
 
 HOST_STATUS:
   .DOWN equ 0x0
@@ -37,8 +38,6 @@ HOST_STATUS_STR:
 
 host_status_str_table dq HOST_STATUS_STR.DOWN
                       dq HOST_STATUS_STR.UP
-
-HOST_HEARTBEAT equ 10
 
 usage_str db "Usage: mishell COMMAND [ARGS...]", LINE_FEED, LINE_FEED
           db "Available Commands:", LINE_FEED
@@ -239,13 +238,7 @@ host_hearbeat:
   mov   rdi, [rsp+0x10]
   mov   byte [rdi+HOST_T_OFF_STATUS], HOST_STATUS.DOWN
 
-  add   rdi, HOST_T_OFF_NAME
-  call  print
-
-  ; log host is down
-  mov   rdi, logan_t
-  mov   rsi, log.host_is_down
-  call  log_info
+  call  log_host_down
   cmp   rax, 0
   jl    .error
 
@@ -255,15 +248,8 @@ host_hearbeat:
   cmp   rax, TRUE
   jne   .next_host
 
-  ; log host is expired
   mov   rdi, [rsp+0x10]
-  add   rdi, HOST_T_OFF_NAME
-  call  print
-
-  ; log host is down
-  mov   rdi, logan_t
-  mov   rsi, log.host_is_expired
-  call  log_info
+  call  log_host_expired
   cmp   rax, 0
   jl    .error
 
@@ -488,6 +474,11 @@ init_or_join_network:
   cmp   rax, TRUE
   je    .connect_to_host
 
+  movzx rdi, word [host_port]
+  call  log_init_network
+  cmp   rax, 0
+  jl    .error
+
   ; make sure it's init
   mov   rdi, FIRST_HOST_CMD
   mov   rsi, [rsp]  ; second CLI argument
@@ -507,6 +498,12 @@ init_or_join_network:
 
   ; increase host count
   inc   byte [curr_host_idx]
+
+  mov   rdi, logan_t
+  mov   rsi, log.network_done
+  call  log_info
+  cmp   rax, 0
+  jl    .error
 
   jmp   .done
 

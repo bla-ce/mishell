@@ -344,6 +344,8 @@ itoa:
 ; catenates the string pointed to by rdi after the string pointed
 ; to by rsi. User is responsible for providing a destination
 ; buffer large enough
+; NOTE: this implementation is different from libc as it returned
+; a pointer to the terminating null char byte of the copied string
 ; @param  rdi: pointer to the destination
 ; @param  rsi: pointer to the source
 ; @return rax: pointer to the destination
@@ -384,7 +386,9 @@ strcat:
   inc   rcx     ; include null char
   rep   movsb
 
-  mov   rax, [rsp]
+  mov   rax, rdi
+  dec   rax ; go before null char
+
   jmp   .return
 
 .error:

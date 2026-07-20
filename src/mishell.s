@@ -129,6 +129,12 @@ _start:
   cmp   rax, 0
   jl    .error
 
+  mov   rdi, logan_t
+  mov   rsi, log.listen
+  call  log_info
+  cmp   rax, 0
+  jl    .error
+
 .outer_loop:
   ; epoll wait
   mov   rax, SYS_EPOLL_WAIT
@@ -176,6 +182,12 @@ _start:
   jl    .next_connection
 
   mov   [conn_fd], rax
+
+  mov   rdi, logan_t
+  mov   rsi, log.accept
+  call  log_info
+  cmp   rax, 0
+  jl    .error
 
   ; set conn fd non blocking
   mov   rax, SYS_FCNTL

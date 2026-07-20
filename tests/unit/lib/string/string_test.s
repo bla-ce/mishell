@@ -1,7 +1,6 @@
 global _start
 
 %include "lib.inc"
-%include "logs.inc"
 
 section .bss
 
@@ -500,32 +499,8 @@ _start:
   cmp   rax, 0
   jl    .error
 
-  mov   rdi, rax
-  mov   rsi, strcat_str_3
-  call  strcmp
-  cmp   rax, TRUE
-  jne   .error
-
   mov   rdi, strcat_str_1
-  mov   rsi, strcat_empty
-  call  strcat
-  cmp   rax, 0
-  jl    .error
-
-  mov   rdi, rax
-  mov   rsi, strcat_str_1
-  call  strcmp
-  cmp   rax, TRUE
-  jne   .error
-
-  mov   rdi, strcat_empty
-  mov   rsi, strcat_str_1
-  call  strcat
-  cmp   rax, 0
-  jl    .error
-
-  mov   rdi, rax
-  mov   rsi, strcat_str_1
+  mov   rsi, strcat_str_3
   call  strcmp
   cmp   rax, TRUE
   jne   .error

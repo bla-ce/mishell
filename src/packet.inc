@@ -62,6 +62,12 @@ packet_dispatch:
   test  rdi, rdi
   jz    .error
 
+  mov   rdi, [rsp]
+  mov   rsi, [rsp+0x8]
+  call  log_packet_reception
+  cmp   rax, 0
+  jl    .error
+
   ; verify packet
   mov   rdi, [rsp]
   call  packet_verify
