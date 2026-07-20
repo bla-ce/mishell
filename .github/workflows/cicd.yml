@@ -20,14 +20,13 @@ jobs:
       - name: Install nasm
         run: sudo apt-get update && sudo apt-get install -y nasm
 
-      - name: mishell builds
+      - name: mishell and mishli build
         run: make
 
-      - name: mishli builds
-        run: make mishli
-
       - name: Run e2e tests
-        run: make test-e2e
+        run: |
+          make run-init &
+          make test-e2e
 
   test-unit:
     runs-on: ubuntu-latest

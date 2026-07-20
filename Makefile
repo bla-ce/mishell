@@ -17,7 +17,7 @@ DEBUG_FLAGS = -g
 BASE_FLAGS = -felf64 -w+all
 
 PORT ?= 7474
-NAME ?= default
+NAME ?= home
 REMOTE_ADDR ?= 127.0.0.1:7474
 
 all:
