@@ -32,7 +32,7 @@ state_save:
   jl    .error
 
   mov   rsi, rax
-  add   rsi, HOST_T_OFF_LAST_UP
+  add   rsi, HOST_T_OFF_SERVICES
 
   ; write state to the file (last up, services and services count)
   mov   rax, SYS_WRITE
