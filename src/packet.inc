@@ -53,14 +53,14 @@ packet_dispatch:
   mov   [rsp+0x8], rsi
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
 
+  test  rdi, rdi
+  jz    .error
+
   ; reset response packet
   lea   rdi, [rsp+0x18]
   call  packet_reset
   cmp   rax, 0
   jl    .error
-
-  test  rdi, rdi
-  jz    .error
 
   mov   rdi, [rsp]
   mov   rsi, [rsp+0x8]

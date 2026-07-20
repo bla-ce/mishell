@@ -123,6 +123,7 @@ log_packet_reception:
   ; reset log message
   mov   qword [log_message], 0
 
+  mov   rax, SUCCESS_CODE
   jmp   .return
 
 .error:
