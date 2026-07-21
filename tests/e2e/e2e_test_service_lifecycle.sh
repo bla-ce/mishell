@@ -143,3 +143,21 @@ else
   echo "Received: $payload"
   exit 1
 fi
+
+echo -n "unregistering a service should not make the other services further down the array unavailable..."
+
+$MISHLI_PATH --host 127.0.0.1:7474 register home PING ping > /dev/null
+$MISHLI_PATH --host 127.0.0.1:7474 register home PING ping2 > /dev/null
+$MISHLI_PATH --host 127.0.0.1:7474 unregister home ping > /dev/null
+
+payload=$($MISHLI_PATH --host 127.0.0.1:7474 start home ping2)
+expected="OK"
+
+if [ "$payload" = "$expected" ]; then
+  echo -e "\033[32mPASSED\033[0m"
+else
+  echo -e "\033[31mFAILED\033[0m"
+  echo "Expected: $expected"
+  echo "Received: $payload"
+  exit 1
+fi
