@@ -31,6 +31,7 @@ section .text
 ; @param  rsi: pointer to the name of the service
 ; @return rax: pointer to the service struct or -1
 service_get_by_name:
+  push  r12
   sub   rsp, 0x20
 
   ; STACK USAGE
@@ -53,19 +54,15 @@ service_get_by_name:
   cmp   rax, 0
   jl    .error
 
-  ; get service max offset
-  movzx rsi, byte [rax+HOST_T_OFF_SERVICES_COUNT]
-  imul  r10, rsi, SERVICE_T_LEN
-
   add   rax, HOST_T_OFF_SERVICES
 
   mov   [rsp+0x10], rax
 
-  xor   r9, r9
+  xor   r12, r12
 
 .loop:
   mov   rsi, [rsp+0x10]
-  lea   rdi, [rsi+r9]
+  lea   rdi, [rsi+r12]
 
   mov   [rsp+0x18], rdi
 
@@ -75,9 +72,9 @@ service_get_by_name:
   cmp   rax, TRUE
   je    .loop_end
 
-  add   r9, SERVICE_T_LEN
+  add   r12, SERVICE_T_LEN
 
-  cmp   r9, r10
+  cmp   r12, SERVICES_LEN
   jge   .error
 
   jmp   .loop
@@ -91,6 +88,7 @@ service_get_by_name:
 
 .return:
   add   rsp, 0x20
+  pop   r12
   ret
 
 ; initialises a new service from a REGISTER packet and adds it to
