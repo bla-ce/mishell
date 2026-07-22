@@ -887,3 +887,26 @@ host_update_network:
   add   rsp, 0x18+PACKET_T_LEN
   pop   r13
   ret
+
+; check if the host array is full
+; @return rax:
+;   - 0 if allocation is full
+;   - pointer to the next available slot
+host_is_allocation_exhausted:
+  xor   r9, r9
+.loop:
+  cmp   r9, HOST_MAX_COUNT
+  jge   .loop_end
+
+  imul  rdi, r9, HOST_T_LEN
+  lea   rax, [hosts+rdi]
+  cmp   qword [rax], 0
+  je    .return
+
+  inc   r9
+  jmp   .loop
+.loop_end:
+  xor   rax, rax
+
+.return:
+  ret

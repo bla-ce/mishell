@@ -127,6 +127,44 @@ _start:
   cmp   rax, error_codes.INTERNAL
   jne   .error
 
+  ; --- host_is_allocation_exhausted tests ---
+  ; reset hosts
+  mov   rdi, hosts
+  xor   rax, rax
+  mov   rcx, HOSTS_LEN
+  rep   stosb
+
+  ; add one host
+  mov   rdi, hosts
+  mov   al, 1
+  mov   rcx, HOST_T_LEN
+  rep   stosb
+
+  call  host_is_allocation_exhausted
+  lea   rdi, [hosts+HOST_T_LEN]
+  cmp   rdi, rax
+  jne   .error
+
+  ; fill all hosts
+  mov   rdi, hosts
+  mov   al, 1
+  mov   rcx, HOSTS_LEN
+  rep   stosb
+
+  call  host_is_allocation_exhausted
+  test  rax, rax
+  jnz   .error
+
+  ; remove first one
+  mov   rdi, hosts
+  xor   al, al
+  mov   rcx, HOST_T_LEN
+  rep   stosb
+
+  call  host_is_allocation_exhausted
+  cmp   rax, hosts
+  jne   .error
+
   mov   rdi, SUCCESS_CODE
   jmp   .exit
 
