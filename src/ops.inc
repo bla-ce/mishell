@@ -247,16 +247,10 @@ op_register:
   jl    .error
 
   mov   rdi, [rsp+0x8]
-  add   rdi, PACKET_T_OFF_PAYLOAD
-  mov   rsi, rax
-  mov   rcx, SERVICE_T_LEN
-  rep   movsb
-
-  mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], SERVICE_T_LEN
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
 
   ; save state
   call  state_save
