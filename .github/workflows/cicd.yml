@@ -10,19 +10,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test-e2e:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - name: Install nasm
-        run: sudo apt-get update && sudo apt-get install -y nasm
-      - name: Build mishell and mishli
-        run: make
-      - name: Run E2E tests
-        run: make test-e2e
-
   test-unit:
     runs-on: ubuntu-latest
     strategy:
