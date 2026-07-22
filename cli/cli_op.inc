@@ -82,10 +82,6 @@ cli_hello:
   cmp   rax, 0
   jl    .error
 
-  ; print ok
-  mov   rdi, res_ok
-  call  println
-
   mov   rax, SUCCESS_CODE
   jmp   .return
 
@@ -248,10 +244,6 @@ cli_unregister:
   cmp   rax, 0
   jl    .error
 
-  ; print ok
-  mov   rdi, res_ok
-  call  println
-
   mov   rax, SUCCESS_CODE
   jmp   .return
 
@@ -323,10 +315,6 @@ cli_start:
   cmp   rax, 0
   jl    .error
 
-  ; print ok
-  mov   rdi, res_ok
-  call  println
-
   mov   rax, SUCCESS_CODE
   jmp   .return
 
@@ -397,10 +385,6 @@ cli_stop:
   call  cli_transaction
   cmp   rax, 0
   jl    .error
-
-  ; print ok
-  mov   rdi, res_ok
-  call  println
 
   mov   rax, SUCCESS_CODE
   jmp   .return
@@ -534,6 +518,9 @@ cli_network:
   add   rax, PACKET_T_OFF_PAYLOAD
   add   r14, rax
 
+  cmp   qword [r14], 0
+  je    .skip_host
+
   movsx rdi, dword [r14+HOST_T_OFF_IP]
   movzx rax, word [r14+HOST_T_OFF_PORT]
   xchg  al, ah
@@ -560,6 +547,7 @@ cli_network:
   mov   rdi, qword [host_status_str_table+0x8*eax]
   call  println
 
+.skip_host:
   inc   r13
   jmp   .loop
 
@@ -653,11 +641,17 @@ cli_query:
   cmp   rax, 0
   jl    .error
 
+  ; if error, skip payload
+  lea   rdi, [rsp+0x18]
+  cmp   byte [PACKET_T_OFF_OP], res_ops.ERROR
+  je    .done
+
   ; print payload
   lea   rdi, [rsp+0x18]
   add   rdi, PACKET_T_OFF_PAYLOAD
   call  println
 
+.done:
   mov   rax, SUCCESS_CODE
   jmp   .return
 
@@ -710,10 +704,20 @@ cli_transaction:
   cmp   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   jne   .error
 
-  ; print ok
+  ; print payload
+  cmp   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], 0
+  je    .print_ok
+
+  add   rdi, PACKET_T_OFF_PAYLOAD
+  call  println
+
+  jmp   .done
+
+.print_ok:
   mov   rdi, res_ok
   call  println
 
+.done:
   mov   rax, SUCCESS_CODE
   jmp   .return
 
