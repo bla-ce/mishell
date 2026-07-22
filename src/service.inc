@@ -117,14 +117,25 @@ service_init:
   test  rsi, rsi
   jz    .error
 
-  ; get pointer to the service
-  mov   rax, [rsp+0x8]
-  movzx r9, byte [rax+HOST_T_OFF_SERVICES_COUNT]
-  lea   rdi, [rax+HOST_T_OFF_SERVICES]
+  xor   r9, r9
 
+  ; get first available service index
+.loop:
+  cmp   r9, SERVICE_MAX_COUNT_PER_HOST
+  jge   .error
+
+  mov   rdi, [rsp+0x8]
+  add   rdi, HOST_T_OFF_SERVICES
   imul  rax, r9, SERVICE_T_LEN
   add   rdi, rax
 
+  cmp   qword [rdi], 0
+  je    .loop_end
+
+  inc   r9
+  jmp   .loop
+
+.loop_end:
   mov   [rsp+0x10], rdi
 
   ; memset service
