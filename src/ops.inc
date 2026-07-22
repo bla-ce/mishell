@@ -114,9 +114,6 @@ op_join:
 
   ; make sure we haven't reached the host limit
   ; TODO: find another way
-  ; mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
-  ; cmp   byte [curr_host_idx], HOST_MAX_COUNT
-  ; jge   .error
 
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   mov   rdi, [rsp]

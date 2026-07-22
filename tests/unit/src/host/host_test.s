@@ -49,8 +49,6 @@ _start:
   mov   rcx, dummy_host_2_len
   rep   movsb
 
-  mov   byte [curr_host_idx], 2
-
   ; filled array without the right id should return -1
   mov   rdi, dummy_host_3
   call  host_get_by_name
@@ -119,8 +117,6 @@ _start:
   mov   rsi, test_host
   mov   rcx, HOST_T_LEN
   rep   movsb
-
-  mov   byte [curr_host_idx], 1
 
   ; invalid host name should return INTERNAL
   mov   rdi, test_host
