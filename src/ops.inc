@@ -113,9 +113,10 @@ op_join:
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
   ; make sure we haven't reached the host limit
-  mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
-  cmp   byte [curr_host_idx], HOST_MAX_COUNT
-  jge   .error
+  ; TODO: find another way
+  ; mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
+  ; cmp   byte [curr_host_idx], HOST_MAX_COUNT
+  ; jge   .error
 
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   mov   rdi, [rsp]
@@ -162,14 +163,10 @@ op_join:
   mov   rcx, HOST_T_LEN
   rep   movsb
 
-  inc   byte [curr_host_idx]
-
 .send_update:
   ; add host array to payload
   mov   rdi, [rsp+0x8]
-  movzx rcx, byte [curr_host_idx]
-  imul  rcx, HOST_T_LEN
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], cx
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOSTS_LEN
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
   rep   movsb
@@ -486,16 +483,14 @@ op_network:
   mov   rdi, [rsp+0x8]
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
-  movzx rdx, byte [curr_host_idx]
-  imul  rcx, rdx, HOST_T_LEN
-  mov   rax, rcx
+  mov   rcx, HOSTS_LEN
   rep   movsb
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOSTS_LEN
 
   mov   rax, SUCCESS_CODE
   jmp   .return
@@ -538,14 +533,6 @@ op_update:
 
   mov   rdi, hosts
   rep   movsb
-
-  ; update host idx
-  mov   rdi, [rsp]
-  movzx rax, word [rdi+PACKET_T_OFF_PAYLOAD_LEN]
-  xor   rdx, rdx
-  mov   rcx, HOST_T_LEN
-  div   rcx
-  mov   byte [curr_host_idx], al
 
   mov   rdi, [rsp+0x8]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE

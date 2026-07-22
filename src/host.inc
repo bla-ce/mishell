@@ -61,7 +61,6 @@ host_name resb HOST_NAME_MAX_LEN
 section .data
 
 hosts times HOSTS_LEN db 0
-curr_host_idx db 0
 
 host_port dw 0
 host_ip   dd 0
@@ -144,7 +143,6 @@ host_is_expired:
   ret
 
 host_hearbeat:
-  push  r12
   push  r13
   sub   rsp, 0x18+PACKET_T_LEN
 
@@ -160,13 +158,6 @@ host_hearbeat:
   mov   rdx, 8
   syscall
 
-  ; get array length
-  movzx r12, byte [curr_host_idx]
-  test  r12, r12
-  jz    .done
-  imul  rax, r12, HOST_T_LEN
-  mov   [rsp], rax
-
   ; build packet
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
@@ -177,13 +168,16 @@ host_hearbeat:
   xor   r13, r13
 
 .loop:
-  cmp   r13, r12
+  cmp   r13, HOST_MAX_COUNT
   jge   .done
 
   ; get host
   imul  rax, r13, HOST_T_LEN
   lea   rdi, [hosts+rax]
   mov   [rsp+0x10], rdi
+
+  cmp   qword [rdi], 0
+  je    .next_host
 
   ; check if we need to skip the host
   add   rdi, HOST_T_OFF_NAME
@@ -259,8 +253,6 @@ host_hearbeat:
   mov   rcx, HOST_T_LEN
   rep   stosb
 
-  dec   byte [curr_host_idx]
-
 .next_host:
   inc   r13
   jmp   .loop
@@ -275,7 +267,6 @@ host_hearbeat:
 .return:
   add   rsp, 0x18+PACKET_T_LEN
   pop   r13
-  pop   r12
   ret
 
 ; @param  rdi: pointer to the request packet
@@ -376,7 +367,7 @@ host_exists:
   xor   r12, r12
 
 .loop:
-  cmp   r12b, byte [curr_host_idx]
+  cmp   r12b, HOST_MAX_COUNT
   jge   .loop_end
 
   imul  rax, r12, HOST_T_LEN
@@ -495,9 +486,6 @@ init_or_join_network:
   call  host_init
   test  rax, rax
   jnz   .error
-
-  ; increase host count
-  inc   byte [curr_host_idx]
 
   mov   rdi, logan_t
   mov   rsi, log.network_done
@@ -664,15 +652,6 @@ host_connect_to_remote:
   mov   rdi, hosts
   rep   movsb
 
-  ; get number of hosts from payload len
-  lea   rsi, [rsp+0x20]
-  movzx rax, word [rsi+PACKET_T_OFF_PAYLOAD_LEN]
-
-  xor   rdx, rdx
-  mov   rcx, HOST_T_LEN
-  div   rcx
-  mov   byte [curr_host_idx], al
-
   ; close connection
   mov   rax, SYS_CLOSE
   mov   rdi, [rsp+0x18]
@@ -713,15 +692,14 @@ host_get_by_name:
 
   xor   r9, r9
 
-  ; get host max offset
-  movzx rax, byte [curr_host_idx]
-  imul  r10, rax, HOST_T_LEN
-
 .loop:
-  cmp   r9, r10
+  cmp   r9, HOSTS_LEN
   jge   .error
 
   lea   rdi, [hosts+r9]
+
+  cmp   qword [rdi], 0
+  je    .skip_host
 
   mov   [rsp+0x8], rdi
 
@@ -731,6 +709,7 @@ host_get_by_name:
   cmp   rax, TRUE
   je    .loop_end
 
+.skip_host:
   add   r9, HOST_T_LEN
 
   jmp   .loop
@@ -824,7 +803,6 @@ host_init:
 ; updates each host in the network with new host array
 ; @return rax: return code
 host_update_network:
-  push  r12
   push  r13
   sub   rsp, 0x18+PACKET_T_LEN
 
@@ -834,37 +812,32 @@ host_update_network:
   ; [rsp+0x10]  -> temp host
   ; [rsp+0x18]  -> packet
 
-  ; get array length
-  movzx r12, byte [curr_host_idx]
-  test  r12, r12
-  jz    .done
-  imul  rax, r12, HOST_T_LEN
-  mov   [rsp], rax
-
   ; build packet
   lea   rdi, [rsp+0x18]
   mov   word [rdi+PACKET_T_OFF_MAGIC], MAGIC_VALUE
   mov   byte [rdi+PACKET_T_OFF_OP], req_ops.UPDATE
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
-  mov   ax, [rsp]
-  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], ax
+  mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOSTS_LEN
 
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
-  movzx rcx, ax
+  mov   rcx, HOSTS_LEN
   rep   movsb
 
   xor   r13, r13
 
 .loop:
-  cmp   r13, r12
+  cmp   r13, HOST_MAX_COUNT
   jge   .done
 
   ; get host
   imul  rax, r13, HOST_T_LEN
   lea   rdi, [hosts+rax]
   mov   [rsp+0x10], rdi
+
+  cmp   qword [rdi], 0
+  je    .next_host
 
   ; check if we need to skip the host
   add   rdi, HOST_T_OFF_NAME
@@ -913,5 +886,4 @@ host_update_network:
 .return:
   add   rsp, 0x18+PACKET_T_LEN
   pop   r13
-  pop   r12
   ret
