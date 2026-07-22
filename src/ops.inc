@@ -140,12 +140,25 @@ op_join:
   jmp   .send_update
 
 .add_host:
-  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
+  ; find first available host
+
+  xor   r9, r9
+.loop:
+  cmp   r9, HOST_MAX_COUNT
+  jge   .error
+
+  imul  rax, r9, HOST_T_LEN
+  lea   rdi, [hosts+rax]
+
+  cmp   qword [rdi], 0
+  je    .loop_end
+
+  inc   r9
+  jmp   .loop
+
+.loop_end:
   mov   rsi, [rsp]
   add   rsi, PACKET_T_OFF_PAYLOAD
-  movzx eax, byte [curr_host_idx]
-  imul  eax, HOST_T_LEN
-  lea   rdi, [hosts+eax]
   mov   rcx, HOST_T_LEN
   rep   movsb
 
@@ -165,6 +178,7 @@ op_join:
   mov   rdi, [rsp+0x8]
   mov   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
 
+  mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   call  host_update_network
   cmp   rax, 0
   jl    .error

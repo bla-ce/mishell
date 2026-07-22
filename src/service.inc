@@ -150,7 +150,7 @@ service_init:
   lea   rdi, [rax+SERVICE_TYPE_NAME_MAX_LEN]
   call  strlen
   cmp   rax, 0
-  jl    .error
+  jle   .error
   cmp   rax, SERVICE_NAME_MAX_LEN
   jge   .error
 

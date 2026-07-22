@@ -116,9 +116,6 @@ cli_register:
   test  rsi, rsi
   jz    .error
 
-  test  rdx, rdx
-  jz    .error
-
   mov   [rsp], rdi
   mov   [rsp+0x8], rsi
   mov   [rsp+0x10], rdx
@@ -179,10 +176,6 @@ cli_register:
   call  cli_transaction
   cmp   rax, 0
   jl    .error
-
-  ; print ok
-  mov   rdi, res_ok
-  call  println
 
   mov   rax, SUCCESS_CODE
   jmp   .return
@@ -717,12 +710,20 @@ cli_transaction:
   cmp   byte [rdi+PACKET_T_OFF_OP], res_ops.OK
   jne   .error
 
+  ; print ok
+  mov   rdi, res_ok
+  call  println
+
   mov   rax, SUCCESS_CODE
   jmp   .return
 
 .error:
   mov   rdi, [rsp]
   call  cli_print_error
+
+  ; technically not a cli error
+  mov   rax, SUCCESS_CODE
+  jmp   .return
 
 .no_print:
   mov   rax, FAILURE_CODE

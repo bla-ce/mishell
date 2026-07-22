@@ -82,7 +82,7 @@ _start:
   mov   rdx, [rsp+0x38]
   call  rax
   cmp   rax, 0
-  jl    .error
+  jl    .usage
 
   ; close fd
   mov   rax, SYS_CLOSE
