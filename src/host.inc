@@ -643,13 +643,9 @@ host_connect_to_remote:
   cmp   byte [rsi+PACKET_T_OFF_OP], res_ops.OK
   jne   .error
 
-  ; get host array from payload
-  movzx rcx, word [rsi+PACKET_T_OFF_PAYLOAD_LEN]
-  cmp   rcx, PAYLOAD_MAX_LEN
-  jge   .error
-
-  add   rsi, PACKET_T_OFF_PAYLOAD
   mov   rdi, hosts
+  add   rsi, PACKET_T_OFF_PAYLOAD
+  mov   rcx, HOSTS_LEN
   rep   movsb
 
   ; close connection
@@ -679,6 +675,7 @@ host_connect_to_remote:
 ; @param  rdi: pointer to the name of the host
 ; @return rax: pointer to the host struct or -1
 host_get_by_name:
+  push  r12
   sub   rsp, 0x10
 
   ; STACK USAGE
@@ -690,13 +687,13 @@ host_get_by_name:
   test  rdi, rdi
   jz    .error
 
-  xor   r9, r9
+  xor   r12, r12
 
 .loop:
-  cmp   r9, HOSTS_LEN
+  cmp   r12, HOSTS_LEN
   jge   .error
 
-  lea   rdi, [hosts+r9]
+  lea   rdi, [hosts+r12]
 
   cmp   qword [rdi], 0
   je    .skip_host
@@ -710,7 +707,7 @@ host_get_by_name:
   je    .loop_end
 
 .skip_host:
-  add   r9, HOST_T_LEN
+  add   r12, HOST_T_LEN
 
   jmp   .loop
 
@@ -723,6 +720,7 @@ host_get_by_name:
 
 .return:
   add   rsp, 0x10
+  pop   r12
   ret
 
 ; populates the host struct with ip, port

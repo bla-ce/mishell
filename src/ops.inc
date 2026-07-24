@@ -141,23 +141,11 @@ op_join:
   jmp   .send_update
 
 .add_host:
-  ; find first available host
+  call  host_is_allocation_exhausted
+  test  rax, rax
+  jz    .error
 
-  xor   r9, r9
-.loop:
-  cmp   r9, HOST_MAX_COUNT
-  jge   .error
-
-  imul  rax, r9, HOST_T_LEN
-  lea   rdi, [hosts+rax]
-
-  cmp   qword [rdi], 0
-  je    .loop_end
-
-  inc   r9
-  jmp   .loop
-
-.loop_end:
+  mov   rdi, rax
   mov   rsi, [rsp]
   add   rsi, PACKET_T_OFF_PAYLOAD
   mov   rcx, HOST_T_LEN
@@ -169,6 +157,7 @@ op_join:
   mov   word [rdi+PACKET_T_OFF_PAYLOAD_LEN], HOSTS_LEN
   add   rdi, PACKET_T_OFF_PAYLOAD
   mov   rsi, hosts
+  mov   rcx, HOSTS_LEN
   rep   movsb
 
   ; build response packet
