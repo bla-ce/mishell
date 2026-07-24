@@ -33,6 +33,13 @@ _start:
   cmp   qword [rsp+PACKET_T_LEN], MISHELL_MIN_ARG
   jl    .usage
 
+  ; initialise logan
+  mov   rdi, logan_t
+  xor   rsi, rsi
+  call  logan_init
+  cmp   rax, 0
+  jl    .error
+
   ; check if port flag has been set
   mov   rdi, [rsp+PACKET_T_LEN+0x18]
   mov   rsi, PORT_FLAG
@@ -84,13 +91,6 @@ _start:
 
   ; load state if there's one
   call  state_load
-
-  ; initialise logan
-  mov   rdi, logan_t
-  xor   rsi, rsi
-  call  logan_init
-  cmp   rax, 0
-  jl    .error
 
   xor   rdi, rdi
   movzx rsi, word [host_port]

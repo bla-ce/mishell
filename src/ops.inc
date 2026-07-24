@@ -141,6 +141,7 @@ op_join:
   jmp   .send_update
 
 .add_host:
+  ; returns next available host
   call  host_is_allocation_exhausted
   test  rax, rax
   jz    .error
