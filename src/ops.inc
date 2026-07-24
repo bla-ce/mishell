@@ -113,7 +113,10 @@ op_join:
   mov   byte [rdi+PACKET_T_OFF_FLAGS], FL_HOST
 
   ; make sure we haven't reached the host limit
-  ; TODO: find another way
+  mov   qword [rsp+0x10], error_codes.HOST_LIMIT_REACHED
+  call  host_is_allocation_exhausted
+  test  rax, rax
+  jz    .error
 
   mov   qword [rsp+0x10], error_codes.INTERNAL  ; default
   mov   rdi, [rsp]
